@@ -1,0 +1,50 @@
+# =============================================================================
+# DerasaX workspace root .gitignore (LOCAL-ONLY repository)
+#
+# This repo versions ONLY the workspace-owned orchestration + documentation
+# (docker-compose.yml, .env.example, scripts/, docs/). The nested application
+# repositories are IGNORED here so they keep their own independent git history.
+# No remote is configured; nothing is ever pushed from this repo.
+# =============================================================================
+
+# --- Application folders + non-runtime archive ------------------------------
+# (Listed for a future root git repo; the active apps are backend/, frontend/, ai/.)
+/backend/
+/frontend/
+/ai/
+/archive/
+
+# --- Local environment / secrets (never tracked) ----------------------------
+.env
+*.env
+!*.env.example
+
+# --- Runtime process metadata + per-service logs ----------------------------
+/.runtime/
+
+# --- Local database cluster (native PostgreSQL data dir) --------------------
+/.localdb/
+pgdata/
+*.sqlite3
+*.db
+
+# --- AI indexes / model binaries --------------------------------------------
+vectorstore/
+*.pkl
+
+# --- Build output -----------------------------------------------------------
+dist/
+bin/
+obj/
+
+# --- Node / Python ----------------------------------------------------------
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# --- Editor / OS / temp -----------------------------------------------------
+*.tmp
+Thumbs.db
+.DS_Store

@@ -1,0 +1,97 @@
+# =============================================================================
+# DerasaX — LOCAL development stack (Phase 1)
+#
+# Services: PostgreSQL, backend (.NET), ai (FastAPI).
+# The unified frontend runs via a local Node dev/preview server (see
+# scripts/start-local.ps1) — containerizing it does not simplify
+# one-command startup, so it is intentionally NOT in this file.
+#
+# The ARCHIVED backend (archive/archived-ai-backend) is intentionally absent.
+#
+# All secrets/passwords come from the workspace .env (copy from .env.example);
+# no real secret is embedded here. Ports are configurable via .env.
+#
+# Usage:
+#   cp .env.example .env   # then edit values
+#   docker compose up -d --build
+#   docker compose ps
+#   docker compose down            # keeps the db volume
+#   docker compose down -v         # also removes the db volume (reset)
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: derasax-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-derasax}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-derasax_local}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - derasax-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-derasax} -d ${POSTGRES_DB:-derasax_local}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: derasax-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: http://+:8080
+      # Connection string targets the postgres SERVICE name (container network).
+      ConnectionStrings__cs: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-derasax_local};Username=${POSTGRES_USER:-derasax};Password=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env};SSL Mode=Disable;Trust Server Certificate=true"
+      SecretKey: ${BACKEND_JWT_KEY:?set BACKEND_JWT_KEY in .env}
+      Seed__Enabled: ${SEED_ENABLED:-true}
+      # Single unified frontend (Phase 20): dev :5173, preview :4173.
+      Cors__AllowedOrigins__0: ${FRONTEND_AUTH_ORIGIN:-http://localhost:5173}
+      Cors__AllowedOrigins__1: http://localhost:4173
+    ports:
+      - "${BACKEND_PORT:-5155}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  ai-rag:
+    build:
+      context: ./ai
+      dockerfile: Dockerfile
+    container_name: derasax-ai-rag
+    restart: unless-stopped
+    environment:
+      PORT: 8000
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      ALLOWED_ORIGINS: ${AIRAG_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173}
+      VECTORSTORE_DIR: /app/vectorstore
+      MODEL_DIR: /app/app/models
+    ports:
+      - "${AIRAG_PORT:-8000}:8000"
+    volumes:
+      - derasax-vectorstore:/app/vectorstore
+      - derasax-models:/app/app/models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health/live').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  derasax-pgdata:
+  derasax-vectorstore:
+  derasax-models:
