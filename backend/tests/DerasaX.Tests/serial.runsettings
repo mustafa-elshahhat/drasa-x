@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Serialized run settings. The shared suite runs class-parallel by default and a few tests assert on
+  globally-shared rows (notifications, audit) that a concurrently-running test can clean up, causing
+  rare cross-test contention (documented from Phase 13 onward). Running collections serially makes the
+  full-suite pass deterministic; behaviour under test is identical.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <MaxCpuCount>1</MaxCpuCount>
+  </RunConfiguration>
+  <xUnit>
+    <ParallelizeTestCollections>false</ParallelizeTestCollections>
+    <MaxParallelThreads>1</MaxParallelThreads>
+  </xUnit>
+</RunSettings>

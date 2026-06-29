@@ -1,0 +1,23 @@
+# =============================================================================
+# OPTIONAL computer-vision dependencies (Phase 15) — NOT installed by default.
+#
+# The CV module runs a deterministic STUB engine with the base requirements
+# alone (the venv already has torch + numpy + pillow). To enable the REAL
+# torch engine (face detection + recognition + emotion + engagement), install
+# these on a machine that can host them, then set CV_ENGINE=torch (or leave
+# CV_ENGINE=auto) and place the model weights in CV_MODEL_DIR.
+#
+#   pip install -r requirements-vision.txt
+#
+# Notes / risks (see docs/phase15/PHASE15_REFERENCE_REPO_AUDIT.md §4):
+#   * The reference repo pinned CUDA wheels (torch==2.5.1+cu121); DerasaX pins
+#     CPU torch==2.2.2 in requirements.txt. Do NOT replace that pin. These extras
+#     are aligned to the existing CPU torch line.
+#   * retina-face pulls in TensorFlow (a second DL runtime). If that is
+#     undesirable, supply your own detector and adapt TorchVisionEngine._detect.
+#   * The service NEVER downloads weights; provide them out-of-band in CV_MODEL_DIR.
+# =============================================================================
+torchvision==0.17.2          # aligned with the existing torch==2.2.2 (CPU)
+opencv-python-headless==4.10.0.84
+facenet-pytorch==2.6.0       # FaceNet (InceptionResnetV1) embeddings — recognition only
+retina-face==0.0.17          # OPTIONAL detector (pulls TensorFlow); replaceable

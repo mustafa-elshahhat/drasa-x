@@ -1,0 +1,85 @@
+/* Public marketing navbar — scoped under .public-root (Phase 20). */
+.public-root .public-nav__container {
+  width: 95%;
+  margin: auto;
+  padding: 20px;
+}
+.public-root .public-nav {
+  background-color: #fff;
+  padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.25);
+  border-radius: 15px;
+}
+.public-root .public-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--public-primary);
+}
+.public-root .public-nav__brand-icon {
+  color: var(--public-primary);
+}
+.public-root .public-nav__brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.public-root .public-nav__brand-name {
+  color: #0f6774;
+  font-size: 20px;
+  font-weight: 700;
+}
+.public-root .public-nav__brand-tagline {
+  color: var(--public-secondary);
+  font-size: 12px;
+}
+.public-root .public-nav__links {
+  display: flex;
+  gap: 30px;
+  font-size: 16px;
+}
+.public-root .public-nav__links a {
+  color: #0f6774;
+  font-weight: 400;
+  transition: 0.2s;
+}
+.public-root .public-nav__links a:hover {
+  color: var(--public-secondary);
+  transform: scale(1.05);
+}
+.public-root .public-nav__actions {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+.public-root .public-btn {
+  padding: 9px 22px;
+  border-radius: 25px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: 0.2s;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(to bottom, #0c7288, #68aab6);
+  color: #fff;
+}
+.public-root .public-btn:hover {
+  background: linear-gradient(to bottom, #0a595f, #4e8a91);
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .public-root .public-nav {
+    padding: 14px 18px;
+  }
+  .public-root .public-nav__links {
+    display: none;
+  }
+}

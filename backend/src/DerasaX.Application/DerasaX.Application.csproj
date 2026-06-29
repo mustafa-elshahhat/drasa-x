@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\DerasaX.Domain\DerasaX.Domain.csproj" />
+  </ItemGroup>
+	<ItemGroup>
+  <FrameworkReference Include="Microsoft.AspNetCore.App" />
+</ItemGroup>
+	
+
+
+	
+		
+	<ItemGroup>
+	  <!-- AutoMapper 12.0.1 carries transitive advisory GHSA-rvv3-g6hj-g44x (CVSS 7.5, StackOverflow
+	       DoS on deeply-nested graphs). The fix exists only in AutoMapper >=15.1.1/16.1.1, which are
+	       published under a COMMERCIAL license requiring a license key (automapper.io) AND require an
+	       AddAutoMapper API migration. Adopting a paid dependency is a product/licensing decision out
+	       of scope for Phase 18; the advisory is tracked in PHASE18_DEPENDENCY_SCAN_REPORT.md with its
+	       (low) real-world exploitability on DerasaX's shallow server-shaped DTOs. -->
+	  <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+	</ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

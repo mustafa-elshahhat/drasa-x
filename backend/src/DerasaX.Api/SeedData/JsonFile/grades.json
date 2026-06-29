@@ -1,0 +1,12 @@
+﻿[
+  {
+    "Id": "G7-ID",
+    "Name": "Grade3",
+    "TenantId": "tenant-1"
+  },
+  {
+    "Id": "G8-ID",
+    "Name": "Grade3",
+    "TenantId": "tenant-1"
+  }
+]

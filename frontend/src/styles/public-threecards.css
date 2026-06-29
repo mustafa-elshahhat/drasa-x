@@ -1,0 +1,208 @@
+/* Public marketing three-cards + modal — scoped under .public-root (Phase 20). */
+.public-root .public-cards {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  padding: 40px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.public-root .public-card {
+  width: 250px;
+  height: 330px;
+  border-radius: 15px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  transition: 0.6s;
+  margin: 0 -7px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+  border: none;
+  padding: 0;
+  background: #000;
+}
+.public-root .public-card:hover {
+  transform: scale(1.06) rotate(-6deg);
+  z-index: 5;
+}
+.public-root .public-card--middle {
+  margin-top: 40px;
+}
+.public-root .public-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.public-root .public-card__title {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  text-align: center;
+  font-size: 18px;
+  transform: translateY(100%);
+  opacity: 0;
+  transition: 0.6s;
+}
+.public-root .public-card:hover .public-card__title,
+.public-root .public-card:focus-visible .public-card__title {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* ----- Modal ----- */
+.public-root .public-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.public-root .public-modal {
+  background: #fff;
+  width: 90%;
+  max-width: 900px;
+  min-height: 480px;
+  border-radius: 20px;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+.public-root .public-modal__wrapper {
+  display: flex;
+  width: 100%;
+}
+.public-root .public-modal__media-col {
+  flex: 1;
+  min-width: 280px;
+  background: #000;
+}
+.public-root .public-modal__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.public-root .public-modal__text-col {
+  flex: 1.5;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.public-root .public-modal__text-col h2 {
+  font-size: 2rem;
+  color: var(--public-primary);
+  font-weight: 700;
+}
+.public-root .public-modal__subtitle {
+  color: var(--public-secondary);
+  margin-bottom: 12px;
+}
+.public-root .public-modal__desc {
+  font-size: 16px;
+  line-height: 24px;
+  color: #555;
+  margin-bottom: 1.5rem;
+}
+.public-root .public-modal__kp-title {
+  font-weight: 700;
+  color: var(--public-secondary);
+  margin-bottom: 12px;
+}
+.public-root .public-modal__kp {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.public-root .public-modal__kp-tag {
+  box-shadow: 3px 3px 12px 0 rgba(0, 0, 0, 0.25);
+  background: linear-gradient(to bottom, #1a8195, #3cb2cc);
+  color: #fff;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+.public-root .public-modal__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+}
+.public-root .public-modal__nav {
+  background: transparent;
+  color: var(--public-primary);
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 10px 16px;
+}
+.public-root .public-modal__explore {
+  background: linear-gradient(to bottom, #1a8195, #3cb2cc);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 12px 36px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1em;
+  transition: transform 0.2s ease;
+}
+.public-root .public-modal__explore:hover {
+  transform: translateY(-2px);
+}
+.public-root .public-modal__close {
+  position: absolute;
+  top: 15px;
+  inset-inline-end: 20px;
+  background: none;
+  border: none;
+  font-size: 2.2em;
+  color: #999;
+  cursor: pointer;
+  line-height: 1;
+  z-index: 10;
+}
+.public-root .public-modal__close:hover {
+  color: #333;
+}
+
+@media (max-width: 800px) {
+  .public-root .public-modal {
+    flex-direction: column;
+    max-width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .public-root .public-modal__wrapper {
+    flex-direction: column;
+  }
+  .public-root .public-modal__media-col {
+    min-width: unset;
+    height: 220px;
+    width: 100%;
+  }
+  .public-root .public-modal__text-col {
+    padding: 24px;
+  }
+  .public-root .public-modal__actions {
+    flex-direction: column;
+  }
+  .public-root .public-modal__nav,
+  .public-root .public-modal__explore {
+    width: 100%;
+    text-align: center;
+  }
+}

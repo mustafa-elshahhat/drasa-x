@@ -1,0 +1,27 @@
+# Secrets
+.env
+*.env
+
+# Vector DB / Chroma
+vectorstore/
+**/*.bin
+chroma.sqlite3
+*.sqlite3
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node (UI)
+node_modules/
+dist/
+
+# AI Models
+*.pkl
+app/models/
+data/outputs/
+
+# OS
+.DS_Store

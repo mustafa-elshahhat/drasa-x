@@ -1,0 +1,48 @@
+# =============================================================================
+# school-ai-rag - locked dependencies (UTF-8, curated).
+#
+# Generated from requirements.in. Replaces the previous 242-package UTF-16
+# `pip freeze` that bundled unrelated developer-machine packages. Versions are
+# pinned to the known-good set the service was developed against (Python 3.10),
+# and verified to install + import on this machine (see
+# docs/phase1/logs/closure/airag-full-install.log).
+#
+#   Full install (all features):     pip install -r requirements.txt
+#   Lightweight boot (API+health):   pip install -r requirements-core.txt
+#
+# To regenerate a fully hash-locked file you may use pip-tools under Python 3.10:
+#   pip install pip-tools && pip-compile requirements.in
+# =============================================================================
+
+# Direct (top-level) dependencies are pinned below; transitive dependencies are
+# resolved by pip. The exact resolved set verified on this machine is captured in
+# docs/phase1/logs/closure/airag-full-pip-freeze.txt.
+
+# --- Web framework / server ---
+fastapi==0.124.2
+uvicorn[standard]==0.38.0
+pydantic==2.12.4
+python-dotenv==1.2.1
+
+# --- LLM provider (uses httpx internally) ---
+groq==0.37.1
+
+# --- Performance prediction (classic ML) ---
+joblib==1.5.2
+pandas==2.2.3
+scikit-learn==1.7.2
+numpy==1.26.4
+
+# --- RAG: document loading, splitting, embeddings, vector store ---
+langchain==1.2.0
+langchain-chroma==1.1.0
+langchain-community==0.4.1
+langchain-huggingface==1.2.0
+langchain-text-splitters==1.1.0
+chromadb==1.3.7
+sentence-transformers==2.7.0
+transformers==4.57.3
+torch==2.2.2
+# NOTE (Phase 6 §18/§22): `requests` and `pypdf` were removed — the global PDF
+# loader and the model-download path were deleted; the backend now extracts text
+# and sends it to /internal/v1/documents. groq uses httpx internally.

@@ -1,0 +1,44 @@
+/* ===========================================================================
+   Public / marketing theme (Phase 20 frontend unification).
+   The marketing pages use a LIGHT theme. Every rule here and in the other
+   public-*.css files is scoped under `.public-root` so the light look never
+   bleeds into the dark authenticated portal, and the portal's dark body/link
+   styles never override the marketing pages. The portal (/login, /app/**) is
+   never rendered inside `.public-root`.
+   =========================================================================== */
+.public-root {
+  --public-primary: #0c7288;
+  --public-secondary: #68aab6;
+  --public-paragraph: #585858;
+  --public-muted: #959595;
+  --public-bg: #ffffff;
+  /* Poppins falls back to the host system stack — no external font origin is
+     loaded, so the strict CSP (font-src 'self' data:) stays intact. */
+  --public-font: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans Arabic', sans-serif;
+
+  min-height: 100vh;
+  background: var(--public-bg);
+  color: var(--public-paragraph);
+  font-family: var(--public-font);
+}
+
+/* The migrated marketing CSS assumed a global margin/padding reset that the
+   portal does not apply. :where() keeps specificity 0 so component rules win. */
+.public-root :where(h1, h2, h3, h4, h5, p, ul, ol, figure) {
+  margin: 0;
+  padding: 0;
+}
+.public-root :where(ul, ol) {
+  list-style: none;
+}
+.public-root a {
+  color: var(--public-primary);
+  text-decoration: none;
+}
+.public-root img {
+  max-width: 100%;
+}
+.public-root button {
+  font-family: inherit;
+}

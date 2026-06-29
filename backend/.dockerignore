@@ -1,0 +1,20 @@
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# Local env / secrets — never copy into the image
+.env
+**/appsettings.*.local.json
+
+# VCS / IDE
+.git/
+.vs/
+.vscode/
+.idea/
+
+# Misc
+**/*.user
+**/*.suo
+Dockerfile
+.dockerignore

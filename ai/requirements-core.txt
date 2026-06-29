@@ -1,0 +1,17 @@
+# =============================================================================
+# school-ai-rag — CORE runtime (lightweight local boot).
+#
+# Just enough to start FastAPI, serve /docs and /health/*, and run the
+# chat/analyze endpoints when GROQ_API_KEY is set. The heavy RAG + ML stack
+# (langchain, chromadb, sentence-transformers, torch, scikit-learn, pandas)
+# is intentionally excluded; those features degrade gracefully and are reported
+# by /health/ready as "missing dependency" until the full requirements.txt is
+# installed.
+#
+# Install:  pip install -r requirements-core.txt
+# =============================================================================
+fastapi==0.124.2
+uvicorn[standard]==0.38.0
+pydantic==2.12.4
+python-dotenv==1.2.1
+groq==0.37.1

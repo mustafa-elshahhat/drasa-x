@@ -1,18 +1,12 @@
 # =============================================================================
-# DerasaX workspace root .gitignore (LOCAL-ONLY repository)
+# DerasaX monorepo root .gitignore
 #
-# This repo versions ONLY the workspace-owned orchestration + documentation
-# (docker-compose.yml, .env.example, scripts/, docs/). The nested application
-# repositories are IGNORED here so they keep their own independent git history.
-# No remote is configured; nothing is ever pushed from this repo.
+# Tracks the full DerasaX monorepo: the three active applications
+# (backend/, frontend/, ai/) plus workspace-owned orchestration and docs
+# (docker-compose.yml, .env.example, scripts/, infra/, docs/). Each app also
+# carries its own nested .gitignore, honored by Git in addition to the rules
+# below. Remote: github.com/mustafa-elshahhat/drasa-x
 # =============================================================================
-
-# --- Application folders + non-runtime archive ------------------------------
-# (Listed for a future root git repo; the active apps are backend/, frontend/, ai/.)
-/backend/
-/frontend/
-/ai/
-/archive/
 
 # --- Local environment / secrets (never tracked) ----------------------------
 .env

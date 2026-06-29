@@ -1,0 +1,45 @@
+# =============================================================================
+# school-ai-rag — TOP-LEVEL (direct) dependencies actually imported by the app.
+#
+# This replaces the previous 242-package UTF-16 `pip freeze` (which contained
+# many unrelated developer-machine packages, e.g. google-genai, bcrypt,
+# fonttools). Only packages the application source actually imports are kept.
+#
+# Pinned/locked output lives in requirements.txt.
+# For the lightweight local boot (API + health, no heavy ML stack) use
+# requirements-core.txt instead.
+#
+# Verified against imports in:
+#   app/api.py, app/cli.py, app/llm/groq_client.py,
+#   app/prediction/service.py, app/prediction/router.py,
+#   app/rag/{loader,splitter,indexer,retriever}.py,
+#   app/quiz/*, app/analyze/*
+# =============================================================================
+
+# --- Web framework / server ---
+fastapi==0.124.2
+uvicorn[standard]==0.38.0
+pydantic==2.12.4
+python-dotenv==1.2.1
+
+# --- LLM provider + HTTP ---
+groq==0.37.1
+requests==2.32.5
+
+# --- Performance prediction (classic ML) ---
+joblib==1.5.2
+pandas==2.2.3
+scikit-learn==1.7.2
+numpy==1.26.4
+
+# --- RAG: document loading, splitting, embeddings, vector store ---
+langchain==1.2.0
+langchain-chroma==1.1.0
+langchain-community==0.4.1
+langchain-huggingface==1.2.0
+langchain-text-splitters==1.1.0
+chromadb==1.3.7
+sentence-transformers==2.7.0
+transformers==4.57.3
+torch==2.2.2
+pypdf==6.1.3

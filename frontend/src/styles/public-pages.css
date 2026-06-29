@@ -1,0 +1,16 @@
+/* Shared simple marketing content pages (Events/Activities/News) — scoped (Phase 20). */
+.public-root .public-page {
+  width: min(900px, 92%);
+  margin: 40px auto;
+  min-height: 40vh;
+}
+.public-root .public-page__title {
+  color: var(--public-primary);
+  font-size: 32px;
+  margin-bottom: 16px;
+}
+.public-root .public-page__body {
+  color: var(--public-paragraph);
+  font-size: 18px;
+  line-height: 1.6;
+}
