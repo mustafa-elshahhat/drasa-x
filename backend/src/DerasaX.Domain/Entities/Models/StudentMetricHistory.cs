@@ -5,8 +5,8 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class StudentMetricHistory : AuditableEntity<string>
     {
-        public string StudentId { get; set; }
-        public Student Student { get; set; }
+        public string StudentId { get; set; } = null!;
+        public Student Student { get; set; } = null!;
         public ProgressMetricType MetricType { get; set; }
         public decimal Value { get; set; }
         public DateTime MeasuredAt { get; set; } = DateTime.UtcNow;

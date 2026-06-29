@@ -8,7 +8,7 @@ namespace DerasaX.Domain.Entities.Models
         public string? UserId { get; set; }
         public ApplicationUser? User { get; set; }
         public AiUsageKind Kind { get; set; }
-        public string Provider { get; set; }
+        public string Provider { get; set; } = null!;
         public string? Model { get; set; }
         public int? PromptTokens { get; set; }
         public int? CompletionTokens { get; set; }

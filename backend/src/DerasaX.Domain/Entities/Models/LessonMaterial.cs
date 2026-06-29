@@ -11,12 +11,12 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class LessonMaterial : BaseEntity<string>
     {
-        public string Title { get; set; }
-        public string Url { get; set; }
+        public string Title { get; set; } = null!;
+        public string Url { get; set; } = null!;
         public AttachmentType Type { get; set; }
         [ForeignKey("Lesson")]
-        public string LessonId { get; set; }
-        public Lesson Lesson { get; set; }
+        public string LessonId { get; set; } = null!;
+        public Lesson Lesson { get; set; } = null!;
 
         /// <summary>
         /// Phase 16 — durable file backing this material when it was uploaded (vs. an external

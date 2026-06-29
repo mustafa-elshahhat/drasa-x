@@ -10,11 +10,11 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class Unit :BaseEntity<string>
     {
-        public string Title { get; set; }
+        public string Title { get; set; } = null!;
 
         [ForeignKey("Subject")]
-        public string SubjectId { get; set; }
-        public Subject Subject { get; set; }
+        public string SubjectId { get; set; } = null!;
+        public Subject Subject { get; set; } = null!;
 
         public ICollection<Lesson> Lessons { get; set; } = new HashSet<Lesson>();
     }

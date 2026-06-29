@@ -6,7 +6,8 @@
 # scripts/start-local.ps1) — containerizing it does not simplify
 # one-command startup, so it is intentionally NOT in this file.
 #
-# The ARCHIVED backend (archive/archived-ai-backend) is intentionally absent.
+# The previously-archived AI backend was removed in the monorepo reorg; it is
+# intentionally not part of this repository or this compose file.
 #
 # All secrets/passwords come from the workspace .env (copy from .env.example);
 # no real secret is embedded here. Ports are configurable via .env.
@@ -76,7 +77,9 @@ services:
     environment:
       PORT: 8000
       GROQ_API_KEY: ${GROQ_API_KEY:-}
-      ALLOWED_ORIGINS: ${AIRAG_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173}
+      # Internal-only: the browser never calls this service, so the allow-list is
+      # empty by default. Override with AIRAG_ALLOWED_ORIGINS only if truly needed. (Phase 22 / AI-01.)
+      ALLOWED_ORIGINS: ${AIRAG_ALLOWED_ORIGINS:-}
       VECTORSTORE_DIR: /app/vectorstore
       MODEL_DIR: /app/app/models
     ports:

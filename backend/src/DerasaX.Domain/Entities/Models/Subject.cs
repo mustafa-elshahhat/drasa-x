@@ -11,12 +11,12 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class Subject :BaseEntity<string>,IHasImageUrl
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
         public string? Description { get; set; }
         public string? ImageUrl { get; set; }
         [ForeignKey("grade")]
-        public string GradeId { get; set; }
-        public Grade grade { get; set; }
+        public string GradeId { get; set; } = null!;
+        public Grade grade { get; set; } = null!;
         public ICollection<Unit> Units { get; set; } = new HashSet<Unit>();
     }
 }

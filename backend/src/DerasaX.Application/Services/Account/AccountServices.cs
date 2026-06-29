@@ -111,7 +111,7 @@ namespace DerasaX.Application.Services.Account
             var hash = Hash(token);
             var user = await _userManager.Users
                 .Include(u => u.Tenant)
-                .SingleOrDefaultAsync(u => u.refreshTokens.Any(t => t.TokenHash == hash));
+                .SingleOrDefaultAsync(u => u.refreshTokens!.Any(t => t.TokenHash == hash));
 
             if (user is null)
                 return AuthResult.Fail(AuthOutcome.InvalidToken);
@@ -163,7 +163,7 @@ namespace DerasaX.Application.Services.Account
 
             var hash = Hash(token);
             var user = await _userManager.Users
-                .SingleOrDefaultAsync(u => u.refreshTokens.Any(t => t.TokenHash == hash));
+                .SingleOrDefaultAsync(u => u.refreshTokens!.Any(t => t.TokenHash == hash));
 
             if (user is not null)
             {
@@ -180,7 +180,7 @@ namespace DerasaX.Application.Services.Account
         {
             var hash = Hash(token);
             var user = await _userManager.Users
-                .SingleOrDefaultAsync(u => u.refreshTokens.Any(t => t.TokenHash == hash));
+                .SingleOrDefaultAsync(u => u.refreshTokens!.Any(t => t.TokenHash == hash));
             if (user == null)
                 return new TokenRevocationResult { Success = false, Message = "Invalid token." };
 

@@ -34,7 +34,7 @@ namespace DerasaX.Application.Services.Subjects
             _fileService=fileService;
             _httpContextAccessor = httpContextAccessor;
         }
-        private string GetTenantId()
+        private string? GetTenantId()
         {
             return _httpContextAccessor.HttpContext?.User?.FindFirst("tenantId")?.Value;
         }
@@ -52,7 +52,7 @@ namespace DerasaX.Application.Services.Subjects
 
             var dataSpec = new SubjectsSpecification(parameters,tenantId);
             var countSpec = new SubjectForCountingSpecification(parameters,tenantId);
-            var subjects = await _unitOfWork.Repository<Subject, string>().GetAllWithSpecAsync(dataSpec);
+            var subjects = await _unitOfWork.Repository<Subject, string>().GetAllWithSpecAsync(dataSpec, asNoTracking: true);
             var totalCount = await _unitOfWork.Repository<Subject, string>().CountAsync(countSpec);
 
             if (subjects == null || !subjects.Any())
@@ -95,7 +95,7 @@ namespace DerasaX.Application.Services.Subjects
                 throw new UnauthorizedException("Tenant is missing.");
 
             var subjectSpecification = new SubjectsSpecification(gradeId, tenantId, true);
-            var subjects = await _unitOfWork.Repository<Subject, string>().GetAllWithSpecAsync(subjectSpecification);
+            var subjects = await _unitOfWork.Repository<Subject, string>().GetAllWithSpecAsync(subjectSpecification, asNoTracking: true);
             if (!subjects.Any())
             {
                 _logger.LogError($"No subjects found in unit with ID {gradeId}.");
@@ -120,7 +120,7 @@ namespace DerasaX.Application.Services.Subjects
                 throw new BadRequestException("Invalid subject data provided");
             }
 
-            string imagePath = null;
+            string? imagePath = null;
             if (addSubjectDto.ImageUrl != null && addSubjectDto.ImageUrl.Length > 0)
             {
                 _logger.LogDebug("Uploading image for subject: {SubjectName}", addSubjectDto.Name);
@@ -170,7 +170,7 @@ namespace DerasaX.Application.Services.Subjects
                 throw new NotFoundException("Subject not found.");
             }
 
-            string imagePath = null;
+            string? imagePath = null;
 
             if (updateSubjectDto.ImageUrl?.Length > 0)
             {

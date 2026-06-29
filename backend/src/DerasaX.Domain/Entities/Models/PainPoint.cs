@@ -5,12 +5,12 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class PainPoint : AuditableEntity<string>
     {
-        public string StudentId { get; set; }
-        public Student Student { get; set; }
+        public string StudentId { get; set; } = null!;
+        public Student Student { get; set; } = null!;
         public string? StudentInsightId { get; set; }
         public StudentInsight? StudentInsight { get; set; }
         public PainPointCategory Category { get; set; }
-        public string Title { get; set; }
+        public string Title { get; set; } = null!;
         public string? Description { get; set; }
         public decimal ConfidenceScore { get; set; }
         public bool IsResolved { get; set; }

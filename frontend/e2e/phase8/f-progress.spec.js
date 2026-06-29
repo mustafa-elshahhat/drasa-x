@@ -21,7 +21,9 @@ test.describe('Phase 8 F — recommendations / progress / engagement', () => {
 
   test('F48 personalized recommendations render persisted backend records', async () => {
     await nav(page, '/app/student/recommendations')
-    await expect(page.getByRole('heading', { name: /ai recommendations/i })).toBeVisible()
+    // The page title (h1) and the recommendations card (h2) share the text "AI recommendations";
+    // target the page heading (level 1) so a render-timing race doesn't trip strict mode.
+    await expect(page.getByRole('heading', { name: /ai recommendations/i, level: 1 })).toBeVisible()
     await expect(page.getByText('Practice linear equations').first()).toBeVisible()
   })
 

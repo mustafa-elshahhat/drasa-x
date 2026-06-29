@@ -115,7 +115,7 @@ namespace DerasaX.Api.Controllers
                 resp.Data.Version = DeploymentInfo.Version;
                 resp.Data.Environment = _env.EnvironmentName;
             }
-            return R(resp);
+            return R(resp!);
         }
 
         // Maps a health-check entry to the existing ServicePostureDto shape (status + note).

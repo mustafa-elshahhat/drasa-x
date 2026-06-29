@@ -11,8 +11,8 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class Announcement :BaseEntity<string>
     {
-        public string Title { get; set; }
-        public string Body { get; set; }
+        public string Title { get; set; } = null!;
+        public string Body { get; set; } = null!;
         public TargetAudience TargetAudience { get; set; } = TargetAudience.All;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? ExpiresAt { get; set; }

@@ -2,7 +2,7 @@
 Computer-vision (CV) module for school-ai-rag (Phase 15).
 
 Adapted from the mandatory reference repo `student-engagement-system`
-(commit e4352456) — see docs/phase15/PHASE15_REFERENCE_REPO_AUDIT.md. The
+(commit e4352456). The
 reusable CV logic (face-crop geometry, FaceNet -> cosine -> threshold ->
 Unknown recognition decision, ResNet emotion softmax, CNN-BiLSTM 16-frame
 engagement sequence, per-track frame buffering, response shape) is

@@ -209,6 +209,19 @@ public class Phase18SecurityTests : IClassFixture<IntegrationFactory>
     }
 
     [Fact]
+    public async Task Unavailable_scanner_with_reject_policy_rejects_the_upload_503()
+    {
+        // Phase 22 PR-1 — fail-closed posture: when the scanner cannot produce a verdict AND
+        // RejectOnUnavailable=true, the upload is rejected (503 Service Unavailable) and the bytes
+        // are removed (no file row is created).
+        await using var f = new ScannerRejectsWhenUnavailableFactory();
+        var admin = await TestClient.AuthedClientAsync(f, "ADMIN-T1");
+        var resp = await admin.PostAsync("/api/v1/files/upload",
+            Form(Pdf(), "rejected.pdf", "application/pdf", ("Purpose", "Other")));
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, resp.StatusCode);
+    }
+
+    [Fact]
     public async Task Default_host_records_not_scanned_status()
     {
         // Regression guard: the Phase 18 scanner default ("Disabled") preserves prior behaviour.

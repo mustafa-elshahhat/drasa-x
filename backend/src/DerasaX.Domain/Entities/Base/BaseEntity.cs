@@ -11,7 +11,7 @@ namespace DerasaX.Domain.Entities.Base
 {
     public class BaseEntity<Tkey>: IMustHaveTenant, ISoftDeletable
     {
-        public Tkey Id { get; set; }
+        public Tkey Id { get; set; } = default!;
         public bool IsDeleted { get; set; } = false;
         public string? TenantId { get; set; }
     }

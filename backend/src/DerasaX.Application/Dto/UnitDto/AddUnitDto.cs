@@ -10,8 +10,8 @@ namespace DerasaX.Application.Dto.UnitDto
 {
     public class AddUnitDto
     {
-        public string Title { get; set; }
-        public string SubjectId { get; set; }
+        public string Title { get; set; } = null!;
+        public string SubjectId { get; set; } = null!;
         
     }
 }

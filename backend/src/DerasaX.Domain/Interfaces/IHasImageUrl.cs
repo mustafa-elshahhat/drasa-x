@@ -8,6 +8,6 @@ namespace DerasaX.Domain.Interfaces
 {
     public interface IHasImageUrl
     {
-        string ImageUrl { get; set; }
+        string? ImageUrl { get; set; }
     }
 }

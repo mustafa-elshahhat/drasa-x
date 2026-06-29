@@ -51,7 +51,7 @@ namespace DerasaX.Application.Services.Progress
             var repo = _uow.Repository<StudentLessonProgress, string>();
             var total = await repo.CountAsync(new CriteriaSpecification<StudentLessonProgress, string>(criteria));
             var items = await repo.GetAllWithSpecAsync(
-                new PagedSpecification<StudentLessonProgress, string>(criteria, x => x.LastAccessedAt, p.PageNumber, p.PageSize, descending: true));
+                new PagedSpecification<StudentLessonProgress, string>(criteria, x => x.LastAccessedAt!, p.PageNumber, p.PageSize, descending: true));
             var dto = items.Select(x => new LessonProgressDto
             {
                 Id = x.Id, LessonId = x.LessonId, IsCompleted = x.IsCompleted,

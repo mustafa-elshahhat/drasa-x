@@ -8,6 +8,6 @@ namespace DerasaX.Application.Dto.GradeDto
 {
     public class AddGradeDto
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
     }
 }

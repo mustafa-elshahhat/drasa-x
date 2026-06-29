@@ -10,12 +10,12 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class Lesson :BaseEntity<string>
     {
-        public string Title { get; set; }
-        public string Content { get; set; }
+        public string Title { get; set; } = null!;
+        public string Content { get; set; } = null!;
 
         [ForeignKey("Unit")]
-        public string UnitId { get; set; }
-        public Unit Unit { get; set; }
+        public string UnitId { get; set; } = null!;
+        public Unit Unit { get; set; } = null!;
         public ICollection<LessonMaterial> materials { get; set; } = new HashSet<LessonMaterial>();
         public ICollection<Quiz> Quizzes { get; set; } = new HashSet<Quiz>();
         public ICollection<StudentLessonProgress> studentLessonProgresses { get; set; } = new HashSet<StudentLessonProgress>();

@@ -10,12 +10,12 @@ namespace DerasaX.Domain.Specification
 {
     public class BaseSpecification<TEntity, TKey> : ISpecification<TEntity, TKey> where TEntity : BaseEntity<TKey>
     {
-        public Expression<Func<TEntity, bool>> Criteria { get; } = null;
+        public Expression<Func<TEntity, bool>> Criteria { get; } = null!;
 
         public List<Expression<Func<TEntity, object>>> Includes { get; } = new List<Expression<Func<TEntity, object>>>();
 
-        public Expression<Func<TEntity, object>> OrderBy { get; set; }
-        public Expression<Func<TEntity, object>> OrderByDescending { get; set; }
+        public Expression<Func<TEntity, object>> OrderBy { get; set; } = null!;
+        public Expression<Func<TEntity, object>> OrderByDescending { get; set; } = null!;
         public int? Skip { get; private set; }
         public int? Take { get; private set; }
         

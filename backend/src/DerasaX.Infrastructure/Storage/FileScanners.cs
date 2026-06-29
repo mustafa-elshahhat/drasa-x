@@ -1,5 +1,7 @@
 using System;
+using System.Buffers.Binary;
 using System.IO;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -96,9 +98,91 @@ namespace DerasaX.Infrastructure.Storage
     }
 
     /// <summary>
-    /// Phase 18 — selects the active <see cref="IFileScanner"/> from
-    /// <c>FileStorage:Scanner:Mode</c> ("Disabled" default / "Unavailable" / "Stub").
-    /// A real ClamAV/cloud scanner would be added here as a new mode in staging/production.
+    /// Phase 22 PR-1 — REAL malware scanner: a minimal ClamAV daemon (clamd) INSTREAM client for
+    /// staging/production. Honest by construction — if the daemon cannot be reached (no clamd locally),
+    /// the connection times out, or the protocol response is unrecognized, it returns
+    /// <see cref="FileScanStatus.ScannerUnavailable"/> (NEVER a faked Clean). Pair with
+    /// <c>RejectOnUnavailable=true</c> for a fail-closed posture. Local/CI use the Disabled/Stub modes,
+    /// so no real engine is required to run the suite.
+    /// </summary>
+    public sealed class ClamAvFileScanner : IFileScanner
+    {
+        private const long DefaultReadCap = 64L * 1024 * 1024;
+        private readonly string _host;
+        private readonly int _port;
+        private readonly int _timeoutMs;
+        private readonly long _maxScanBytes;
+
+        public ClamAvFileScanner(string? host, int port, int timeoutSeconds, bool rejectOnUnavailable, long maxScanBytes)
+        {
+            _host = string.IsNullOrWhiteSpace(host) ? "localhost" : host;
+            _port = port > 0 ? port : 3310;
+            _timeoutMs = (timeoutSeconds > 0 ? timeoutSeconds : 10) * 1000;
+            RejectOnUnavailable = rejectOnUnavailable;
+            _maxScanBytes = maxScanBytes > 0 ? maxScanBytes : DefaultReadCap;
+        }
+
+        public string Mode => "ClamAv";
+        public bool IsEnabled => true;
+        public bool RejectOnUnavailable { get; }
+
+        public async Task<FileScanResult> ScanAsync(Stream content, string fileName, string declaredContentType, CancellationToken ct = default)
+        {
+            try
+            {
+                using var client = new TcpClient();
+                using var connectCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                connectCts.CancelAfter(_timeoutMs);
+                await client.ConnectAsync(_host, _port, connectCts.Token);
+
+                await using var net = client.GetStream();
+
+                // zINSTREAM\0 : stream the file as <4-byte BE length><bytes> chunks, terminated by a 0 length.
+                await net.WriteAsync(Encoding.ASCII.GetBytes("zINSTREAM\0").AsMemory(), ct);
+
+                var buffer = new byte[8192];
+                var lenPrefix = new byte[4];
+                long total = 0;
+                int read;
+                while ((read = await content.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0)
+                {
+                    total += read;
+                    if (total > _maxScanBytes) return FileScanResult.Unavailable(); // too large to stream safely
+                    BinaryPrimitives.WriteUInt32BigEndian(lenPrefix, (uint)read);
+                    await net.WriteAsync(lenPrefix.AsMemory(), ct);
+                    await net.WriteAsync(buffer.AsMemory(0, read), ct);
+                }
+                BinaryPrimitives.WriteUInt32BigEndian(lenPrefix, 0); // zero-length chunk = end of stream
+                await net.WriteAsync(lenPrefix.AsMemory(), ct);
+
+                using var respMs = new MemoryStream();
+                while ((read = await net.ReadAsync(buffer.AsMemory(0, buffer.Length), ct)) > 0)
+                    respMs.Write(buffer, 0, read);
+                var resp = Encoding.ASCII.GetString(respMs.GetBuffer(), 0, (int)respMs.Length).Trim('\0', '\n', ' ');
+
+                if (resp.EndsWith("OK", StringComparison.Ordinal)) return FileScanResult.Clean();
+                if (resp.Contains("FOUND", StringComparison.Ordinal))
+                {
+                    var sig = resp.Replace("stream:", "").Replace("FOUND", "").Trim();
+                    return FileScanResult.Infected(string.IsNullOrWhiteSpace(sig) ? "ClamAV" : sig);
+                }
+                return FileScanResult.Unavailable(); // unrecognized/empty/error -> honest, never faked Clean
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw; // genuine caller cancellation (not the connect timeout)
+            }
+            catch
+            {
+                // No daemon / connection refused / timeout / protocol error -> honest "unavailable".
+                return FileScanResult.Unavailable();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Phase 18 / Phase 22 PR-1 — selects the active <see cref="IFileScanner"/> from
+    /// <c>FileStorage:Scanner:Mode</c> ("Disabled" default / "Unavailable" / "Stub" / "ClamAv").
     /// </summary>
     public static class FileScannerFactory
     {
@@ -109,6 +193,7 @@ namespace DerasaX.Infrastructure.Storage
             {
                 "stub" => new StubSignatureFileScanner(scanner.RejectOnUnavailable, scanner.MaxScanBytes),
                 "unavailable" => new UnavailableFileScanner(scanner.RejectOnUnavailable),
+                "clamav" => new ClamAvFileScanner(scanner.Host, scanner.Port, scanner.TimeoutSeconds, scanner.RejectOnUnavailable, scanner.MaxScanBytes),
                 _ => new DisabledFileScanner(),
             };
         }

@@ -61,7 +61,7 @@ public class AiTutorOrchestrationTests
         public Exception? Throw;
 
         public AiIngestRequest? LastIngest;
-        public Func<AiIngestResponse>? OnIngest;
+        public Func<AiIngestResponse>? OnIngest = null;
 
         public Task<AiTutorResponse> TutorAsync(AiTutorRequest request, string tenantId, string? actorUserId, CancellationToken ct = default)
         {
@@ -90,7 +90,7 @@ public class AiTutorOrchestrationTests
         }
 
         public AiQuizDraftRequest? LastQuiz;
-        public Func<AiQuizDraftResponse>? OnQuiz;
+        public Func<AiQuizDraftResponse>? OnQuiz = null;
 
         public Task<AiQuizDraftResponse> QuizDraftAsync(AiQuizDraftRequest request, string tenantId, string? actorUserId, CancellationToken ct = default)
         {
@@ -108,7 +108,7 @@ public class AiTutorOrchestrationTests
         }
 
         public AiAnalysisRequest? LastAnalysis;
-        public Func<AiAnalysisResponse>? OnAnalysis;
+        public Func<AiAnalysisResponse>? OnAnalysis = null;
 
         public Task<AiAnalysisResponse> AnalyzeAsync(AiAnalysisRequest request, string tenantId, string? actorUserId, CancellationToken ct = default)
         {

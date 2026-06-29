@@ -5,9 +5,8 @@ owned by a single application.
 
 ## Where things actually live today
 
-- **Local orchestration:** `../docker-compose.yml` lives at the repository root (per
-  `docs/01_TARGET_ARCHITECTURE.md`, which lists `docker-compose.yml` as a root-level file). It builds
-  the `backend` and `ai` services and runs PostgreSQL.
+- **Local orchestration:** `../docker-compose.yml` lives at the repository root (a root-level file;
+  see the root `README.md`). It builds the `backend` and `ai` services and runs PostgreSQL.
 - **Per-app container builds:** each app keeps its own `Dockerfile` next to its source, because that
   `Dockerfile` is the build context referenced by `docker-compose.yml`:
   - `../backend/Dockerfile`

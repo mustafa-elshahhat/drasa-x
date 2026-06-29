@@ -28,7 +28,7 @@ namespace DerasaX.Infrastructure.Repositories
                 var repository = new GenericRepository<TEntity, TKey>(_context);
                 _repositories.Add(type, repository);
             }
-            return (IGenericRepository<TEntity, TKey>)_repositories[type];
+            return (IGenericRepository<TEntity, TKey>)_repositories[type]!;
 
         }
         public async Task SaveChangesAsync(System.Threading.CancellationToken cancellationToken = default)

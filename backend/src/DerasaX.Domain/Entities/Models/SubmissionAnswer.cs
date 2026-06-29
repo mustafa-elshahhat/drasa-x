@@ -21,11 +21,11 @@ namespace DerasaX.Domain.Entities.Models
         public System.DateTime? GradedAt { get; set; }
         public string? Feedback { get; set; }
         [ForeignKey("Question")]
-        public string QuestionId { get; set; }
-        public Question Question { get; set; }
+        public string QuestionId { get; set; } = null!;
+        public Question Question { get; set; } = null!;
         [ForeignKey("QuizSubmission")]
-        public string QuizSubmissionId { get; set; }
-        public QuizSubmission QuizSubmission { get; set; }
+        public string QuizSubmissionId { get; set; } = null!;
+        public QuizSubmission QuizSubmission { get; set; } = null!;
         [ForeignKey("SelectedOption")]
         public string? SelectedOptionId { get; set; }
         public QuestionOption? SelectedOption { get; set; }

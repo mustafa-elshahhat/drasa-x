@@ -21,8 +21,8 @@ namespace DerasaX.Domain.Entities.Models
         public DateTime PeriodStart { get; set; }       
         public DateTime PeriodEnd { get; set; }
         [ForeignKey("Student")]
-        public string StudentId { get; set; }
-        public Student Student { get; set; }
+        public string StudentId { get; set; } = null!;
+        public Student Student { get; set; } = null!;
         public ICollection<PainPoint> PainPoints { get; set; } = new HashSet<PainPoint>();
         public ICollection<StudentRecommendation> Recommendations { get; set; } = new HashSet<StudentRecommendation>();
     }

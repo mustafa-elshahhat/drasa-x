@@ -20,7 +20,7 @@ public class Phase19StorageMigrationTests : IClassFixture<IntegrationFactory>
     private readonly IntegrationFactory _factory;
     public Phase19StorageMigrationTests(IntegrationFactory factory) => _factory = factory;
 
-    private sealed class Img : IHasImageUrl { public string ImageUrl { get; set; } = ""; }
+    private sealed class Img : IHasImageUrl { public string? ImageUrl { get; set; } = ""; }
 
     private static GenericPictureUrlResolver<Img, object> Resolver(string folder = "Subjects")
     {

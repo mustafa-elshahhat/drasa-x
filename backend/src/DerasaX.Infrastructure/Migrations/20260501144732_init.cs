@@ -4,6 +4,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
+// CS8981: the EF-generated migration class name is intentionally lower-case.
+// Suppress here WITHOUT renaming the migration class (renaming would break the
+// migrations history). Phase 22 Step 4c.
+#pragma warning disable CS8981
+
 namespace DerasaX.Infrastructure.Migrations
 {
     /// <inheritdoc />

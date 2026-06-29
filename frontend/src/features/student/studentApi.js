@@ -12,19 +12,19 @@ function qs(params = {}) {
 
 export const studentApi = {
   async subjects(signal) {
-    return toItems(await api.get('/api/Subjects/GetSubjects', { signal }))
+    return toItems(await api.get('/api/v1/Subjects/GetSubjects', { signal }))
   },
   async subject(id, signal) {
-    return toObject(await api.get(`/api/Subjects/GetSubjectById/${encodeURIComponent(id)}`, { signal }))
+    return toObject(await api.get(`/api/v1/Subjects/GetSubjectById/${encodeURIComponent(id)}`, { signal }))
   },
   async units(subjectId, signal) {
-    return toItems(await api.get(`/api/Units/GetUnitsBySubjectId${qs({ id: subjectId })}`, { signal }))
+    return toItems(await api.get(`/api/v1/Units/GetUnitsBySubjectId${qs({ id: subjectId })}`, { signal }))
   },
   async lessons(unitId, signal) {
-    return toItems(await api.get(`/api/Lessons/GetLessonsByUnitId${qs({ id: unitId })}`, { signal }))
+    return toItems(await api.get(`/api/v1/Lessons/GetLessonsByUnitId${qs({ id: unitId })}`, { signal }))
   },
   async materials(lessonId, signal) {
-    return toItems(await api.get(`/api/LessonMaterial/GetMaterialByLessonId${qs({ id: lessonId })}`, { signal }))
+    return toItems(await api.get(`/api/v1/LessonMaterial/GetMaterialByLessonId${qs({ id: lessonId })}`, { signal }))
   },
   async completeLesson(lessonId) {
     return unwrapEnvelope(await api.post(`/api/v1/student/lessons/${encodeURIComponent(lessonId)}/complete`))
@@ -66,7 +66,7 @@ export const studentApi = {
     return toItems(await api.get(`/api/v1/quizzes/${encodeURIComponent(quizId)}/my-attempts`, { signal }))
   },
   async tutor(payload) {
-    return normalizeTutorResponse(await api.post('/api/chat', payload))
+    return normalizeTutorResponse(await api.post('/api/v1/ai/tutor', payload))
   },
   async progress(studentId, signal) {
     const base = `/api/v1/students/${encodeURIComponent(studentId)}`

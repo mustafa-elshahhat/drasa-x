@@ -193,3 +193,82 @@ def test_ingest_endpoint_requires_ingest_scope(client):
             "content": "some content", "language": "en", "material_type": "notes"}
     # A valid token with the WRONG scope (ai:tutor) must be denied on the ingest surface.
     assert c.post("/internal/v1/documents", json=body, headers=auth(scope="ai:tutor")).status_code == 403
+
+
+# --- internal-only CORS posture (AI-01 / XL-01) ------------------------------
+
+_BROWSER_ORIGINS = (
+    "http://localhost:5173", "http://127.0.0.1:5173",
+    "http://localhost:4173", "http://127.0.0.1:4173", "*",
+)
+
+
+def _cors_allow_origins(app):
+    """Return allow_origins configured on the app's CORS middleware (version-tolerant)."""
+    from starlette.middleware.cors import CORSMiddleware
+    for mw in app.user_middleware:
+        if mw.cls is CORSMiddleware:
+            opts = getattr(mw, "kwargs", None)
+            if opts is None:
+                opts = getattr(mw, "options", {})
+            return list(opts.get("allow_origins", []))
+    return None
+
+
+def test_ai_cors_has_no_browser_origin_by_default(monkeypatch):
+    # The internal AI service is called server-to-server by the backend only; the browser
+    # NEVER calls it. "Default" = the shipped config (.env.example / docker-compose.yml /
+    # start-local.ps1, all now empty) -> the allow-list must be EMPTY (no SPA/browser origin).
+    # Set ALLOWED_ORIGINS empty (NOT delete) so api.load_dotenv() does not restore a
+    # developer's local ai/.env value — matching the pattern in test_health_readiness.py.
+    monkeypatch.setenv("ALLOWED_ORIGINS", "")
+    import app.api as api
+    importlib.reload(api)
+    try:
+        # The hardcoded fallback (var entirely unset) is also internal-only.
+        assert api._default_origins == ""
+        # With the shipped empty config, the wired allow-list contains no browser origin.
+        assert api.ALLOWED_ORIGINS == []
+        origins = _cors_allow_origins(api.app)
+        assert origins is not None, "CORS middleware not found on the app"
+        for bad in _BROWSER_ORIGINS:
+            assert bad not in origins, f"browser origin {bad} must not be advertised by default"
+            assert bad not in api.ALLOWED_ORIGINS
+    finally:
+        importlib.reload(api)  # restore a clean app for later tests
+
+
+def test_ai_cors_allow_list_is_explicit_opt_in(monkeypatch):
+    # An operator may still opt into a narrow allow-list (e.g. an internal docs UI),
+    # but ONLY by explicit configuration — never by default.
+    monkeypatch.setenv("ALLOWED_ORIGINS", "https://ops.example.internal")
+    import app.api as api
+    importlib.reload(api)
+    try:
+        assert api.ALLOWED_ORIGINS == ["https://ops.example.internal"]
+    finally:
+        monkeypatch.delenv("ALLOWED_ORIGINS", raising=False)
+        importlib.reload(api)
+
+
+# --- PII-in-logs sweep (SEC-06): no raw content/identifiers reach the logs ----
+
+def test_tutor_request_logs_contain_no_message_pii(client, caplog):
+    # End-to-end: a real tutor request whose message carries PII (an email + a
+    # distinctive marker) must never have that PII appear in ANY log line, while the
+    # safe telemetry event ("ai_operation") is still emitted (observability intact).
+    c, api, r, store = client
+    caplog.set_level(logging.INFO)
+    email = "pupil.parent@example.com"
+    marker = "PII-MARKER-9f3c2a"
+    message = f"My email is {email} ({marker}). What does chlorophyll absorb?"
+    res = c.post("/internal/v1/tutor", json=_tbody(message=message), headers=auth())
+    assert res.status_code == 200
+
+    log = caplog.text
+    assert "ai_operation" in log                       # telemetry still emitted
+    assert email not in log                             # email embedded in the user message
+    assert marker not in log                            # any raw message content
+    assert "what does chlorophyll absorb" not in log.lower()
+    assert "grounded answer" not in log                 # the model's answer is never logged
+    assert "tenant-1" not in log                        # raw tenant id (only the fingerprint is logged)

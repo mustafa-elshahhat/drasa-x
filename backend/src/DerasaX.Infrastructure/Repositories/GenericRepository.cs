@@ -27,7 +27,7 @@ namespace DerasaX.Infrastructure.Repositories
         {
             return await _dbSet.ToListAsync();
         }
-        public async Task<TEntity> GetByIdAsync(TKey id) => await _dbSet.FindAsync(id);
+        public async Task<TEntity> GetByIdAsync(TKey id) => (await _dbSet.FindAsync(id))!;
         public void Update(TEntity entity)
         {
             _dbSet.Attach(entity);
@@ -41,13 +41,16 @@ namespace DerasaX.Infrastructure.Repositories
             }
         }
         // Specification methods
-        public async Task<IEnumerable<TEntity>> GetAllWithSpecAsync(ISpecification<TEntity, TKey> specification)
+        public async Task<IEnumerable<TEntity>> GetAllWithSpecAsync(ISpecification<TEntity, TKey> specification, bool asNoTracking = false)
         {
-            return await ApplySpecification(specification).ToListAsync();
+            var query = ApplySpecification(specification);
+            // PERF-01: read-only list reads skip change-tracking (less CPU/memory; identical results).
+            if (asNoTracking) query = query.AsNoTracking();
+            return await query.ToListAsync();
         }
         public async Task<TEntity> GetByIdWithSpecAsync(ISpecification<TEntity, TKey> specification)
         {
-            return await ApplySpecification(specification).FirstOrDefaultAsync();
+            return (await ApplySpecification(specification).FirstOrDefaultAsync())!;
         }
         public async Task<int> CountAsync(ISpecification<TEntity, TKey> specification)
         {

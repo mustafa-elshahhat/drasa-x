@@ -47,6 +47,6 @@ namespace DerasaX.Application.Dto.ProvisioningDto
         /// <summary>Include disabled accounts (default false).</summary>
         public bool IncludeDisabled { get; set; }
         /// <summary>Case-insensitive contains match on full name or login code.</summary>
-        public string? Search { get; set; }
+        public new string? Search { get; set; }
     }
 }

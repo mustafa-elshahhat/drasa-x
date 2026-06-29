@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Playwright/test generated artifacts (regenerated every run; Phase 22 / FE-03, INFRA-03)
+playwright-report
+test-results
+coverage
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

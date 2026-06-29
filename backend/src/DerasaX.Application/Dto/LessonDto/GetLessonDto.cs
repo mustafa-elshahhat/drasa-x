@@ -8,9 +8,9 @@ namespace DerasaX.Application.Dto.LessonDto
 {
     public class GetLessonDto
     {
-        public string Id { get; set; }
-        public string Title { get; set; }
-        public string Content { get; set; }
-        public string UnitId { get; set; }
+        public string Id { get; set; } = null!;
+        public string Title { get; set; } = null!;
+        public string Content { get; set; } = null!;
+        public string UnitId { get; set; } = null!;
     }
 }

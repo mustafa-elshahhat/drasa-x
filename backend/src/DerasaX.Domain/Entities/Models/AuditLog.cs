@@ -8,7 +8,7 @@ namespace DerasaX.Domain.Entities.Models
         public string? ActorUserId { get; set; }
         public ApplicationUser? ActorUser { get; set; }
         public AuditActionType Action { get; set; }
-        public string EntityType { get; set; }
+        public string EntityType { get; set; } = null!;
         public string? EntityId { get; set; }
         public string? CorrelationId { get; set; }
         public string? IpAddress { get; set; }

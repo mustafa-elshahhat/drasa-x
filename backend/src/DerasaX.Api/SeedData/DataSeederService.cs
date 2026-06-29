@@ -808,6 +808,54 @@ namespace DerasaX.Api.SeedData
                 .Where(s => actorIds.Contains(s.SubmittedByUserId)).ToListAsync();
             _context.suggestions.RemoveRange(suggestions);
 
+            // Phase 15 CV-confirmed attendance for the actors: remove ComputerVision-source records
+            // so the Phase 8 attendance fixture returns to its deterministic seeded (manual/import)
+            // baseline regardless of test execution order. The seeded manual/import records are kept.
+            var cvAttendance = await _context.studentAttendanceRecords.IgnoreQueryFilters()
+                .Where(a => actorIds.Contains(a.StudentId) && a.Source == AttendanceSource.ComputerVision).ToListAsync();
+            _context.studentAttendanceRecords.RemoveRange(cvAttendance);
+
+            await _context.SaveChangesAsync();
+
+            // Test-created communities & competitions accumulate run-over-run: the Phase 14 closure
+            // flow seeds fresh ones each pass via the teacher API and never deletes them, so without a
+            // full reset-local-db they pile up and crowd the deterministic seeded fixtures off the
+            // Phase 8 H/I "eligible X are listed" surfaces. Remove every community/competition EXCEPT
+            // the seeded Phase 8 fixtures (with their dependents) so the listings are stable run-over-run.
+            // (reset-local-db remains the full hard reset; the seeded fixtures' own member/post/score
+            // rows are kept because the fixture ids are retained.)
+            var seededCommunityIds = new[] { "E2E-PH8-COMM-T1", "E2E-PH8-COMM-T2" };
+            var staleCommunityIds = await _context.communities.IgnoreQueryFilters()
+                .Where(c => !seededCommunityIds.Contains(c.Id)).Select(c => c.Id).ToListAsync();
+            if (staleCommunityIds.Count > 0)
+            {
+                var stalePostIds = await _context.posts.IgnoreQueryFilters()
+                    .Where(p => p.CommunityId != null && staleCommunityIds.Contains(p.CommunityId)).Select(p => p.Id).ToListAsync();
+                if (stalePostIds.Count > 0)
+                {
+                    _context.postComments.RemoveRange(await _context.postComments.IgnoreQueryFilters().Where(c => stalePostIds.Contains(c.PostId)).ToListAsync());
+                    _context.postReports.RemoveRange(await _context.postReports.IgnoreQueryFilters().Where(r => stalePostIds.Contains(r.PostId)).ToListAsync());
+                    _context.posts.RemoveRange(await _context.posts.IgnoreQueryFilters().Where(p => stalePostIds.Contains(p.Id)).ToListAsync());
+                }
+                _context.communityMemberships.RemoveRange(await _context.communityMemberships.IgnoreQueryFilters().Where(m => staleCommunityIds.Contains(m.CommunityId)).ToListAsync());
+                _context.communities.RemoveRange(await _context.communities.IgnoreQueryFilters().Where(c => staleCommunityIds.Contains(c.Id)).ToListAsync());
+            }
+
+            var seededCompetitionIds = new[] { "E2E-PH8-COMP-T1", "E2E-PH8-COMP-T2" };
+            var staleCompetitionIds = await _context.competitions.IgnoreQueryFilters()
+                .Where(c => !seededCompetitionIds.Contains(c.Id)).Select(c => c.Id).ToListAsync();
+            if (staleCompetitionIds.Count > 0)
+            {
+                var staleEntryIds = await _context.competitionEntries.IgnoreQueryFilters()
+                    .Where(e => staleCompetitionIds.Contains(e.CompetitionId)).Select(e => e.Id).ToListAsync();
+                if (staleEntryIds.Count > 0)
+                    _context.competitionScores.RemoveRange(await _context.competitionScores.IgnoreQueryFilters().Where(s => staleEntryIds.Contains(s.CompetitionEntryId)).ToListAsync());
+                _context.competitionEntries.RemoveRange(await _context.competitionEntries.IgnoreQueryFilters().Where(e => staleCompetitionIds.Contains(e.CompetitionId)).ToListAsync());
+                _context.competitionSubmissions.RemoveRange(await _context.competitionSubmissions.IgnoreQueryFilters().Where(s => staleCompetitionIds.Contains(s.CompetitionId)).ToListAsync());
+                _context.leaderboardEntries.RemoveRange(await _context.leaderboardEntries.IgnoreQueryFilters().Where(l => staleCompetitionIds.Contains(l.CompetitionId)).ToListAsync());
+                _context.competitions.RemoveRange(await _context.competitions.IgnoreQueryFilters().Where(c => staleCompetitionIds.Contains(c.Id)).ToListAsync());
+            }
+
             await _context.SaveChangesAsync();
 
             // Reset the actor's lesson-progress on the fixture lesson so B16 (explicit

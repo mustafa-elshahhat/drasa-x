@@ -5,11 +5,11 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class PostReport : AuditableEntity<string>
     {
-        public string PostId { get; set; }
-        public Post Post { get; set; }
-        public string ReportedByUserId { get; set; }
-        public ApplicationUser ReportedByUser { get; set; }
-        public string Reason { get; set; }
+        public string PostId { get; set; } = null!;
+        public Post Post { get; set; } = null!;
+        public string ReportedByUserId { get; set; } = null!;
+        public ApplicationUser ReportedByUser { get; set; } = null!;
+        public string Reason { get; set; } = null!;
         public ReportStatus Status { get; set; } = ReportStatus.Open;
     }
 }

@@ -5,7 +5,7 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class Community : AuditableEntity<string>
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
         public string? Description { get; set; }
         public CommunityVisibility Visibility { get; set; } = CommunityVisibility.TenantOnly;
         public string? SchoolClassId { get; set; }

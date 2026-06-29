@@ -24,7 +24,10 @@ test.describe('Phase 8 I — competitions & leaderboards', () => {
     await nav(page, '/app/student/competitions')
     await expect(page.getByRole('heading', { name: /^competitions$/i })).toBeVisible()
     await expect(page.getByText('Phase 8 Math Olympiad').first()).toBeVisible()
-    expect(await page.locator('.student-row-link').count()).toBe(1)
+    // Tenant scoping is the real contract: the seeded same-tenant competition is listed and the
+    // cross-tenant competition never leaks in. (An exact total count is not deterministic — a
+    // later phase, e.g. Phase 14, seeds additional same-tenant competitions in the shared run.)
+    await expect(page.getByText('Phase 8 Tenant2 Competition')).toHaveCount(0)
   })
 
   test('I64 competition details render state and the entry action', async () => {
@@ -52,7 +55,9 @@ test.describe('Phase 8 I — competitions & leaderboards', () => {
     const board = page.locator('.ui-card', { hasText: /leaderboard/i })
     await expect(board).toBeVisible()
     await expect(board.getByText(/no leaderboard rows/i)).toHaveCount(0)
-    await expect(board.getByText('95')).toBeVisible() // OTHER-T1's persisted score
+    // Exact match: the rival's persisted score is "95"; a non-exact match also hits any random
+    // student-ref GUID that happens to contain "95" (e.g. "...149515..."), tripping strict mode.
+    await expect(board.getByText('95', { exact: true })).toBeVisible() // OTHER-T1's persisted score
   })
 
   test('I67 a duplicate entry carries no client authority and a cross-tenant id is denied', async () => {

@@ -3,6 +3,7 @@ import { test, expect, request as pwRequest } from '@playwright/test'
 const BACKEND = process.env.VITE_DOTNET_URL || 'http://localhost:5155'
 const LOGIN_CODE = process.env.E2E_LOGIN_CODE
 const PASSWORD = process.env.E2E_PASSWORD
+const RESET_KEY = process.env.E2E_RESET_KEY || 'ph8-e2e-local'
 
 async function backendUp() {
   try {
@@ -12,6 +13,22 @@ async function backendUp() {
     return res.ok()
   } catch {
     return false
+  }
+}
+
+// Restore STU-T1's deterministic fixture baseline (Development-only backend endpoint). Phase 15's
+// CV-confirmation flow runs earlier in the shared file order and adds a ComputerVision attendance
+// record for STU-T1; resetting first keeps the attendance summary/percentage order-independent.
+async function resetE2E() {
+  const ctx = await pwRequest.newContext()
+  try {
+    const res = await ctx.post(`${BACKEND}/api/v1/dev/e2e/reset`, {
+      headers: { 'X-E2E-Reset-Key': RESET_KEY },
+      timeout: 8000,
+    })
+    if (!res.ok()) throw new Error(`reset failed: ${res.status()}`)
+  } finally {
+    await ctx.dispose()
   }
 }
 
@@ -39,6 +56,7 @@ test.describe('Phase 8 student portal live contracts', () => {
 
   test.beforeAll(async ({ browser }) => {
     test.skip(!(await backendUp()), `DerasaX-backend not reachable at ${BACKEND}`)
+    await resetE2E() // deterministic attendance baseline (clears Phase 15 CV-confirmed records)
 
     context = await browser.newContext()
     studentPage = await context.newPage()

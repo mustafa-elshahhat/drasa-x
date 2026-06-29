@@ -13,7 +13,7 @@ namespace DerasaX.Domain.Entities.Models
     {
         public string FullName { get; set; } = string.Empty;
         public string? ImageUrl { get; set; }
-        public string LoginCode { get; set; }
+        public string LoginCode { get; set; } = null!;
         // Nullable so a platform-scoped SystemAdmin can exist without a tenant
         // (Phase 2 AUTHENTICATION_FLOW §6). Tenant-role users always have one.
         [ForeignKey("Tenant")]
@@ -30,8 +30,8 @@ namespace DerasaX.Domain.Entities.Models
     public class Student:ApplicationUser
     {
         [ForeignKey("Grade")]
-        public string GradeId { get; set; }
-        public Grade Grade { get; set; }
+        public string GradeId { get; set; } = null!;
+        public Grade Grade { get; set; } = null!;
         public ICollection<StudentInsight> studentInsights { get; set; } = new HashSet<StudentInsight>();
         public ICollection<StudentLessonProgress> studentLessonProgresses { get; set; } = new HashSet<StudentLessonProgress>();
         public ICollection<QuizSubmission> quizSubmissions { get; set; } = new HashSet<QuizSubmission>();

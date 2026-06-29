@@ -8,8 +8,8 @@ namespace DerasaX.Application.Dto.UnitDto
 {
     public class UpdateUnitDto
     {
-        public string Id { get; set; }
-        public string Title { get; set; }
-        public string SubjectId { get; set; }
+        public string Id { get; set; } = null!;
+        public string Title { get; set; } = null!;
+        public string SubjectId { get; set; } = null!;
     }
 }

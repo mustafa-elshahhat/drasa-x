@@ -44,7 +44,7 @@ public class AiPredictionApiTests : IClassFixture<IntegrationFactory>
         public Task<AiVisionAnalyzeResponse> AnalyzeVisionFrameAsync(AiVisionAnalyzeRequest r, string t, string? u, CancellationToken ct = default) => throw new NotImplementedException();
         public Task<AiVisionEndSessionResponse> EndVisionSessionAsync(AiVisionEndSessionRequest r, string t, string? u, CancellationToken ct = default) => throw new NotImplementedException();
         public bool Throw;
-        public Func<AiPredictionResponse>? On;
+        public Func<AiPredictionResponse>? On = null;
         public Task<AiPredictionResponse> PredictAsync(AiPredictionRequest r, string t, string? u, CancellationToken ct = default)
             => Throw ? throw new AiServiceException("provider_error", "AI failed")
                      : Task.FromResult(On?.Invoke() ?? Valid());

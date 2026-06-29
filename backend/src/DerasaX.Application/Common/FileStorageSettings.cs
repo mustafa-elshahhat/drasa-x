@@ -68,7 +68,11 @@ namespace DerasaX.Application.Common
     /// </summary>
     public class ScannerOptions
     {
-        /// <summary>"Disabled" (default), "Unavailable", or "Stub" (deterministic EICAR test scanner).</summary>
+        /// <summary>
+        /// "Disabled" (default, local/CI), "Unavailable", "Stub" (deterministic EICAR test scanner), or
+        /// "ClamAv" (real clamd INSTREAM client for staging/production). Staging/prod example:
+        /// Mode=ClamAv, Host=clamav, Port=3310, RejectOnUnavailable=true. (Phase 22 PR-1.)
+        /// </summary>
         public string Mode { get; set; } = "Disabled";
 
         /// <summary>
@@ -80,6 +84,15 @@ namespace DerasaX.Application.Common
 
         /// <summary>Upper bound (bytes) the scanner will read into memory; 0 = no extra cap.</summary>
         public long MaxScanBytes { get; set; } = 0;
+
+        /// <summary>ClamAv daemon host (clamd). Default "localhost"; staging/prod set the service hostname.</summary>
+        public string Host { get; set; } = "localhost";
+
+        /// <summary>ClamAv daemon TCP port (clamd default 3310).</summary>
+        public int Port { get; set; } = 3310;
+
+        /// <summary>Connect/IO timeout (seconds) for the ClamAv daemon. Default 10.</summary>
+        public int TimeoutSeconds { get; set; } = 10;
     }
 
     public class LocalStorageOptions

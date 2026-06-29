@@ -196,4 +196,15 @@ public class Phase19RetentionTests : IClassFixture<IntegrationFactory>
             await DeleteRowsAsync(asset.Id);
         }
     }
+
+    [Fact]
+    public void Retention_local_defaults_are_safe()
+    {
+        // PR-3 (SEC-05) — the default/local posture must NEVER run the destructive sweep or hard-purge.
+        // Staging/prod opt in explicitly via FileStorage:Retention:{Enabled,HardPurgeEnabled}=true in config.
+        var opts = new RetentionOptions();
+        Assert.False(opts.Enabled, "background retention sweep must be OFF by default (local-safe)");
+        Assert.False(opts.HardPurgeEnabled, "hard purge must be OFF by default (soft-delete-only)");
+        Assert.True(opts.HardPurgeGraceDays >= 1, "a non-trivial grace window must be the default");
+    }
 }

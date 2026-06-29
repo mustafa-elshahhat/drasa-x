@@ -33,7 +33,7 @@ namespace DerasaX.Application.Services.Lessons
             _logger=logger;
             _httpContextAccessor=httpContextAccessor;
         }
-        private string GetTenantId()
+        private string? GetTenantId()
         {
             return _httpContextAccessor.HttpContext?.User?.FindFirst("tenantId")?.Value;
         }
@@ -44,7 +44,7 @@ namespace DerasaX.Application.Services.Lessons
                 throw new UnauthorizedException("Tenant is missing.");
 
             var LessonSpecification = new LessonSpecification(unitId, tenantId, true);
-            var lessons = await _unitOfWork.Repository<Lesson, string>().GetAllWithSpecAsync(LessonSpecification);
+            var lessons = await _unitOfWork.Repository<Lesson, string>().GetAllWithSpecAsync(LessonSpecification, asNoTracking: true);
             if (!lessons.Any())
             {
                 _logger.LogError($"No lessons found in unit with ID {unitId}.");

@@ -31,7 +31,7 @@ namespace DerasaX.Application.Services.Grades
             _logger=logger;
             _httpContextAccessor=httpContextAccessor;
         }
-        private string GetTenantId()
+        private string? GetTenantId()
         {
             return _httpContextAccessor.HttpContext?.User?.FindFirst("tenantId")?.Value;
         }
@@ -45,7 +45,7 @@ namespace DerasaX.Application.Services.Grades
             var spec = new GradeSpecification(tenantId);
 
             var grades = await _unitOfWork.Repository<Grade, string>()
-                .GetAllWithSpecAsync(spec);
+                .GetAllWithSpecAsync(spec, asNoTracking: true);
 
             if (!grades.Any())
             {

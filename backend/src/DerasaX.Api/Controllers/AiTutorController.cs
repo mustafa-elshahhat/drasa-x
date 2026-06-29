@@ -25,7 +25,9 @@ namespace DerasaX.Api.Controllers
         private readonly ITutorService _tutor;
         public AiTutorController(ITutorService tutor) => _tutor = tutor;
 
+        // Canonical versioned route (Phase 22 Step 6); "/api/chat" retained as a compatibility alias.
         [HttpPost("chat")]
+        [HttpPost("/api/v1/ai/tutor")]
         public async Task<IActionResult> Chat([FromBody] TutorChatRequestDto request, CancellationToken ct)
         {
             var result = await _tutor.AskAsync(request, ct);

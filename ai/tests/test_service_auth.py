@@ -159,3 +159,50 @@ def test_browser_style_token_rejected(sa):
     )
     with pytest.raises(sa.ServiceAuthError):
         sa.decode_and_verify(browser)
+
+
+# --- pluggable replay store (PR-2 / AI-02 / SEC-03) --------------------------
+
+class _FakeSharedRedis:
+    """Minimal Redis-like double implementing SET ... NX EX (cross-replica state)."""
+
+    def __init__(self):
+        self.store = {}
+
+    def set(self, key, value, nx=False, ex=None):  # noqa: A003 - mirror redis-py signature
+        if nx and key in self.store:
+            return None          # already set -> NOT newly set (replay)
+        self.store[key] = value
+        return True              # newly set (first use)
+
+
+def test_default_replay_store_is_in_memory(sa):
+    assert isinstance(sa.get_replay_store(), sa.InMemoryReplayStore)
+
+
+def test_in_memory_store_misses_cross_instance_replay(sa):
+    # Demonstrates WHY a shared store is needed at scale: the in-memory store is
+    # per-process. Clearing it simulates a SECOND replica with empty local memory,
+    # which would (wrongly) accept the replayed token.
+    token = mint(base_claims())
+    sa.decode_and_verify(token)            # replica A: first use ok
+    sa._seen_jti.clear()                    # replica B: separate process memory (no record of jti)
+    sa.decode_and_verify(token)            # NOT rejected by the single-instance cache
+
+
+def test_shared_store_rejects_cross_instance_replay(sa):
+    # With a shared store installed, a captured token is rejected even by a replica
+    # that has never seen it locally (its local in-memory cache is empty).
+    sa.set_replay_store(sa.SharedReplayStore(_FakeSharedRedis()))
+    token = mint(base_claims())
+    sa.decode_and_verify(token)            # replica A: first use ok (recorded in the SHARED store)
+    sa._seen_jti.clear()                    # replica B: empty LOCAL memory...
+    with pytest.raises(sa.ServiceAuthError):
+        sa.decode_and_verify(token)        # ...but the SHARED store still rejects the replay
+
+
+def test_shared_store_still_accepts_a_fresh_token(sa):
+    # The shared store must not break legitimate, distinct one-time tokens.
+    sa.set_replay_store(sa.SharedReplayStore(_FakeSharedRedis()))
+    sa.decode_and_verify(mint(base_claims()))
+    sa.decode_and_verify(mint(base_claims()))  # different jti -> accepted

@@ -5,9 +5,9 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class OfficeHourSession : AuditableEntity<string>
     {
-        public string TeacherId { get; set; }
-        public Teacher Teacher { get; set; }
-        public string Title { get; set; }
+        public string TeacherId { get; set; } = null!;
+        public Teacher Teacher { get; set; } = null!;
+        public string Title { get; set; } = null!;
         public DateTime StartsAt { get; set; }
         public DateTime EndsAt { get; set; }
         public int Capacity { get; set; }

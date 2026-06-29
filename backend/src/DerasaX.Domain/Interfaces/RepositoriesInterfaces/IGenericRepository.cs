@@ -17,7 +17,10 @@ namespace DerasaX.Domain.Interfaces.RepositoriesInterfaces
         void Update(TEntity entity);
         void Delete(TEntity entity);
         //specification methods
-        Task<IEnumerable<TEntity>> GetAllWithSpecAsync(ISpecification<TEntity, TKey> specification);
+        // Phase 22 Step 8 (PERF-01): read-only callers may opt into AsNoTracking to skip change-tracking
+        // on list reads that only project to DTOs. Defaults to false so existing (incl. write) callers are
+        // unchanged. Never pass true on a path that mutates + saves the returned entities.
+        Task<IEnumerable<TEntity>> GetAllWithSpecAsync(ISpecification<TEntity, TKey> specification, bool asNoTracking = false);
         Task<TEntity> GetByIdWithSpecAsync(ISpecification<TEntity, TKey> specification);
         Task<int> CountAsync(ISpecification<TEntity, TKey> specification);
     }

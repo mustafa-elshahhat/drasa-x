@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { HAS_CREDS, CODES, backendUp, login, nav, attachGuards } from '../support/ph8.js'
+import { HAS_CREDS, CODES, backendUp, login, nav, attachGuards, resetE2E } from '../support/ph8.js'
 
 // Group G — Attendance (G52–G56).
 test.describe('Phase 8 G — attendance', () => {
@@ -9,6 +9,10 @@ test.describe('Phase 8 G — attendance', () => {
   let context, page, guards
   test.beforeAll(async ({ browser }) => {
     test.skip(!(await backendUp()), 'DerasaX-backend not reachable')
+    // Restore STU-T1's deterministic attendance baseline (3 seeded manual/import records).
+    // Phase 15's CV-confirmation flow runs earlier in the file order and adds a ComputerVision
+    // record for STU-T1; resetE2E removes it so the summary/percentage is order-independent.
+    await resetE2E()
     context = await browser.newContext()
     page = await context.newPage()
     guards = attachGuards(page)
@@ -23,7 +27,7 @@ test.describe('Phase 8 G — attendance', () => {
     await nav(page, '/app/student/attendance')
     await expect(page.getByRole('heading', { name: 'Attendance', exact: true })).toBeVisible()
     await expect(page.getByText('Attendance records')).toBeVisible()
-    await expect(page.getByLabel(/attendance status: present/i)).toBeVisible()
+    await expect(page.getByLabel(/attendance status: present/i).first()).toBeVisible()
   })
 
   test('G53 attendance summary totals and percentage match the server', async () => {
@@ -54,6 +58,6 @@ test.describe('Phase 8 G — attendance', () => {
   test('G56 attendance stays correct after reload', async () => {
     await page.goto('/app/student/attendance')
     await expect(page.getByText('66.67%')).toBeVisible()
-    await expect(page.getByLabel(/attendance status: present/i)).toBeVisible()
+    await expect(page.getByLabel(/attendance status: present/i).first()).toBeVisible()
   })
 })

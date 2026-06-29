@@ -16,7 +16,7 @@ namespace DerasaX.Domain.Entities.Models
     {
         [ForeignKey("Student")]
         public string StudentId { get; set; } = string.Empty;
-        public Student Student { get; set; }
+        public Student Student { get; set; } = null!;
 
         /// <summary>Student age in years (no DOB is stored in the schema).</summary>
         public int AgeYears { get; set; }

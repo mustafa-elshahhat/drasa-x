@@ -24,7 +24,10 @@ test.describe('Phase 8 H — communities', () => {
     await nav(page, '/app/student/communities')
     await expect(page.getByRole('heading', { name: /^communities$/i })).toBeVisible()
     await expect(page.getByText('Phase 8 Math Club').first()).toBeVisible()
-    expect(await page.locator('.student-row-link').count()).toBe(1)
+    // Tenant scoping is the real contract here: the seeded same-tenant community is listed and
+    // the cross-tenant community never leaks in. (An exact total count is not deterministic — a
+    // later phase, e.g. Phase 14, seeds additional same-tenant communities in the shared run.)
+    await expect(page.getByText('Phase 8 Tenant2 Club')).toHaveCount(0)
   })
 
   test('H58 community details render info and the membership action', async () => {

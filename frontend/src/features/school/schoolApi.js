@@ -54,10 +54,10 @@ export const schoolApi = {
     return unwrapEnvelope(await api.post('/api/v1/terms', body))
   },
   async grades(signal) {
-    return toItems(await api.get('/api/Grades/GetAllGrades', { signal }))
+    return toItems(await api.get('/api/v1/Grades/GetAllGrades', { signal }))
   },
   async createGrade(body) {
-    return unwrapEnvelope(await api.post('/api/Grades/AddGrade', body))
+    return unwrapEnvelope(await api.post('/api/v1/Grades/AddGrade', body))
   },
   async classes(signal) {
     return toItems(await api.get('/api/v1/classes', { signal }))
@@ -66,7 +66,7 @@ export const schoolApi = {
     return unwrapEnvelope(await api.post('/api/v1/classes', body))
   },
   async subjects(signal) {
-    return toItems(await api.get('/api/Subjects/GetSubjects', { signal }))
+    return toItems(await api.get('/api/v1/Subjects/GetSubjects', { signal }))
   },
 
   // ---- tenant users (reused provisioning contract) ----

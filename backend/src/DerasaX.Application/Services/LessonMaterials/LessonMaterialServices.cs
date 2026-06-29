@@ -33,7 +33,7 @@ namespace DerasaX.Application.Services.LessonMaterials
             _logger=logger;
             _httpContextAccessor=httpContextAccessor;
         }
-        private string GetTenantId()
+        private string? GetTenantId()
         {
             return _httpContextAccessor.HttpContext?.User?.FindFirst("tenantId")?.Value;
         }
@@ -44,7 +44,7 @@ namespace DerasaX.Application.Services.LessonMaterials
                 throw new UnauthorizedException("Tenant is missing.");
 
             var lessonMaterialSpecification = new LessonMaterialSpecification(lessonId, tenantId, true);
-            var material = await _unitOfWork.Repository<LessonMaterial, string>().GetAllWithSpecAsync(lessonMaterialSpecification);
+            var material = await _unitOfWork.Repository<LessonMaterial, string>().GetAllWithSpecAsync(lessonMaterialSpecification, asNoTracking: true);
             if (!material.Any())
             {
                 _logger.LogError($"No Material found in lesson with ID {lessonId}.");

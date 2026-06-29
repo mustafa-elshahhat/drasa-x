@@ -10,9 +10,9 @@ namespace DerasaX.Application.Dto.LessonMaterialDto
 {
     public class AddLessonMaterialDto
     {
-        public string Title { get; set; }
-        public string Url { get; set; }
+        public string Title { get; set; } = null!;
+        public string Url { get; set; } = null!;
         public AttachmentType Type { get; set; }
-        public string LessonId { get; set; }
+        public string LessonId { get; set; } = null!;
     }
 }

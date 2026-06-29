@@ -33,11 +33,11 @@ namespace DerasaX.Domain.Entities.Models
         public string? AssignmentId { get; set; }
 
         [ForeignKey("Student")]
-        public string StudentId { get; set; }
-        public Student Student { get; set; }
+        public string StudentId { get; set; } = null!;
+        public Student Student { get; set; } = null!;
         [ForeignKey("Quiz")]
-        public string QuizId { get; set; }
-        public Quiz Quiz { get; set; }
+        public string QuizId { get; set; } = null!;
+        public Quiz Quiz { get; set; } = null!;
         public ICollection<SubmissionAnswer> SubmissionAnswers { get; set; } = new HashSet<SubmissionAnswer>();
 
     }

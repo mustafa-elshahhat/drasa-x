@@ -9,7 +9,7 @@ namespace DerasaX.Application.Dto.QuizDto
 {
     public class GetQuizDto
     {
-        public string Id { get; set; }
+        public string Id { get; set; } = null!;
         public DifficultyLevel Difficulty { get; set; } = DifficultyLevel.Core;
         public int TimeLimitMinutes { get; set; } = 30;
         public QuizType Type { get; set; } = QuizType.Lesson;

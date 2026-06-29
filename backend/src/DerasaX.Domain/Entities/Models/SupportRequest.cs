@@ -13,13 +13,13 @@ namespace DerasaX.Domain.Entities.Models
     {
         public RequestType Type { get; set; }
         public RequestStatus Status { get; set; } = RequestStatus.Pending;
-        public string Message { get; set; }
+        public string Message { get; set; } = null!;
         public string? ResponseMessage { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? RespondedAt { get; set; }
         [ForeignKey("User")]
-        public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
+        public string UserId { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
 
     }
 }

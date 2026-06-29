@@ -5,8 +5,8 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class PredictionRecord : AuditableEntity<string>
     {
-        public string StudentId { get; set; }
-        public Student Student { get; set; }
+        public string StudentId { get; set; } = null!;
+        public Student Student { get; set; } = null!;
         public PredictionKind Kind { get; set; } = PredictionKind.Performance;
         public decimal PredictedScore { get; set; }
         public PerformanceLevel Level { get; set; }

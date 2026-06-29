@@ -1,8 +1,9 @@
 """
 Internal service-to-service authentication for school-ai-rag.
 
-Validates the signed service JWT issued by DerasaX-backend
-(see docs/phase2/SERVICE_AUTHENTICATION.md). Implemented with a small,
+Validates the signed service JWT issued by DerasaX-backend (the internal
+backend->AI contract; see the root README and
+docs/audit/CROSS_LAYER_ARCHITECTURE_FINDINGS.md). Implemented with a small,
 dependency-free HS256 verifier so the service does not require PyJWT.
 
 Validation performed:
@@ -43,25 +44,79 @@ def _signing_key() -> Optional[str]:
     return os.environ.get("SERVICE_AUTH_SIGNING_KEY") or os.environ.get("AI__ServiceSigningKey")
 
 
-# --- replay protection (recent jti cache) ------------------------------------
-# Single-instance, in-memory store keyed by jti -> token expiry epoch. Suitable
-# for the local/compose topology. A multi-instance deployment must replace this
-# with a shared store (e.g. Redis SETNX with TTL) — documented in SERVICE_AUTHENTICATION.
+# --- replay protection (pluggable store) -------------------------------------
+# A one-time-use jti guard. The DEFAULT is an in-memory store suitable ONLY for a
+# single-instance (local/compose) topology. A horizontally-scaled deployment must
+# install a shared store via set_replay_store(SharedReplayStore(redis_client)) so a
+# captured token cannot be replayed against a DIFFERENT replica within its TTL
+# (AI-02 / SEC-03). The contract is fail-safe: a fresh jti returns True exactly once.
+
+
+class ReplayStore:
+    """Records one-time jti use. ``register_unseen`` returns True on the FIRST use
+    of a jti and False on any replay. Implementations must be atomic for their
+    deployment topology."""
+
+    def register_unseen(self, jti: str, exp: float) -> bool:  # pragma: no cover - interface
+        raise NotImplementedError
+
+
+class InMemoryReplayStore(ReplayStore):
+    """Single-instance, in-memory jti -> expiry-epoch store; prunes expired entries
+    on each call. NOT safe across multiple processes/replicas (each has its own
+    memory), which is exactly why a multi-instance deployment needs a shared store."""
+
+    def __init__(self, backing: Optional[Dict[str, float]] = None) -> None:
+        self._seen: Dict[str, float] = backing if backing is not None else {}
+        self._lock = threading.Lock()
+
+    def register_unseen(self, jti: str, exp: float) -> bool:
+        now = time.time()
+        with self._lock:
+            for k in [k for k, v in self._seen.items() if v < now]:
+                self._seen.pop(k, None)
+            if jti in self._seen:
+                return False
+            self._seen[jti] = exp
+            return True
+
+
+class SharedReplayStore(ReplayStore):
+    """Multi-instance replay store backed by a Redis-like client. The client is
+    injected and duck-typed: ``client.set(key, value, nx=True, ex=<int seconds>)``
+    must return a truthy value IFF the key was newly set. This module therefore
+    never hard-depends on a redis package; the atomic SET-NX-EX is the cross-replica
+    guard (Redis SETNX-with-TTL is the canonical backing in production)."""
+
+    def __init__(self, client: Any, namespace: str = "airag:jti:") -> None:
+        self._client = client
+        self._namespace = namespace
+
+    def register_unseen(self, jti: str, exp: float) -> bool:
+        ttl = max(1, int(exp - time.time()) + _CLOCK_SKEW)
+        return bool(self._client.set(f"{self._namespace}{jti}", "1", nx=True, ex=ttl))
+
+
+# Module-level default store. `_seen_jti` remains the in-memory backing dict so
+# existing tooling/tests (sa._seen_jti.clear()) keep resetting the replay cache.
 _seen_jti: Dict[str, float] = {}
-_jti_lock = threading.Lock()
+_replay_store: ReplayStore = InMemoryReplayStore(_seen_jti)
+
+
+def set_replay_store(store: ReplayStore) -> None:
+    """Install the replay store (e.g. a SharedReplayStore for multi-instance)."""
+    global _replay_store
+    _replay_store = store
+
+
+def get_replay_store() -> ReplayStore:
+    return _replay_store
 
 
 def _remember_jti(jti: str, exp: float) -> bool:
-    """Return True if jti is fresh (first use); False if it is a replay."""
-    now = time.time()
-    with _jti_lock:
-        # prune expired entries
-        for k in [k for k, v in _seen_jti.items() if v < now]:
-            _seen_jti.pop(k, None)
-        if jti in _seen_jti:
-            return False
-        _seen_jti[jti] = exp
-        return True
+    """Return True if jti is fresh (first use); False if it is a replay.
+    Delegates to the configured replay store (in-memory by default)."""
+    return _replay_store.register_unseen(jti, exp)
 
 
 # --- base64url helpers -------------------------------------------------------

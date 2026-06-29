@@ -186,7 +186,9 @@ else {
     # The AI service reads its own gitignored ai\.env (GROQ_API_KEY etc.)
     # via load_dotenv(); the workspace .env value (if any) takes precedence here.
     if ($envVals['GROQ_API_KEY']) { $env:GROQ_API_KEY = $envVals['GROQ_API_KEY'] }
-    $env:ALLOWED_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173"
+    # Internal-only: the browser never calls the AI service (backend mediates all
+    # AI traffic), so no browser CORS origin is advertised locally. (Phase 22 / AI-01.)
+    $env:ALLOWED_ORIGINS = ""
     # Phase 3: AI service validates internal service tokens with the same shared key.
     $env:SERVICE_AUTH_SIGNING_KEY = $envVals['SERVICE_AUTH_SIGNING_KEY']
     if (-not (Start-ServiceGuarded -Name "airag" -Port $aiPort -Launch {

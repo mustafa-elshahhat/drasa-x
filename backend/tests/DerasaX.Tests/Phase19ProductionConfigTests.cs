@@ -80,4 +80,21 @@ public class Phase19ProductionConfigTests
         var errors = ProductionConfigValidator.Validate(Config(values), "Production");
         Assert.Empty(errors);
     }
+
+    [Theory] // Phase 22 PR-4 (BE-04/SEC-04) — the ACTUAL appsettings.Development local-dev keys are rejected in Production.
+    [InlineData("SecretKey", "local-dev-only-signing-key-not-for-production-0123456789abcdef")]
+    [InlineData("ServiceAuth:SigningKey", "local-dev-only-service-signing-key-not-for-production-abcdef0123456789")]
+    [InlineData("FileStorage:SigningKey", "local-dev-only-file-download-signing-key-not-for-production-0123456789abcdef")]
+    public void Production_rejects_each_literal_local_dev_only_key(string keyName, string localDevValue)
+    {
+        var values = new Dictionary<string, string?>
+        {
+            ["SecretKey"] = Strong,
+            ["ServiceAuth:SigningKey"] = Strong + "X",
+            ["Cors:AllowedOrigins:0"] = "https://app.derasax.example",
+        };
+        values[keyName] = localDevValue; // override the key under test with its real local-dev value
+        var errors = ProductionConfigValidator.Validate(Config(values), "Production");
+        Assert.Contains(errors, e => e.Contains(keyName) && e.Contains("placeholder"));
+    }
 }

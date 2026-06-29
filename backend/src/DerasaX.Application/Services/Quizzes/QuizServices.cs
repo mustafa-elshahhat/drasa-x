@@ -33,7 +33,7 @@ namespace DerasaX.Application.Services.Quizzes
             _logger=logger;
             _httpContextAccessor=httpContextAccessor;
         }
-        private string GetTenantId()
+        private string? GetTenantId()
         {
             return _httpContextAccessor.HttpContext?.User?.FindFirst("tenantId")?.Value;
         }

@@ -4,11 +4,11 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class PostComment : AuditableEntity<string>
     {
-        public string PostId { get; set; }
-        public Post Post { get; set; }
-        public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
-        public string Body { get; set; }
+        public string PostId { get; set; } = null!;
+        public Post Post { get; set; } = null!;
+        public string UserId { get; set; } = null!;
+        public ApplicationUser User { get; set; } = null!;
+        public string Body { get; set; } = null!;
         public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     }
 }

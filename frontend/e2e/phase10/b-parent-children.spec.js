@@ -32,7 +32,10 @@ test.describe('Phase 10 — parent child monitoring', () => {
     await login(page, CODES10.parentLinked)
     await nav(page, `/app/parent/children/${childId}/progress`)
     await expect(page.getByRole('heading', { name: 'Academic progress' })).toBeVisible()
-    await expect(page.getByText('Quiz results')).toBeVisible()
+    // The "Quiz results" section heading always renders from the backend read model (with rows
+    // or an honest empty state). Target the section heading exactly so the substring "Quiz
+    // results" inside the "No quiz results yet." empty state does not trip strict mode.
+    await expect(page.getByRole('heading', { name: 'Quiz results', exact: true })).toBeVisible()
     guards.assertNoForbidden()
   })
 

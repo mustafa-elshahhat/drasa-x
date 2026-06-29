@@ -16,7 +16,7 @@ namespace DerasaX.Domain.Entities.Models
     /// </summary>
     public class QuizGeneration :BaseEntity<string>
     {
-        public string PromptUsed { get; set; }
+        public string PromptUsed { get; set; } = null!;
         public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
 
         // AI provenance metadata.
@@ -35,7 +35,7 @@ namespace DerasaX.Domain.Entities.Models
         public string? ErrorCategory { get; set; }
 
         [ForeignKey("Quiz")]
-        public string QuizId { get; set; }
-        public Quiz Quiz { get; set; }
+        public string QuizId { get; set; } = null!;
+        public Quiz Quiz { get; set; } = null!;
     }
 }

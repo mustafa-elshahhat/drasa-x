@@ -9,11 +9,11 @@ namespace DerasaX.Application.Dto.AccountDto
 {
     public class AuthModel
     {
-        public string Id { get; set; }
+        public string Id { get; set; } = null!;
         public string? Message { get; set; }
         public bool IsAuthenticated { get; set; } = false;
-        public List<string> Errors { get; set; }
-        public string UserName { get; set; }
+        public List<string> Errors { get; set; } = null!;
+        public string UserName { get; set; } = null!;
         public string? FullName { get; set; }
         /// <summary>Trusted role from the access token; the frontend uses it only to render navigation, never as authorization.</summary>
         public string? Role { get; set; }

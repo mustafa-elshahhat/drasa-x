@@ -3,7 +3,7 @@ import {
   HAS_CREDS, CODES, backendUp, login, attachGuards, captureRequest, ensureTutorDoc,
 } from '../support/ph8.js'
 
-// Group E — AI Tutor (E39–E47). The browser calls the backend (/api/chat); the
+// Group E — AI Tutor (E39–E47). The browser calls the backend (/api/v1/ai/tutor); the
 // backend mediates school-ai-rag. A deterministic curriculum document is ingested
 // through the real teacher → backend → RAG flow so a known question is grounded.
 test.describe('Phase 8 E — AI tutor (backend-mediated, grounded)', () => {
@@ -40,7 +40,7 @@ test.describe('Phase 8 E — AI tutor (backend-mediated, grounded)', () => {
 
   test('E40 the question is sent same-origin to the backend; no browser call to the AI service', async () => {
     const calls = []
-    const listener = (req) => { if (req.method() === 'POST' && /\/api\/chat/.test(req.url())) calls.push(req.url()) }
+    const listener = (req) => { if (req.method() === 'POST' && /\/api\/v1\/ai\/tutor/.test(req.url())) calls.push(req.url()) }
     page.on('request', listener)
     await ask('Explain how to solve 2x + 3 = 7 step by step.')
     await expect(page.getByRole('heading', { name: /grounded answer/i })).toBeVisible({ timeout: 30000 })
@@ -53,7 +53,7 @@ test.describe('Phase 8 E — AI tutor (backend-mediated, grounded)', () => {
   test('E41 the outbound request carries only the question content (no client identity/usage)', async () => {
     await page.goto('/app/student/ai-tutor')
     await page.getByLabel(/^question/i).fill('Define a linear equation.')
-    const reqP = captureRequest(page, '/api/chat', 'POST')
+    const reqP = captureRequest(page, '/api/v1/ai/tutor', 'POST')
     await page.getByRole('button', { name: /send question/i }).click()
     const req = await reqP
     const body = req.body || {}
@@ -75,7 +75,7 @@ test.describe('Phase 8 E — AI tutor (backend-mediated, grounded)', () => {
   })
 
   test('E43 the grounded answer is the backend-mediated grounded response (with a real answer body)', async () => {
-    const respP = page.waitForResponse((r) => r.url().includes('/api/chat') && r.request().method() === 'POST')
+    const respP = page.waitForResponse((r) => r.url().includes('/api/v1/ai/tutor') && r.request().method() === 'POST')
     await ask('What is the standard form of a linear equation?')
     const resp = await respP
     const json = await resp.json().catch(() => ({}))
@@ -103,7 +103,7 @@ test.describe('Phase 8 E — AI tutor (backend-mediated, grounded)', () => {
   })
 
   test('E46 an off-syllabus question returns the documented no-answer state (no fabrication)', async () => {
-    const respP = page.waitForResponse((r) => r.url().includes('/api/chat') && r.request().method() === 'POST')
+    const respP = page.waitForResponse((r) => r.url().includes('/api/v1/ai/tutor') && r.request().method() === 'POST')
     await ask('What year did the French Revolution begin?', 'history')
     const resp = await respP
     const json = await resp.json().catch(() => ({}))
@@ -123,7 +123,7 @@ test.describe('Phase 8 E — AI tutor (backend-mediated, grounded)', () => {
       setter.call(el, v)
       el.dispatchEvent(new Event('input', { bubbles: true }))
     }, huge)
-    const respP = page.waitForResponse((r) => r.url().includes('/api/chat') && r.request().method() === 'POST')
+    const respP = page.waitForResponse((r) => r.url().includes('/api/v1/ai/tutor') && r.request().method() === 'POST')
     await page.getByRole('button', { name: /send question/i }).click()
     const resp = await respP
     expect(resp.status()).toBe(400) // real backend rejection, not 5xx

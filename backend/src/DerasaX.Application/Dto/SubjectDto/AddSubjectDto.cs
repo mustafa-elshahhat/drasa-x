@@ -9,9 +9,9 @@ namespace DerasaX.Application.Dto.SubjectDto
 {
     public class AddSubjectDto
     {
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
         public string? Description { get; set; }
         public IFormFile? ImageUrl { get; set; }
-        public string GradeId { get; set; }
+        public string GradeId { get; set; } = null!;
     }
 }

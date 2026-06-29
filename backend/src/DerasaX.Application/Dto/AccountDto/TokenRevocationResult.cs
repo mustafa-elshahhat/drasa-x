@@ -9,6 +9,6 @@ namespace DerasaX.Application.Dto.AccountDto
     public class TokenRevocationResult
     {
         public bool Success { get; set; }
-        public string Message { get; set; }
+        public string Message { get; set; } = null!;
     }
 }

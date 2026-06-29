@@ -7,7 +7,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DerasaX.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]   // canonical versioned route (Phase 22 Step 6)
+    [Route("api/[controller]")]      // legacy alias — retained for backwards compatibility during /api/v1 convergence
     [ApiController]
     [Authorize(Policy = Policies.TenantMember)]
     public class UnitsController : ControllerBase

@@ -5,7 +5,7 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class Competition : AuditableEntity<string>
     {
-        public string Title { get; set; }
+        public string Title { get; set; } = null!;
         public string? Description { get; set; }
         public CompetitionStatus Status { get; set; } = CompetitionStatus.Draft;
         public DateTime StartsAt { get; set; }

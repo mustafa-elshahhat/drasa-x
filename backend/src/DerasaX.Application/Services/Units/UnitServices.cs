@@ -33,7 +33,7 @@ namespace DerasaX.Application.Services.Units
             _logger=logger;
             _httpContextAccessor=httpContextAccessor;
         }
-        private string GetTenantId()
+        private string? GetTenantId()
         {
             return _httpContextAccessor.HttpContext?.User?.FindFirst("tenantId")?.Value;
         }
@@ -44,7 +44,7 @@ namespace DerasaX.Application.Services.Units
                 throw new UnauthorizedException("Tenant is missing.");
 
             var unitSpecification = new UnitSpecification(subjectId,tenantId , true);
-            var units = await _unitOfWork.Repository<Unit, string>().GetAllWithSpecAsync(unitSpecification);
+            var units = await _unitOfWork.Repository<Unit, string>().GetAllWithSpecAsync(unitSpecification, asNoTracking: true);
             if (!units.Any())
             {
                 _logger.LogError($"No units found in subject with ID {subjectId}.");

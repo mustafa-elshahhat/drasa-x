@@ -10,11 +10,11 @@ namespace DerasaX.Domain.Entities.Models
     /// </summary>
     public class CompetitionSubmission : AuditableEntity<string>
     {
-        public string CompetitionId { get; set; }
-        public Competition Competition { get; set; }
-        public string StudentId { get; set; }
-        public Student Student { get; set; }
-        public string Content { get; set; }
+        public string CompetitionId { get; set; } = null!;
+        public Competition Competition { get; set; } = null!;
+        public string StudentId { get; set; } = null!;
+        public Student Student { get; set; } = null!;
+        public string Content { get; set; } = null!;
         public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
     }
 }

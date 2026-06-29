@@ -18,11 +18,11 @@ namespace DerasaX.Domain.Entities.Models
         public int TimeSpentSeconds { get; set; }
         public int WatchedMaterialsCount { get; set; }
         [ForeignKey("Student")]
-        public string StudentId { get; set; }
-        public Student Student { get; set; }
+        public string StudentId { get; set; } = null!;
+        public Student Student { get; set; } = null!;
         [ForeignKey("Lesson")]
-        public string LessonId { get; set; }
-        public Lesson Lesson { get; set; }
+        public string LessonId { get; set; } = null!;
+        public Lesson Lesson { get; set; } = null!;
 
     }
 }

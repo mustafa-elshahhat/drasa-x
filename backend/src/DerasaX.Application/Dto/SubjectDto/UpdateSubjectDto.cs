@@ -9,10 +9,10 @@ namespace DerasaX.Application.Dto.SubjectDto
 {
     public class UpdateSubjectDto
     {
-        public string Id { get; set; }
+        public string Id { get; set; } = null!;
         public string? Name { get; set; }
         public string? Description { get; set; }
         public IFormFile? ImageUrl { get; set; }
-        public string GradeId { get; set; }
+        public string GradeId { get; set; } = null!;
     }
 }

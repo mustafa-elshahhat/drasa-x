@@ -37,13 +37,13 @@ export const teacherApi = {
 
   // ---- curriculum browse (shared read endpoints) ----
   async subjectUnits(subjectId, signal) {
-    return toItems(await api.get(`/api/Units/GetUnitsBySubjectId${qs({ id: subjectId })}`, { signal }))
+    return toItems(await api.get(`/api/v1/Units/GetUnitsBySubjectId${qs({ id: subjectId })}`, { signal }))
   },
   async unitLessons(unitId, signal) {
-    return toItems(await api.get(`/api/Lessons/GetLessonsByUnitId${qs({ id: unitId })}`, { signal }))
+    return toItems(await api.get(`/api/v1/Lessons/GetLessonsByUnitId${qs({ id: unitId })}`, { signal }))
   },
   async lessonMaterials(lessonId, signal) {
-    return toItems(await api.get(`/api/LessonMaterial/GetMaterialByLessonId${qs({ id: lessonId })}`, { signal }))
+    return toItems(await api.get(`/api/v1/LessonMaterial/GetMaterialByLessonId${qs({ id: lessonId })}`, { signal }))
   },
 
   // ---- quiz authoring lifecycle ----

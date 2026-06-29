@@ -99,10 +99,13 @@ except Exception as exc:  # pragma: no cover
 # -----------------------------------------------------------------------------
 app = FastAPI(title="School AI RAG API (internal)")
 
-# CORS origins come from configuration (ALLOWED_ORIGINS, comma-separated) with
-# local-frontend defaults. No production origins are hardcoded. NOTE: the browser
-# does NOT call this service; CORS is intentionally narrow.
-_default_origins = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173"
+# CORS: this is an INTERNAL service. It is called ONLY by the DerasaX backend,
+# server-to-server (which is unaffected by CORS); the browser NEVER calls it.
+# Therefore the default allow-list is EMPTY — no browser/SPA origin is advertised.
+# An operator may still opt into a narrow allow-list by setting ALLOWED_ORIGINS
+# (comma-separated) explicitly, e.g. for a same-origin internal docs UI; nothing
+# is allowed by default. (Phase 22 / AI-01 / XL-01.)
+_default_origins = ""
 ALLOWED_ORIGINS = [
     o.strip()
     for o in os.environ.get("ALLOWED_ORIGINS", _default_origins).split(",")

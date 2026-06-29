@@ -15,7 +15,11 @@ import { queryKeys, STALE } from '../../lib/query/keys'
 import { toItems, toObject } from '../../features/student/studentSchemas'
 
 function useTeacherQuery(key, fn, options = {}) {
-  return useQuery({ queryKey: key, queryFn: ({ signal }) => fn(signal), staleTime: options.staleTime ?? STALE.short, enabled: options.enabled ?? true })
+  // React Query forbids a query fn resolving to `undefined`. Real data funnels through
+  // toItems()/toObject() (already an array/object), but normalize any degenerate
+  // `undefined` to `null` so no teacher query (e.g. quizzes) can violate that invariant.
+  // (Phase 22 / FE-02; QueryResult already renders `null` as the empty state.)
+  return useQuery({ queryKey: key, queryFn: async ({ signal }) => (await fn(signal)) ?? null, staleTime: options.staleTime ?? STALE.short, enabled: options.enabled ?? true })
 }
 
 function Field({ label, value }) {

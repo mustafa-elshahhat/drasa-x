@@ -9,7 +9,7 @@ namespace DerasaX.Domain.Entities.Models
 {
     public class Tenant
     {
-        public string Id { get; set; } 
+        public string Id { get; set; } = null!;
         public string Name { get; set; } = string.Empty;
         public string Domain { get; set; } = string.Empty;
         public SubscriptionPlan SubscriptionPlan { get; set; }
