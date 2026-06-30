@@ -4,11 +4,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, Check, ClipboardList, Clock, FileText, PlayCircle } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
-import { Button } from '../../../components/ui/Button'
-import { Chip } from '../../../components/ui/Chip'
-import { Card } from '../../../components/ui/PageHeader'
-import { QueryBoundary } from '../../../components/ui/QueryBoundary'
-import { EmptyState, ErrorState } from '../../../components/ui/states'
+import { Button, Chip, Card } from '../../../shared/ui'
+import { QueryBoundary, EmptyState, ErrorState } from '../../../shared/feedback'
 import { useStudentQuery } from '../../../features/student/helpers'
 import { Loading } from '../../../features/student/Loading'
 import { studentApi } from '../../../features/student/studentApi'
@@ -95,8 +92,8 @@ function QuizzesPage({ userId, locale }) {
                 const quizItemId = itemId(item, ['quizId', 'QuizId', 'id', 'Id'])
 
                 return (
-                  <Card key={quizItemId} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                  <Card key={quizItemId} className="flex flex-col h-full">
+                    <div className="flex justify-between items-start mb-3">
                       <div
                         style={{
                           width: '44px',
@@ -118,11 +115,11 @@ function QuizzesPage({ userId, locale }) {
                       )}
                     </div>
 
-                    <h3 style={{ margin: '0 0 6px', fontSize: '17px', fontWeight: 700, color: 'var(--text)', flexGrow: 1 }}>
+                    <h3 className="[margin:0_0_6px] text-[17px] font-bold text-ink grow">
                       {displayValue(item)}
                     </h3>
 
-                    <div style={{ display: 'flex', gap: '14px', color: 'var(--text-dim)', fontSize: '13px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                    <div className="flex gap-3.5 text-muted text-[13px] mb-4 flex-wrap">
                       <span>{qCount} Q</span>
                       <span>{duration} min</span>
                       <span style={{ color: isGraded ? 'var(--success)' : 'var(--orange)', fontWeight: 600 }}>
@@ -188,33 +185,33 @@ function QuizDetails({ userId, quizId, list, locale }) {
   return (
     <>
       {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '22px', fontSize: '14px', color: 'var(--text-dim)' }}>
+      <div className="flex items-center gap-2 mb-[22px] text-sm text-muted">
         <Link to="/app/student/quizzes" style={{ textDecoration: 'none', color: 'var(--text-dim)' }}>
           {t('student.quizzes.title', 'Quizzes')}
         </Link>
-        <span style={{ color: 'var(--faint)' }}>{isAr ? '‹' : '›'}</span>
-        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{title}</span>
+        <span className="text-faint">{isAr ? '‹' : '›'}</span>
+        <span className="font-semibold text-ink">{title}</span>
       </div>
 
       {start.isError && <ErrorState error={start.error} />}
 
-      <div style={{ maxWidth: '720px', margin: '0 auto' }}>
+      <div className="max-w-[720px] [margin:0_auto]">
         <Card>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
+          <div className="flex items-center gap-3.5 mb-[18px]">
             <div style={{ width: '56px', height: '56px', borderRadius: '15px', background: 'var(--brand-soft)', display: 'flex', alignItems: 'center', justify: 'center', color: 'var(--brand)' }}>
               <ClipboardList size={28} />
             </div>
             <div>
-              <h1 style={{ margin: 0, fontSize: '26px', fontWeight: 800, color: 'var(--text)' }}>
+              <h1 className="m-0 text-[26px] font-extrabold text-ink">
                 {title}
               </h1>
-              <div style={{ color: 'var(--text-dim)', fontSize: '14px', marginTop: '2px' }}>
+              <div className="text-muted text-sm mt-0.5">
                 {theme.teacher} &middot; {theme.units} {t('student.units.title', 'Units')}
               </div>
             </div>
           </div>
 
-          <p style={{ color: 'var(--text-dim)', lineHeight: 1.7, fontSize: '15px', marginBottom: '18px' }}>
+          <p className="text-muted leading-[1.7] text-[15px] mb-[18px]">
             {desc}
           </p>
 
@@ -243,9 +240,9 @@ function QuizDetails({ userId, quizId, list, locale }) {
           </div>
 
           {/* Yellow Warning Banner */}
-          <div style={{ background: 'var(--warning-bg)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', gap: '10px', marginBottom: '20px' }}>
-            <ClipboardList size={20} style={{ color: 'var(--warning)', flexShrink: 0 }} />
-            <div style={{ fontSize: '13px', color: 'var(--warning)', lineHeight: 1.5 }}>
+          <div className="bg-[var(--warning-bg)] rounded-soft p-3.5 flex gap-2.5 mb-5">
+            <ClipboardList size={20} className="text-warning shrink-0" />
+            <div className="text-[13px] text-warning leading-[1.5]">
               {isAr
                 ? 'بمجرد البدء يبدأ المؤقت. تأكد من اتصال مستقر. بالتوفيق!'
                 : 'Once you start, the timer begins. Make sure you have a stable connection. Good luck!'}
@@ -253,13 +250,13 @@ function QuizDetails({ userId, quizId, list, locale }) {
           </div>
 
           {/* Action buttons */}
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div className="flex gap-2.5 flex-wrap">
             <Button
               onClick={() => start.mutate()}
               loading={start.isPending}
               size="lg"
             >
-              <PlayCircle size={18} style={{ marginInlineEnd: '6px' }} />
+              <PlayCircle size={18} className="me-1.5" />
               {t('student.quizzes.start', 'Start quiz')}
             </Button>
             <Button
@@ -273,21 +270,21 @@ function QuizDetails({ userId, quizId, list, locale }) {
         </Card>
 
         {/* Previous attempts */}
-        <div style={{ marginTop: '16px' }}>
+        <div className="mt-4">
           <Card>
-            <h3 style={{ margin: '0 0 12px', fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>
+            <h3 className="[margin:0_0_12px] text-base font-bold text-ink">
               {t('student.quizzes.previousAttempts', 'Previous attempts')}
             </h3>
 
             <QueryBoundary query={history} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.attempts')} emptyIcon={ClipboardList}>
               {(items) => (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="flex flex-col gap-2.5">
                   {items.map((attempt) => (
                     <Link
                       key={itemId(attempt)}
                       to={`/app/student/quiz-attempts/${itemId(attempt)}/result`}
-                      className="student-material-row"
-                      style={{ textDecoration: 'none' }}
+                      className="student-material-row no-underline"
+                     
                     >
                       <div className="student-material-row__icon-tile">
                         <FileText size={20} />

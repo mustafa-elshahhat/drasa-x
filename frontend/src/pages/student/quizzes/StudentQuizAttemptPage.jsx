@@ -4,13 +4,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Clock } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
-import { DetailList } from '../../../components/data/DetailList'
-import { TextareaField } from '../../../components/form/fields'
-import { OptionCard } from '../../../components/quiz/OptionCard'
-import { Alert } from '../../../components/ui/Alert'
-import { Button } from '../../../components/ui/Button'
-import { Card, PageHeader } from '../../../components/ui/PageHeader'
-import { ErrorState } from '../../../components/ui/states'
+import { DetailList } from '../../../shared/data-display'
+import { TextareaField } from '../../../shared/form'
+import { OptionCard } from '../../../shared/quiz'
+import { Alert, Button, Card, PageHeader } from '../../../shared/ui'
+import { ErrorState } from '../../../shared/feedback'
 import { useStudentQuery } from '../../../features/student/helpers'
 import { Loading } from '../../../features/student/Loading'
 import { studentApi } from '../../../features/student/studentApi'
@@ -131,12 +129,12 @@ function QuizAttemptPage({ userId, locale }) {
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
+      <div className="flex justify-between items-center mb-[18px] flex-wrap gap-2.5">
         <div>
-          <div style={{ fontWeight: 800, fontSize: '18px', color: 'var(--text)' }}>
+          <div className="font-extrabold text-lg text-ink">
             {quizTitle}
           </div>
-          <div style={{ color: 'var(--text-dim)', fontSize: '13px' }}>
+          <div className="text-muted text-[13px]">
             {t('student.quizzes.questionIndex', 'Question')} {currentQuestionIndex + 1} {t('student.quizzes.of', 'of')} {totalQuestions}
           </div>
         </div>
@@ -153,7 +151,7 @@ function QuizAttemptPage({ userId, locale }) {
         </div>
       </div>
 
-      <div style={{ maxWidth: '720px' }}>
+      <div className="max-w-[720px]">
         {currentQuestion ? (
           <QuestionBlock
             index={currentQuestionIndex}
@@ -167,7 +165,7 @@ function QuizAttemptPage({ userId, locale }) {
         )}
 
         {/* Bottom actions row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '26px', gap: '10px', flexWrap: 'wrap' }}>
+        <div className="flex justify-between mt-[26px] gap-2.5 flex-wrap">
           <Button
             variant="ghost"
             disabled={currentQuestionIndex === 0}
@@ -176,7 +174,7 @@ function QuizAttemptPage({ userId, locale }) {
             {isAr ? 'السابق' : 'Previous'}
           </Button>
 
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div className="flex gap-2.5">
             <Button variant="secondary" onClick={handleSave} loading={save.isPending}>
               {t('student.quizzes.save', 'Save answers')}
             </Button>
@@ -193,7 +191,7 @@ function QuizAttemptPage({ userId, locale }) {
         </div>
 
         {/* Pagination buttons */}
-        <div className="quiz-nav" style={{ marginTop: '18px' }}>
+        <div className="quiz-nav mt-[18px]">
           {questions.map((_, qi) => {
             const hasAns = Boolean(selectedAnswers[itemId(questions[qi])]?.selectedOptionId || selectedAnswers[itemId(questions[qi])]?.answerText)
             const isCurrent = qi === currentQuestionIndex

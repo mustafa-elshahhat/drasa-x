@@ -1,11 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { useStudentContext } from '../../../features/student/helpers'
-import { Alert } from '../../../components/ui/Alert'
-import { Chip } from '../../../components/ui/Chip'
-import { Card, PageHeader } from '../../../components/ui/PageHeader'
-import { EmptyState, ErrorState } from '../../../components/ui/states'
-import { Heatmap } from '../../../components/viz/Heatmap'
-import { Ring } from '../../../components/viz/Ring'
+import { Alert, Chip, Card, PageHeader } from '../../../shared/ui'
+import { EmptyState, ErrorState } from '../../../shared/feedback'
+import { Heatmap, Ring } from '../../../shared/charts'
 import { ATTENDANCE_TONE, useStudentQuery } from '../../../features/student/helpers'
 import { Loading } from '../../../features/student/Loading'
 import { studentApi } from '../../../features/student/studentApi'
@@ -54,7 +51,7 @@ function AttendanceContent({ data, locale }) {
             <Stat label={t('student.attendance.excused')} value={summary.excused ?? 0} />
           </div>
         </div>
-        {cells.length > 0 && <div style={{ marginTop: 18 }}><Heatmap cells={cells} legend={legend} /></div>}
+        {cells.length > 0 && <div className="mt-[18px]"><Heatmap cells={cells} legend={legend} /></div>}
       </Card>
       <Card title={t('student.attendance.records')}>
         {records.length === 0 ? (

@@ -9,9 +9,8 @@ import { useAuth } from '../../features/auth/AuthContext'
 import { homeRouteForRole } from '../../features/auth/roles'
 import { safeReturnPath } from '../../lib/security/returnUrl'
 import { useDocumentTitle } from '../../app/useDocumentTitle'
-import { TextField, PasswordField } from '../../components/form/fields'
-import { Button } from '../../components/ui/Button'
-import { Alert } from '../../components/ui/Alert'
+import { TextField, PasswordField } from '../../shared/form'
+import { Button, Alert } from '../../shared/ui'
 import { LanguageSwitcher } from '../../layouts/LanguageSwitcher'
 
 // Login screen wired to the real DerasaX-backend account contract (Phase 7

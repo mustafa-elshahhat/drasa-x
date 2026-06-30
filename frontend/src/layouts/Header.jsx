@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Menu, LogOut, GraduationCap, ChevronDown, UserCircle, Settings, KeyRound, Search } from 'lucide-react'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { NotificationBell } from '../features/notifications/NotificationBell'
-import { Avatar } from '../components/ui/Avatar'
+import { Avatar } from '../shared/ui'
 
 // Per-role URL slug used to build the role-scoped settings destination.
 const ROLE_SLUG = { Student: 'student', Teacher: 'teacher', Parent: 'parent', SchoolAdmin: 'school', SystemAdmin: 'system' }

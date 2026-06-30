@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { ErrorState } from '../../../components/ui/states'
+import { ErrorState } from '../../../shared/feedback'
 import { Head, List } from '../../../features/school/components'
 import { useSchoolQuery } from '../../../features/school/helpers'
 import { schoolApi } from '../../../features/school/schoolApi'

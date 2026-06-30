@@ -1,12 +1,13 @@
 // =============================================================================
-// Frontend role & permission model (Phase 7 §5).
+// Frontend role & permission model (Phase 7 §5) — now TypeScript.
 //
 // IMPORTANT: this mirrors the backend role model ONLY to drive navigation and
 // UX (what to render). It is NEVER authorization — every protected backend
 // endpoint independently enforces access from the signed access token. Hiding a
 // link does not protect data.
 //
-// The five roles come straight from the backend AuthModel.Role claim.
+// The five roles come straight from the backend AuthModel.Role claim. Runtime
+// behavior is unchanged from the previous roles.js; only types were added.
 // =============================================================================
 
 export const ROLES = Object.freeze({
@@ -15,9 +16,12 @@ export const ROLES = Object.freeze({
   PARENT: 'Parent',
   SCHOOL_ADMIN: 'SchoolAdmin',
   SYSTEM_ADMIN: 'SystemAdmin',
-})
+} as const)
 
-export const ALL_ROLES = Object.freeze(Object.values(ROLES))
+/** A recognized backend role value (e.g. 'Student'). */
+export type Role = (typeof ROLES)[keyof typeof ROLES]
+
+export const ALL_ROLES: readonly Role[] = Object.freeze(Object.values(ROLES))
 
 /**
  * Representative, frontend-side permission catalog used by PermissionGuard and
@@ -32,10 +36,13 @@ export const PERMISSIONS = Object.freeze({
   MANAGE_SCHOOL: 'manage_school',
   MANAGE_PLATFORM: 'manage_platform',
   MANAGE_OWN_ACCOUNT: 'manage_own_account',
-})
+} as const)
+
+/** A frontend permission flag (e.g. 'manage_school'). */
+export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
 
 /** Role -> permissions the frontend will optimistically render for. */
-const ROLE_PERMISSIONS = Object.freeze({
+const ROLE_PERMISSIONS: Record<Role, Permission[]> = Object.freeze({
   [ROLES.STUDENT]: [PERMISSIONS.VIEW_OWN_LEARNING, PERMISSIONS.MANAGE_OWN_ACCOUNT],
   [ROLES.TEACHER]: [
     PERMISSIONS.VIEW_CLASS_ANALYTICS,
@@ -57,22 +64,22 @@ const ROLE_PERMISSIONS = Object.freeze({
 })
 
 /** Permissions granted to a role (empty array for unknown roles). */
-export function permissionsForRole(role) {
-  return ROLE_PERMISSIONS[role] || []
+export function permissionsForRole(role: string | null | undefined): Permission[] {
+  return (ROLE_PERMISSIONS as Record<string, Permission[]>)[role ?? ''] || []
 }
 
 /** True if `role` holds `permission`. */
-export function roleHasPermission(role, permission) {
-  return permissionsForRole(role).includes(permission)
+export function roleHasPermission(role: string | null | undefined, permission: string): boolean {
+  return permissionsForRole(role).includes(permission as Permission)
 }
 
 /** True when `role` is one of the recognized backend roles. */
-export function isKnownRole(role) {
-  return ALL_ROLES.includes(role)
+export function isKnownRole(role: string | null | undefined): role is Role {
+  return ALL_ROLES.includes(role as Role)
 }
 
 /** The home/landing route a role should be sent to after login. */
-export function homeRouteForRole(role) {
+export function homeRouteForRole(role: string | null | undefined): string {
   switch (role) {
     case ROLES.STUDENT:
       return '/app/student'

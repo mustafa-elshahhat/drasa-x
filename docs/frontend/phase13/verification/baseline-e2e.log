@@ -1,0 +1,255 @@
+
+> schoolui@0.0.0 test:e2e
+> playwright test
+
+
+Running 245 tests using 1 worker
+
+  -    1 [chromium] › e2e\authenticated.spec.js:31:3 › authenticated flows (requires local backend + seed user) › valid user can log in and sees their role shell
+  -    2 [chromium] › e2e\authenticated.spec.js:40:3 › authenticated flows (requires local backend + seed user) › logout returns to login and protects the app again
+  ✓    3 [chromium] › e2e\foundation.spec.js:7:1 › anonymous user is redirected from a protected route to login (3.3s)
+  ✓    4 [chromium] › e2e\foundation.spec.js:13:1 › landing page renders without fabricated data (519ms)
+  ✓    5 [chromium] › e2e\foundation.spec.js:20:1 › switching to Arabic flips the document direction to RTL (3.0s)
+  ✓    6 [chromium] › e2e\foundation.spec.js:28:1 › the browser makes NO direct request to the AI service or archived backend (3.5s)
+  ✓    7 [chromium] › e2e\foundation.spec.js:49:1 › mobile navigation: protected route still redirects on a narrow viewport (3.0s)
+  -    8 [chromium] › e2e\phase10\a-parent-auth.spec.js:11:3 › Phase 10 — parent auth & role guards › PH10-A1 parent login lands on the Parent Portal dashboard
+  -    9 [chromium] › e2e\phase10\a-parent-auth.spec.js:19:3 › Phase 10 — parent auth & role guards › PH10-A2 a student cannot reach the parent portal (role guard → forbidden)
+  -   10 [chromium] › e2e\phase10\a-parent-auth.spec.js:28:3 › Phase 10 — parent auth & role guards › PH10-A3 an unauthenticated visitor is redirected to login
+  -   11 [chromium] › e2e\phase10\b-parent-children.spec.js:11:3 › Phase 10 — parent child monitoring › PH10-B1 parent sees only the linked child in the children list
+  -   12 [chromium] › e2e\phase10\b-parent-children.spec.js:19:3 › Phase 10 — parent child monitoring › PH10-B2 parent opens the linked child profile (real backend data)
+  -   13 [chromium] › e2e\phase10\b-parent-children.spec.js:29:3 › Phase 10 — parent child monitoring › PH10-B3 parent views the child academic progress from the backend
+  -   14 [chromium] › e2e\phase10\b-parent-children.spec.js:42:3 › Phase 10 — parent child monitoring › PH10-B4 parent views the child attendance read model
+  -   15 [chromium] › e2e\phase10\b-parent-children.spec.js:53:3 › Phase 10 — parent child monitoring › PH10-B5 a parent with no children sees the empty state
+  -   16 [chromium] › e2e\phase10\b-parent-children.spec.js:61:3 › Phase 10 — parent child monitoring › PH10-B6 parent cannot open a same-tenant UNLINKED child (denied, no profile leak)
+  -   17 [chromium] › e2e\phase10\b-parent-children.spec.js:72:3 › Phase 10 — parent child monitoring › PH10-B7 parent cannot open a CROSS-TENANT child (hidden as not found)
+  -   18 [chromium] › e2e\phase10\b-parent-children.spec.js:82:3 › Phase 10 — parent child monitoring › PH10-B8 parent submits a document request for a linked child
+  -   19 [chromium] › e2e\phase10\c-regression-smoke.spec.js:12:3 › Phase 10 — Phase 8/9 regression smoke › PH10-C1 Student Portal (Phase 8) still loads its dashboard
+  -   20 [chromium] › e2e\phase10\c-regression-smoke.spec.js:20:3 › Phase 10 — Phase 8/9 regression smoke › PH10-C2 Teacher Portal (Phase 9) still loads its dashboard and classes
+  -   21 [chromium] › e2e\phase10\c-regression-smoke.spec.js:30:3 › Phase 10 — Phase 8/9 regression smoke › PH10-C3 the parent portal never calls the AI service or archived backend
+  -   22 [chromium] › e2e\phase11\a-school-auth.spec.js:11:3 › Phase 11 — school-admin auth & role guards › PH11-A1 school admin login lands on the School Admin dashboard
+  -   23 [chromium] › e2e\phase11\a-school-auth.spec.js:19:3 › Phase 11 — school-admin auth & role guards › PH11-A2 a student cannot reach the school portal (role guard → forbidden)
+  -   24 [chromium] › e2e\phase11\a-school-auth.spec.js:26:3 › Phase 11 — school-admin auth & role guards › PH11-A3 a parent cannot reach the school portal (role guard → forbidden)
+  -   25 [chromium] › e2e\phase11\a-school-auth.spec.js:33:3 › Phase 11 — school-admin auth & role guards › PH11-A4 an unauthenticated visitor is redirected to login
+  -   26 [chromium] › e2e\phase11\b-school-management.spec.js:16:3 › Phase 11 — school-admin management › PH11-B1 dashboard shows a real tenant summary (no fabricated data)
+  -   27 [chromium] › e2e\phase11\b-school-management.spec.js:25:3 › Phase 11 — school-admin management › PH11-B2 students roster lists real tenant students
+  -   28 [chromium] › e2e\phase11\b-school-management.spec.js:34:3 › Phase 11 — school-admin management › PH11-B3 admin creates an academic year
+  -   29 [chromium] › e2e\phase11\b-school-management.spec.js:50:3 › Phase 11 — school-admin management › PH11-B4 admin links a parent to a student
+  -   30 [chromium] › e2e\phase11\b-school-management.spec.js:66:3 › Phase 11 — school-admin management › PH11-B5 admin assigns a teacher to a class
+  -   31 [chromium] › e2e\phase11\b-school-management.spec.js:79:3 › Phase 11 — school-admin management › PH11-B6 admin publishes an announcement
+  -   32 [chromium] › e2e\phase11\b-school-management.spec.js:93:3 › Phase 11 — school-admin management › PH11-B7 admin views the tenant audit log
+  -   33 [chromium] › e2e\phase11\c-regression-smoke.spec.js:13:3 › Phase 11 — Phase 8/9/10 regression smoke › PH11-C1 Student Portal (Phase 8) still loads its dashboard
+  -   34 [chromium] › e2e\phase11\c-regression-smoke.spec.js:21:3 › Phase 11 — Phase 8/9/10 regression smoke › PH11-C2 Teacher Portal (Phase 9) still loads its dashboard and classes
+  -   35 [chromium] › e2e\phase11\c-regression-smoke.spec.js:31:3 › Phase 11 — Phase 8/9/10 regression smoke › PH11-C3 Parent Portal (Phase 10) still loads its dashboard
+  -   36 [chromium] › e2e\phase11\c-regression-smoke.spec.js:39:3 › Phase 11 — Phase 8/9/10 regression smoke › PH11-C4 the school portal never calls the AI service or archived backend
+  -   37 [chromium] › e2e\phase12\a-system-auth.spec.js:10:3 › Phase 12 — system-admin auth & role guards › PH12-A1 system admin login lands on the Platform administration dashboard
+  -   38 [chromium] › e2e\phase12\a-system-auth.spec.js:18:3 › Phase 12 — system-admin auth & role guards › PH12-A2 a student cannot reach the system portal (role guard → forbidden)
+  -   39 [chromium] › e2e\phase12\a-system-auth.spec.js:25:3 › Phase 12 — system-admin auth & role guards › PH12-A3 a school admin cannot reach the system portal (role guard → forbidden)
+  -   40 [chromium] › e2e\phase12\a-system-auth.spec.js:32:3 › Phase 12 — system-admin auth & role guards › PH12-A4 an unauthenticated visitor is redirected to login
+  -   41 [chromium] › e2e\phase12\b-system-management.spec.js:13:3 › Phase 12 — system-admin management › PH12-B1 dashboard shows a real platform aggregate (no fabricated data)
+  -   42 [chromium] › e2e\phase12\b-system-management.spec.js:23:3 › Phase 12 — system-admin management › PH12-B2 admin lists tenants and opens a tenant detail
+  -   43 [chromium] › e2e\phase12\b-system-management.spec.js:35:3 › Phase 12 — system-admin management › PH12-B3 admin onboards a tenant: create → assign plan → create initial admin → activate
+  -   44 [chromium] › e2e\phase12\b-system-management.spec.js:67:3 › Phase 12 — system-admin management › PH12-B4 admin suspends then reactivates a tenant
+  -   45 [chromium] › e2e\phase12\b-system-management.spec.js:82:3 › Phase 12 — system-admin management › PH12-B5 admin handles a support ticket from the cross-tenant inbox
+  -   46 [chromium] › e2e\phase12\b-system-management.spec.js:97:3 › Phase 12 — system-admin management › PH12-B6 admin reviews usage, AI usage, audit and security pages (real data)
+  -   47 [chromium] › e2e\phase12\b-system-management.spec.js:120:3 › Phase 12 — system-admin management › PH12-B7 admin publishes a global announcement
+  -   48 [chromium] › e2e\phase12\c-regression-smoke.spec.js:14:3 › Phase 12 — Phase 8/9/10/11 regression smoke › PH12-C1 Student Portal (Phase 8) still loads its dashboard
+  -   49 [chromium] › e2e\phase12\c-regression-smoke.spec.js:22:3 › Phase 12 — Phase 8/9/10/11 regression smoke › PH12-C2 Teacher Portal (Phase 9) still loads its dashboard and classes
+  -   50 [chromium] › e2e\phase12\c-regression-smoke.spec.js:32:3 › Phase 12 — Phase 8/9/10/11 regression smoke › PH12-C3 Parent Portal (Phase 10) still loads its dashboard
+  -   51 [chromium] › e2e\phase12\c-regression-smoke.spec.js:40:3 › Phase 12 — Phase 8/9/10/11 regression smoke › PH12-C4 School Admin Portal (Phase 11) still loads its dashboard
+  -   52 [chromium] › e2e\phase12\c-regression-smoke.spec.js:48:3 › Phase 12 — Phase 8/9/10/11 regression smoke › PH12-C5 the system portal never calls the AI service or archived backend
+  -   53 [chromium] › e2e\phase13\a-notifications.spec.js:21:3 › Phase 13 A — notification centre › A1 the inbox lists the student's own seeded notifications
+  -   54 [chromium] › e2e\phase13\a-notifications.spec.js:28:3 › Phase 13 A — notification centre › A2 the unread count shown matches the server
+  -   55 [chromium] › e2e\phase13\a-notifications.spec.js:35:3 › Phase 13 A — notification centre › A3 marking one notification read decrements the count
+  -   56 [chromium] › e2e\phase13\b-announce-prefs-realtime.spec.js:20:3 › Phase 13 B — announcements, preferences, real-time › B1 SignalR delivers an announcement notification in real time (no refresh)
+  -   57 [chromium] › e2e\phase13\b-announce-prefs-realtime.spec.js:40:3 › Phase 13 B — announcements, preferences, real-time › B2 a non-targeted role does not receive the announcement (recipients-only)
+  -   58 [chromium] › e2e\phase13\b-announce-prefs-realtime.spec.js:53:3 › Phase 13 B — announcements, preferences, real-time › B3 preferences suppress an optional category but lock mandatory ones
+  -   59 [chromium] › e2e\phase13\c-messaging-isolation.spec.js:28:3 › Phase 13 C — messaging + isolation › C1 the recipient sees the thread and can reply through the UI
+  -   60 [chromium] › e2e\phase13\c-messaging-isolation.spec.js:41:3 › Phase 13 C — messaging + isolation › C2 the teacher sees the recipient's reply
+  -   61 [chromium] › e2e\phase13\c-messaging-isolation.spec.js:50:3 › Phase 13 C — messaging + isolation › C3 a non-participant in the same tenant cannot read the thread
+  -   62 [chromium] › e2e\phase13\c-messaging-isolation.spec.js:59:3 › Phase 13 C — messaging + isolation › C4 a cross-tenant user cannot read the thread
+  -   63 [chromium] › e2e\phase13\d-regression-smoke.spec.js:25:5 › Phase 13 D — prior-phase regression smoke › Phase 8 portal still loads for STU-T1
+  -   64 [chromium] › e2e\phase13\d-regression-smoke.spec.js:25:5 › Phase 13 D — prior-phase regression smoke › Phase 9 portal still loads for TEACH-T1
+  -   65 [chromium] › e2e\phase13\d-regression-smoke.spec.js:25:5 › Phase 13 D — prior-phase regression smoke › Phase 10 portal still loads for PARENT-T1
+  -   66 [chromium] › e2e\phase13\d-regression-smoke.spec.js:25:5 › Phase 13 D — prior-phase regression smoke › Phase 11 portal still loads for ADMIN-T1
+  -   67 [chromium] › e2e\phase13\d-regression-smoke.spec.js:25:5 › Phase 13 D — prior-phase regression smoke › Phase 12 portal still loads for SYS-1
+  -   68 [chromium] › e2e\phase14\a-gamification.spec.js:60:3 › Phase 14 A — gamification › G1 student gamification page renders points, ledger and leaderboard from the backend
+  -   69 [chromium] › e2e\phase14\a-gamification.spec.js:70:3 › Phase 14 A — gamification › G2 the admin award is visible in the student leaderboard (tenant-scoped, real data)
+  -   70 [chromium] › e2e\phase14\a-gamification.spec.js:94:3 › Phase 14 A — gamification › G3 a student cannot award points (cannot self-award) — backend rejects with 403
+  -   71 [chromium] › e2e\phase14\a-gamification.spec.js:108:3 › Phase 14 A — gamification › G4 a re-applied award with the same idempotency key does not double-count
+  -   72 [chromium] › e2e\phase14\b-closure.spec.js:48:3 › Phase 14 B — closure gaps › C1 competition submissions: entry required, durable resubmission, staff-only listing (API)
+  -   73 [chromium] › e2e\phase14\b-closure.spec.js:79:3 › Phase 14 B — closure gaps › C2 community grade-eligibility gate admits matching grade and rejects others (API)
+  -   74 [chromium] › e2e\phase14\b-closure.spec.js:98:3 › Phase 14 B — closure gaps › C3 a teacher awards points to an assigned student through the portal UI
+  -   75 [chromium] › e2e\phase14\b-closure.spec.js:119:3 › Phase 14 B — closure gaps › C4 a parent sees a linked child read-only gamification points (UI)
+  -   76 [chromium] › e2e\phase14\b-closure.spec.js:136:3 › Phase 14 B — closure gaps › C5 a student submits durable competition work through the portal UI
+  -   77 [chromium] › e2e\phase15\cv-attendance.spec.js:84:3 › Phase 15 — CV attendance + engagement › 1+2+3 teacher starts a session, analyzes a frame, backend persists candidates
+  -   78 [chromium] › e2e\phase15\cv-attendance.spec.js:99:3 › Phase 15 — CV attendance + engagement › 4+5 teacher confirms a candidate and it appears in the student attendance flow
+  -   79 [chromium] › e2e\phase15\cv-attendance.spec.js:119:3 › Phase 15 — CV attendance + engagement › 6 cross-tenant / unauthorized access is rejected
+  -   80 [chromium] › e2e\phase15\cv-attendance.spec.js:140:3 › Phase 15 — CV attendance + engagement › 7 a parent sees only their linked child summary
+  -   81 [chromium] › e2e\phase15\cv-attendance.spec.js:159:3 › Phase 15 — CV attendance + engagement › 8 a student sees only their own summary
+  -   82 [chromium] › e2e\phase15\cv-attendance.spec.js:173:3 › Phase 15 — CV attendance + engagement › 9 AI unavailable / model-not-ready is shown honestly
+  -   83 [chromium] › e2e\phase15\cv-attendance.spec.js:185:3 › Phase 15 — CV attendance + engagement › 10 prior Phase 13/14 surfaces still load (smoke)
+  -   84 [chromium] › e2e\phase16\file-storage.spec.js:71:3 › Phase 16 — durable file storage (live) › 1. teacher uploads lesson material; enrolled student downloads; cross-tenant blocked
+  -   85 [chromium] › e2e\phase16\file-storage.spec.js:100:3 › Phase 16 — durable file storage (live) › 2. parent document: linked parent downloads, unrelated parent rejected; audited
+  -   86 [chromium] › e2e\phase16\file-storage.spec.js:135:3 › Phase 16 — durable file storage (live) › 3. community attachment upload + download via the generic file API
+  -   87 [chromium] › e2e\phase16\file-storage.spec.js:168:3 › Phase 16 — durable file storage (live) › 4. validation: invalid type and oversized are rejected
+  -   88 [chromium] › e2e\phase16\file-storage.spec.js:182:3 › Phase 16 — durable file storage (live) › 5. CV enrollment assets are honestly disabled by default
+  ✓   89 [chromium] › e2e\phase17\regression-smoke.spec.js:61:5 › Phase 17 — session protection (no backend required) › anonymous is redirected from /app/student to login (3.0s)
+  ✓   90 [chromium] › e2e\phase17\regression-smoke.spec.js:61:5 › Phase 17 — session protection (no backend required) › anonymous is redirected from /app/teacher to login (3.0s)
+  ✓   91 [chromium] › e2e\phase17\regression-smoke.spec.js:61:5 › Phase 17 — session protection (no backend required) › anonymous is redirected from /app/parent to login (3.0s)
+  ✓   92 [chromium] › e2e\phase17\regression-smoke.spec.js:61:5 › Phase 17 — session protection (no backend required) › anonymous is redirected from /app/school to login (3.0s)
+  ✓   93 [chromium] › e2e\phase17\regression-smoke.spec.js:61:5 › Phase 17 — session protection (no backend required) › anonymous is redirected from /app/system to login (3.0s)
+  -   94 [chromium] › e2e\phase17\regression-smoke.spec.js:88:3 › Phase 17 — regression smoke (live) › login → role shell → logout → protected route is re-protected (UI session)
+  -   95 [chromium] › e2e\phase17\regression-smoke.spec.js:102:3 › Phase 17 — regression smoke (live) › role-scoped dashboards: each admin reaches its own, and cross-role is 403
+  -   96 [chromium] › e2e\phase17\regression-smoke.spec.js:118:3 › Phase 17 — regression smoke (live) › school admin sees tenant teachers / students / classes
+  -   97 [chromium] › e2e\phase17\regression-smoke.spec.js:129:3 › Phase 17 — regression smoke (live) › teacher uploads lesson material; enrolled student downloads; teacher soft-deletes
+  -   98 [chromium] › e2e\phase17\regression-smoke.spec.js:156:3 › Phase 17 — regression smoke (live) › student sees own-tenant data and is blocked cross-tenant
+  -   99 [chromium] › e2e\phase17\regression-smoke.spec.js:166:3 › Phase 17 — regression smoke (live) › parent reaches their linked-child document surface (read-only smoke)
+  -  100 [chromium] › e2e\phase17\regression-smoke.spec.js:177:3 › Phase 17 — regression smoke (live) › Phase 16 generic file: upload → download → signed token → soft-delete
+  -  101 [chromium] › e2e\phase17\regression-smoke.spec.js:202:3 › Phase 17 — regression smoke (live) › CV enrollment assets are honestly disabled by default (status + 403)
+  ✓  102 [chromium] › e2e\phase18\security-smoke.spec.js:75:5 › Phase 18 — session protection (no backend required) › anonymous is redirected from /app/student to login (3.0s)
+  ✓  103 [chromium] › e2e\phase18\security-smoke.spec.js:75:5 › Phase 18 — session protection (no backend required) › anonymous is redirected from /app/teacher to login (3.0s)
+  ✓  104 [chromium] › e2e\phase18\security-smoke.spec.js:75:5 › Phase 18 — session protection (no backend required) › anonymous is redirected from /app/parent to login (3.0s)
+  ✓  105 [chromium] › e2e\phase18\security-smoke.spec.js:75:5 › Phase 18 — session protection (no backend required) › anonymous is redirected from /app/school to login (2.9s)
+  ✓  106 [chromium] › e2e\phase18\security-smoke.spec.js:75:5 › Phase 18 — session protection (no backend required) › anonymous is redirected from /app/system to login (3.0s)
+  ✓  107 [chromium] › e2e\phase18\security-smoke.spec.js:81:3 › Phase 18 — session protection (no backend required) › anonymous app stores no auth token in localStorage/sessionStorage (135ms)
+  -  108 [chromium] › e2e\phase18\security-smoke.spec.js:95:3 › Phase 18 — backend security headers (no creds) › normal response carries the security headers
+  -  109 [chromium] › e2e\phase18\security-smoke.spec.js:110:3 › Phase 18 — backend security headers (no creds) › unauthorized API response is 401, carries headers, and leaks no internals
+  -  110 [chromium] › e2e\phase18\security-smoke.spec.js:142:3 › Phase 18 — live security matrix › cross-role access is forbidden (403)
+  -  111 [chromium] › e2e\phase18\security-smoke.spec.js:158:3 › Phase 18 — live security matrix › after a real UI login no auth token is persisted to web storage
+  -  112 [chromium] › e2e\phase19\observability-smoke.spec.js:28:3 › Phase 19 observability › aggregate /health reports service identity, version and dependency checks
+  -  113 [chromium] › e2e\phase19\observability-smoke.spec.js:47:3 › Phase 19 observability › liveness echoes a correlation id on the response
+  -  114 [chromium] › e2e\phase19\observability-smoke.spec.js:60:3 › Phase 19 observability › inbound X-Correlation-Id is propagated verbatim
+  -  115 [chromium] › e2e\phase19\observability-smoke.spec.js:74:3 › Phase 19 observability › readiness endpoint is reachable
+  ✓  116 [chromium] › e2e\phase20\public-marketing.spec.js:9:1 › public homepage renders the DerasaX marketing hero without auth (553ms)
+  ✓  117 [chromium] › e2e\phase20\public-marketing.spec.js:19:1 › marketing "Sign in" navigates to the real /login (3.0s)
+  ✓  118 [chromium] › e2e\phase20\public-marketing.spec.js:26:1 › the request-demo page renders the marketing form without auth (517ms)
+  ✓  119 [chromium] › e2e\phase20\public-marketing.spec.js:32:1 › unauthenticated /app still redirects to /login (role guard intact) (3.0s)
+  ✓  120 [chromium] › e2e\phase20\public-marketing.spec.js:37:1 › switching a public page to Arabic flips the document direction to RTL (584ms)
+  -  121 [chromium] › e2e\phase8\a-auth.spec.js:13:3 › Phase 8 A — authentication & role boundaries › A1 anonymous user is redirected to login and sees no protected student data
+  -  122 [chromium] › e2e\phase8\a-auth.spec.js:25:3 › Phase 8 A — authentication & role boundaries › A2 a valid student logs in and reaches the Student Portal dashboard
+  -  123 [chromium] › e2e\phase8\a-auth.spec.js:46:5 › Phase 8 A — authentication & role boundaries › A3 Teacher (TEACH-T1) is denied every Student Portal route
+  -  124 [chromium] › e2e\phase8\a-auth.spec.js:46:5 › Phase 8 A — authentication & role boundaries › A4 Parent (PARENT-T1) is denied every Student Portal route
+  -  125 [chromium] › e2e\phase8\a-auth.spec.js:46:5 › Phase 8 A — authentication & role boundaries › A5 SchoolAdmin (ADMIN-T1) is denied every Student Portal route
+  -  126 [chromium] › e2e\phase8\a-auth.spec.js:46:5 › Phase 8 A — authentication & role boundaries › A6 SystemAdmin (SYS-1) is denied every Student Portal route
+  -  127 [chromium] › e2e\phase8\a-auth.spec.js:64:3 › Phase 8 A — authentication & role boundaries › A7 a student cannot reach another tenant's resource by tampering route params, and no client identity is sent
+  -  128 [chromium] › e2e\phase8\a-auth.spec.js:90:3 › Phase 8 A — authentication & role boundaries › A8 logout clears the session and re-protects student routes
+  -  129 [chromium] › e2e\phase8\b-curriculum.spec.js:25:3 › Phase 8 B — curriculum & lesson progress › B9 dashboard renders real API-backed metrics (no static demo values)
+  -  130 [chromium] › e2e\phase8\b-curriculum.spec.js:33:3 › Phase 8 B — curriculum & lesson progress › B10 my subjects lists the enrolled subject and is tenant-scoped
+  -  131 [chromium] › e2e\phase8\b-curriculum.spec.js:43:3 › Phase 8 B — curriculum & lesson progress › B11 subject details loads the authorized subject; a cross-tenant subject id leaks nothing
+  -  132 [chromium] › e2e\phase8\b-curriculum.spec.js:53:3 › Phase 8 B — curriculum & lesson progress › B12 units flow renders only units of the authorized subject
+  -  133 [chromium] › e2e\phase8\b-curriculum.spec.js:58:3 › Phase 8 B — curriculum & lesson progress › B13 lessons flow renders only lessons of the authorized unit
+  -  134 [chromium] › e2e\phase8\b-curriculum.spec.js:63:3 › Phase 8 B — curriculum & lesson progress › B14 lesson materials render persisted backend material as safe text
+  -  135 [chromium] › e2e\phase8\b-curriculum.spec.js:68:3 › Phase 8 B — curriculum & lesson progress › B15 viewing a lesson does not mark it complete
+  -  136 [chromium] › e2e\phase8\b-curriculum.spec.js:74:3 › Phase 8 B — curriculum & lesson progress › B16 explicit Complete Lesson sends the command and updates UI after server confirmation
+  -  137 [chromium] › e2e\phase8\b-curriculum.spec.js:80:3 › Phase 8 B — curriculum & lesson progress › B17 completed state survives reload
+  -  138 [chromium] › e2e\phase8\b-curriculum.spec.js:85:3 › Phase 8 B — curriculum & lesson progress › B18 completion is idempotent (single stable completed state, no contradiction)
+  -  139 [chromium] › e2e\phase8\b-curriculum.spec.js:92:3 › Phase 8 B — curriculum & lesson progress › B19 completing an unassigned lesson (different grade) is rejected without leaking details
+  -  140 [chromium] › e2e\phase8\b-curriculum.spec.js:100:3 › Phase 8 B — curriculum & lesson progress › B20 a Tenant 1 student cannot complete a Tenant 2 lesson
+  -  141 [chromium] › e2e\phase8\c-homework.spec.js:23:3 › Phase 8 C — homework › C21 only assigned homework is listed (self-scoped)
+  -  142 [chromium] › e2e\phase8\c-homework.spec.js:33:3 › Phase 8 C — homework › C22 homework details show backend instructions and status
+  -  143 [chromium] › e2e\phase8\c-homework.spec.js:39:3 › Phase 8 C — homework › C23 submitting an answer is confirmed by the server and shown
+  -  144 [chromium] › e2e\phase8\c-homework.spec.js:52:3 › Phase 8 C — homework › C24 the submission persists across reload
+  -  145 [chromium] › e2e\phase8\c-homework.spec.js:58:3 › Phase 8 C — homework › C25 invalid submissions are rejected accurately and leave the prior submission intact
+  -  146 [chromium] › e2e\phase8\d-quiz.spec.js:26:3 › Phase 8 D — quiz lifecycle › D26 only assigned quizzes are listed (self-scoped)
+  -  147 [chromium] › e2e\phase8\d-quiz.spec.js:33:3 › Phase 8 D — quiz lifecycle › D27 quiz details expose no correct answers or score before submission
+  -  148 [chromium] › e2e\phase8\d-quiz.spec.js:42:3 › Phase 8 D — quiz lifecycle › D28 starting a quiz creates an attempt and navigates to the attempt route
+  -  149 [chromium] › e2e\phase8\d-quiz.spec.js:54:3 › Phase 8 D — quiz lifecycle › D29 starting again resumes the same attempt (no duplicate)
+  -  150 [chromium] › e2e\phase8\d-quiz.spec.js:63:3 › Phase 8 D — quiz lifecycle › D30 the attempt renders the real questions and options
+  -  151 [chromium] › e2e\phase8\d-quiz.spec.js:71:3 › Phase 8 D — quiz lifecycle › D31 a selected option answer is saved (server-confirmed)
+  -  152 [chromium] › e2e\phase8\d-quiz.spec.js:80:3 › Phase 8 D — quiz lifecycle › D32 a free-text answer is saved as answer text (not as an option id)
+  -  153 [chromium] › e2e\phase8\d-quiz.spec.js:96:3 › Phase 8 D — quiz lifecycle › D33 saved answers are restored on reload
+  -  154 [chromium] › e2e\phase8\d-quiz.spec.js:103:3 › Phase 8 D — quiz lifecycle › D34 the answers payload carries no score/correctness/rank/identity
+  -  155 [chromium] › e2e\phase8\d-quiz.spec.js:118:3 › Phase 8 D — quiz lifecycle › D35 submitting the attempt locks editing and shows the result
+  -  156 [chromium] › e2e\phase8\d-quiz.spec.js:130:3 › Phase 8 D — quiz lifecycle › D36 re-submitting a submitted attempt is safely rejected (no duplicate grade)
+  -  157 [chromium] › e2e\phase8\d-quiz.spec.js:138:3 › Phase 8 D — quiz lifecycle › D37 the result is the server-owned score and status
+  -  158 [chromium] › e2e\phase8\d-quiz.spec.js:149:3 › Phase 8 D — quiz lifecycle › D38 attempt history shows the persisted attempt; a foreign attempt id is denied
+  -  159 [chromium] › e2e\phase8\e-tutor.spec.js:35:3 › Phase 8 E — AI tutor (backend-mediated, grounded) › E39 a grounded question renders an answer from the backend-mediated tutor
+  -  160 [chromium] › e2e\phase8\e-tutor.spec.js:41:3 › Phase 8 E — AI tutor (backend-mediated, grounded) › E40 the question is sent same-origin to the backend; no browser call to the AI service
+  -  161 [chromium] › e2e\phase8\e-tutor.spec.js:53:3 › Phase 8 E — AI tutor (backend-mediated, grounded) › E41 the outbound request carries only the question content (no client identity/usage)
+  -  162 [chromium] › e2e\phase8\e-tutor.spec.js:66:3 › Phase 8 E — AI tutor (backend-mediated, grounded) › E42 the answer and citations render as safe escaped text (no HTML injection)
+  -  163 [chromium] › e2e\phase8\e-tutor.spec.js:77:3 › Phase 8 E — AI tutor (backend-mediated, grounded) › E43 the grounded answer is the backend-mediated grounded response (with a real answer body)
+  -  164 [chromium] › e2e\phase8\e-tutor.spec.js:89:3 › Phase 8 E — AI tutor (backend-mediated, grounded) › E44 citations are rendered from the grounded response
+  -  165 [chromium] › e2e\phase8\e-tutor.spec.js:98:3 › Phase 8 E — AI tutor (backend-mediated, grounded) › E45 the correlation id is surfaced for traceability
+  -  166 [chromium] › e2e\phase8\e-tutor.spec.js:105:3 › Phase 8 E — AI tutor (backend-mediated, grounded) › E46 an off-syllabus question returns the documented no-answer state (no fabrication)
+  -  167 [chromium] › e2e\phase8\e-tutor.spec.js:116:3 › Phase 8 E — AI tutor (backend-mediated, grounded) › E47 an over-long question is rejected by the backend and shows a usable error (no fabricated answer)
+  -  168 [chromium] › e2e\phase8\f-progress.spec.js:22:3 › Phase 8 F — recommendations / progress / engagement › F48 personalized recommendations render persisted backend records
+  -  169 [chromium] › e2e\phase8\f-progress.spec.js:30:3 › Phase 8 F — recommendations / progress / engagement › F49 progress renders real subject/metric progress
+  -  170 [chromium] › e2e\phase8\f-progress.spec.js:38:3 › Phase 8 F — recommendations / progress / engagement › F50 engagement renders persisted metrics/insights
+  -  171 [chromium] › e2e\phase8\f-progress.spec.js:44:3 › Phase 8 F — recommendations / progress / engagement › F51 recommendations/progress/engagement stay accurate after reload
+  -  172 [chromium] › e2e\phase8\g-attendance.spec.js:26:3 › Phase 8 G — attendance › G52 attendance renders persisted records
+  -  173 [chromium] › e2e\phase8\g-attendance.spec.js:33:3 › Phase 8 G — attendance › G53 attendance summary totals and percentage match the server
+  -  174 [chromium] › e2e\phase8\g-attendance.spec.js:38:3 › Phase 8 G — attendance › G54 a student with no attendance sees the correct empty state
+  -  175 [chromium] › e2e\phase8\g-attendance.spec.js:51:3 › Phase 8 G — attendance › G55 no computer-vision claim is made; source is shown truthfully
+  -  176 [chromium] › e2e\phase8\g-attendance.spec.js:58:3 › Phase 8 G — attendance › G56 attendance stays correct after reload
+  -  177 [chromium] › e2e\phase8\h-communities.spec.js:23:3 › Phase 8 H — communities › H57 eligible (tenant-scoped) communities are listed
+  -  178 [chromium] › e2e\phase8\h-communities.spec.js:33:3 › Phase 8 H — communities › H58 community details render info and the membership action
+  -  179 [chromium] › e2e\phase8\h-communities.spec.js:40:3 › Phase 8 H — communities › H59 joining a community persists across reload
+  -  180 [chromium] › e2e\phase8\h-communities.spec.js:57:3 › Phase 8 H — communities › H60 a member can create a post and it is shown
+  -  181 [chromium] › e2e\phase8\h-communities.spec.js:67:3 › Phase 8 H — communities › H61 a member can add a material comment and it is shown
+  -  182 [chromium] › e2e\phase8\h-communities.spec.js:77:3 › Phase 8 H — communities › H62 a cross-tenant community is denied and user content renders as safe text
+  -  183 [chromium] › e2e\phase8\i-competitions.spec.js:23:3 › Phase 8 I — competitions & leaderboards › I63 eligible (tenant-scoped) competitions are listed
+  -  184 [chromium] › e2e\phase8\i-competitions.spec.js:33:3 › Phase 8 I — competitions & leaderboards › I64 competition details render state and the entry action
+  -  185 [chromium] › e2e\phase8\i-competitions.spec.js:40:3 › Phase 8 I — competitions & leaderboards › I65 entering a competition is server-confirmed and sends no client authority
+  -  186 [chromium] › e2e\phase8\i-competitions.spec.js:53:3 › Phase 8 I — competitions & leaderboards › I66 the leaderboard shows server-owned rank and points
+  -  187 [chromium] › e2e\phase8\i-competitions.spec.js:63:3 › Phase 8 I — competitions & leaderboards › I67 a duplicate entry carries no client authority and a cross-tenant id is denied
+  -  188 [chromium] › e2e\phase8\j-office-hours.spec.js:24:3 › Phase 8 J — office hours › J68 available sessions render with capacity state; full sessions are not offered
+  -  189 [chromium] › e2e\phase8\j-office-hours.spec.js:33:3 › Phase 8 J — office hours › J69 booking a session is confirmed by the server
+  -  190 [chromium] › e2e\phase8\j-office-hours.spec.js:44:3 › Phase 8 J — office hours › J70 the booking persists across reload
+  -  191 [chromium] › e2e\phase8\j-office-hours.spec.js:51:3 › Phase 8 J — office hours › J71 booking the same session again is rejected (no duplicate)
+  -  192 [chromium] › e2e\phase8\j-office-hours.spec.js:60:3 › Phase 8 J — office hours › J72 a capacity-reached session cannot be overbooked (server authoritative)
+  -  193 [chromium] › e2e\phase8\k-notifications.spec.js:39:3 › Phase 8 K — notifications & announcements › K73 the inbox lists the student's own notifications
+  -  194 [chromium] › e2e\phase8\k-notifications.spec.js:45:3 › Phase 8 K — notifications & announcements › K74 the unread count shown matches the server
+  -  195 [chromium] › e2e\phase8\k-notifications.spec.js:53:3 › Phase 8 K — notifications & announcements › K75 marking one notification read decrements the count
+  -  196 [chromium] › e2e\phase8\k-notifications.spec.js:61:3 › Phase 8 K — notifications & announcements › K76 marking all read drops the unread count to zero
+  -  197 [chromium] › e2e\phase8\k-notifications.spec.js:68:3 › Phase 8 K — notifications & announcements › K77 the read state persists across reload
+  -  198 [chromium] › e2e\phase8\k-notifications.spec.js:73:3 › Phase 8 K — notifications & announcements › K78 announcements show tenant-targeted records
+  -  199 [chromium] › e2e\phase8\k-notifications.spec.js:79:3 › Phase 8 K — notifications & announcements › K79 the inbox exposes no external or foreign-tenant deep links
+  -  200 [chromium] › e2e\phase8\l-suggestions.spec.js:23:3 › Phase 8 L — anonymous suggestions › L80 privacy wording describes application-level anonymity (no cryptographic claim)
+  -  201 [chromium] › e2e\phase8\l-suggestions.spec.js:29:3 › Phase 8 L — anonymous suggestions › L81 client-side validation gates submission without replacing the backend
+  -  202 [chromium] › e2e\phase8\l-suggestions.spec.js:39:3 › Phase 8 L — anonymous suggestions › L83 the outbound request carries only suggestion content (no identity)
+  -  203 [chromium] › e2e\phase8\l-suggestions.spec.js:56:3 › Phase 8 L — anonymous suggestions › L82 a valid suggestion submits and shows a success state
+  -  204 [chromium] › e2e\phase8\l-suggestions.spec.js:66:3 › Phase 8 L — anonymous suggestions › L84 invalid input is blocked client-side and fires no request (no duplicate submit)
+  -  205 [chromium] › e2e\phase8\l-suggestions.spec.js:76:3 › Phase 8 L — anonymous suggestions › L85 the success response exposes no author identity
+  -  206 [chromium] › e2e\phase8\m-badges.spec.js:23:3 › Phase 8 M — badges / streaks / profile / settings › M86 the badge catalog renders backend records
+  -  207 [chromium] › e2e\phase8\m-badges.spec.js:31:3 › Phase 8 M — badges / streaks / profile / settings › M87 only awarded badges are shown and survive reload
+  -  208 [chromium] › e2e\phase8\m-badges.spec.js:40:3 › Phase 8 M — badges / streaks / profile / settings › M88 the streak is the backend streak (not client-computed)
+  -  209 [chromium] › e2e\phase8\m-badges.spec.js:57:3 › Phase 8 M — badges / streaks / profile / settings › M89 the profile shows the real signed-in identity; localStorage is not authoritative
+  -  210 [chromium] › e2e\phase8\m-badges.spec.js:68:3 › Phase 8 M — badges / streaks / profile / settings › M90 settings link to the single existing security implementation
+  -  211 [chromium] › e2e\phase8\m-badges.spec.js:75:3 › Phase 8 M — badges / streaks / profile / settings › M91 badge/streak/profile state is read-only from the server (no client authority sent)
+  -  212 [chromium] › e2e\phase8-a11y.spec.js:73:3 › Phase 8 accessibility (axe) on representative authenticated routes › English (LTR): landmarks/headings present and no serious/critical axe violations
+  -  213 [chromium] › e2e\phase8-a11y.spec.js:88:3 › Phase 8 accessibility (axe) on representative authenticated routes › Arabic (RTL): direction flips and no serious/critical axe violations
+  -  214 [chromium] › e2e\phase8-roles.spec.js:48:5 › Phase 8 cross-role rejection of student routes › Teacher (TEACH-T1) is denied the Student Portal
+  -  215 [chromium] › e2e\phase8-roles.spec.js:48:5 › Phase 8 cross-role rejection of student routes › Parent (PARENT-T1) is denied the Student Portal
+  -  216 [chromium] › e2e\phase8-roles.spec.js:48:5 › Phase 8 cross-role rejection of student routes › SchoolAdmin (ADMIN-T1) is denied the Student Portal
+  -  217 [chromium] › e2e\phase8-roles.spec.js:48:5 › Phase 8 cross-role rejection of student routes › SystemAdmin (SYS-1) is denied the Student Portal
+  -  218 [chromium] › e2e\phase8-student.spec.js:74:3 › Phase 8 student portal live contracts › student sees persisted attendance summary and records with no CV claim
+  -  219 [chromium] › e2e\phase8-student.spec.js:85:3 › Phase 8 student portal live contracts › student explicitly completes an assigned lesson and completion survives reload
+  -  220 [chromium] › e2e\phase8-student.spec.js:98:3 › Phase 8 student portal live contracts › viewing a lesson alone does not create progress for an uncompleted cross-tenant lesson
+  -  221 [chromium] › e2e\phase8-student.spec.js:105:3 › Phase 8 student portal live contracts › representative mobile/tablet/desktop student routes have no horizontal page overflow
+  -  222 [chromium] › e2e\phase8-student.spec.js:122:3 › Phase 8 student portal live contracts › Arabic RTL attendance remains usable
+  -  223 [chromium] › e2e\phase9\a-teacher-auth.spec.js:13:1 › PH9-A1 teacher logs in and the dashboard loads assignment-scoped data
+  -  224 [chromium] › e2e\phase9\a-teacher-auth.spec.js:29:1 › PH9-A2 a student is denied every teacher route
+  -  225 [chromium] › e2e\phase9\a-teacher-auth.spec.js:43:1 › PH9-A3 parent and system admin are denied teacher routes
+  -  226 [chromium] › e2e\phase9\a-teacher-auth.spec.js:57:1 › PH9-A4 direct navigation to a protected teacher URL while anonymous redirects to login
+  -  227 [chromium] › e2e\phase9\a-teacher-auth.spec.js:68:1 › PH9-A5 an unassigned teacher sees an empty class list (no data leak)
+  -  228 [chromium] › e2e\phase9\a-teacher-auth.spec.js:82:1 › PH9-A6 a cross-tenant teacher cannot read another tenant's class students
+  -  229 [chromium] › e2e\phase9\b-teacher-curriculum.spec.js:21:1 › PH9-B1 teacher sees the assigned class in the class list
+  -  230 [chromium] › e2e\phase9\b-teacher-curriculum.spec.js:27:1 › PH9-B2 teacher opens the assigned class and sees enrolled students
+  -  231 [chromium] › e2e\phase9\b-teacher-curriculum.spec.js:33:1 › PH9-B3 teacher cannot read students of a class they are not assigned to
+  -  232 [chromium] › e2e\phase9\b-teacher-curriculum.spec.js:40:1 › PH9-B4 teacher browses curriculum: subjects → units → lessons → lesson detail
+  -  233 [chromium] › e2e\phase9\b-teacher-curriculum.spec.js:53:1 › PH9-B5 teacher gradebook lists students with backend-authoritative averages
+  -  234 [chromium] › e2e\phase9\c-ai-quiz-lifecycle.spec.js:25:1 › PH9-C1 the seeded AI quiz appears as a DRAFT only (not published)
+  -  235 [chromium] › e2e\phase9\c-ai-quiz-lifecycle.spec.js:34:1 › PH9-C2 teacher edits a draft question and the change persists
+  -  236 [chromium] › e2e\phase9\c-ai-quiz-lifecycle.spec.js:44:1 › PH9-C3 teacher publishes the reviewed draft
+  -  237 [chromium] › e2e\phase9\c-ai-quiz-lifecycle.spec.js:52:1 › PH9-C4 teacher assigns the published quiz to an assigned class
+  -  238 [chromium] › e2e\phase9\c-ai-quiz-lifecycle.spec.js:61:1 › PH9-C5 teacher generates a new AI quiz draft through the backend (draft-only)
+  -  239 [chromium] › e2e\phase9\d-grading.spec.js:23:1 › PH9-D1 teacher sees the student submission for an assigned quiz
+  -  240 [chromium] › e2e\phase9\d-grading.spec.js:31:1 › PH9-D2 teacher opens the submission and grades it
+  -  241 [chromium] › e2e\phase9\d-grading.spec.js:39:1 › PH9-D3 teacher adds feedback to the submission
+  -  242 [chromium] › e2e\phase9\d-grading.spec.js:47:1 › PH9-D4 the student can see the graded result with the teacher feedback
+  -  243 [chromium] › e2e\phase9\e-a11y-responsive.spec.js:23:1 › PH9-E1 representative teacher pages have no serious/critical a11y violations (EN)
+  -  244 [chromium] › e2e\phase9\e-a11y-responsive.spec.js:34:1 › PH9-E2 Arabic flips direction to RTL on the teacher dashboard
+  -  245 [chromium] › e2e\phase9\e-a11y-responsive.spec.js:49:1 › PH9-E3 mobile viewport renders the teacher dashboard
+
+  224 skipped
+  21 passed (56.3s)

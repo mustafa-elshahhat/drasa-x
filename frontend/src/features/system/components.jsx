@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { Spinner } from '../../components/ui/Spinner'
-import { PageHeader } from '../../components/ui/PageHeader'
-import { ResourceTable } from '../../components/data/ResourceTable'
+import { Spinner, PageHeader } from '../../shared/ui'
+import { ResourceTable } from '../../shared/data-display'
 
 // Shared system-admin presentational helpers (components only).
 

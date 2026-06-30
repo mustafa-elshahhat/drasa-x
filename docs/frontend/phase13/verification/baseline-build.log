@@ -1,0 +1,301 @@
+
+> schoolui@0.0.0 build
+> vite build
+
+[36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+transforming...
+[33mnode_modules/@microsoft/signalr/dist/esm/Utils.js (189:0): A comment
+
+"/*#__PURE__*/"
+
+in "node_modules/@microsoft/signalr/dist/esm/Utils.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.[39m
+[33mnode_modules/@microsoft/signalr/dist/esm/Utils.js (207:0): A comment
+
+"/*#__PURE__*/"
+
+in "node_modules/@microsoft/signalr/dist/esm/Utils.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.[39m
+[32m✓[39m 2097 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mmanifest.webmanifest                                                   [39m[1m[2m    0.44 kB[22m[1m[22m
+[2mdist/[22m[32mindex.html                                                             [39m[1m[2m    0.71 kB[22m[1m[22m[2m │ gzip:   0.39 kB[22m
+[2mdist/[22m[32massets/inter-vietnamese-400-normal-DMkecbls.woff2                      [39m[1m[2m    4.97 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-vietnamese-600-normal-Cc8MFFhd.woff2                      [39m[1m[2m    5.10 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-vietnamese-700-normal-DlLaEgI2.woff2                      [39m[1m[2m    5.10 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-vietnamese-500-normal-DOriooB6.woff2                      [39m[1m[2m    5.11 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-vietnamese-800-normal-Cm7tD1pz.woff2                      [39m[1m[2m    5.18 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-ext-400-normal-DGGRlc-M.woff2                       [39m[1m[2m    5.26 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-ext-500-normal-C4iEst2y.woff2                       [39m[1m[2m    5.43 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-ext-600-normal-DRtmH8MT.woff2                       [39m[1m[2m    5.43 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-ext-700-normal-qfdV9bQt.woff2                       [39m[1m[2m    5.44 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-ext-800-normal-B--PVpEC.woff2                       [39m[1m[2m    5.55 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-vietnamese-400-normal-Bbgyi5SW.woff                       [39m[1m[2m    6.50 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-vietnamese-500-normal-mJboJaSs.woff                       [39m[1m[2m    6.60 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-vietnamese-700-normal-BZaoP0fm.woff                       [39m[1m[2m    6.63 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-vietnamese-600-normal-BuLX-rYi.woff                       [39m[1m[2m    6.64 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-vietnamese-800-normal-DDlpr_Ee.woff                       [39m[1m[2m    6.64 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-ext-400-normal-KugGGMne.woff                        [39m[1m[2m    7.06 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-ext-500-normal-2j5mBUwD.woff                        [39m[1m[2m    7.19 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-ext-800-normal-DUe57HfS.woff                        [39m[1m[2m    7.20 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-ext-600-normal-B8X0CLgF.woff                        [39m[1m[2m    7.21 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-ext-700-normal-BoQ6DsYi.woff                        [39m[1m[2m    7.22 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-ext-400-normal-xCL67Y2R.woff2                       [39m[1m[2m    7.34 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-ext-800-normal-ChnkP8hn.woff2                       [39m[1m[2m    7.43 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-ext-500-normal-DxXN6Mb5.woff2                       [39m[1m[2m    7.46 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-ext-700-normal-Cscux539.woff2                       [39m[1m[2m    7.46 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-ext-600-normal-DuRnqffh.woff2                       [39m[1m[2m    7.48 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-400-normal-obahsSVq.woff2                        [39m[1m[2m    7.71 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-400-normal-B4URO6DV.woff2                           [39m[1m[2m    7.78 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-800-normal-CLIouy3y.woff2                           [39m[1m[2m    7.89 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-500-normal-BasfLYem.woff2                        [39m[1m[2m    7.90 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-700-normal-CjBOestx.woff2                        [39m[1m[2m    7.90 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-500-normal-BIZE56-Y.woff2                           [39m[1m[2m    7.92 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-700-normal-C3JjAnD8.woff2                           [39m[1m[2m    7.92 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-600-normal-plRanbMR.woff2                           [39m[1m[2m    7.94 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-600-normal-CWCymEST.woff2                        [39m[1m[2m    7.97 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-800-normal-C7MGvYyJ.woff2                        [39m[1m[2m    7.99 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-400-normal-HOLc17fK.woff                         [39m[1m[2m    9.78 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-700-normal-DrXBdSj3.woff                         [39m[1m[2m    9.91 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-400-normal-q2sYcFCs.woff                            [39m[1m[2m    9.92 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-600-normal-4D_pXhcN.woff                         [39m[1m[2m    9.94 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-500-normal-CxZf_p3X.woff                         [39m[1m[2m    9.94 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-800-normal-CCHyn08d.woff                         [39m[1m[2m    9.94 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-800-normal-BU00tryP.woff                            [39m[1m[2m    9.96 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-500-normal-Xzm54t5V.woff                            [39m[1m[2m    9.98 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-700-normal-BUv2fZ6O.woff                            [39m[1m[2m    9.98 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-greek-600-normal-BZpKdvQh.woff                            [39m[1m[2m   10.03 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-ext-400-normal-C_BIE9Qe.woff                        [39m[1m[2m   10.16 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-ext-400-normal-BQZuk6qB.woff2                    [39m[1m[2m   10.23 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-ext-600-normal-DAfLYaOC.woff                        [39m[1m[2m   10.24 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-ext-700-normal-htXca11Z.woff                        [39m[1m[2m   10.25 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-ext-800-normal-RObK5hVW.woff                        [39m[1m[2m   10.26 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-ext-500-normal-De4OTi8O.woff                        [39m[1m[2m   10.26 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-ext-500-normal-B0yAr1jD.woff2                    [39m[1m[2m   10.43 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-ext-800-normal-BZOjs1Xv.woff2                    [39m[1m[2m   10.44 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-ext-600-normal-Dfes3d0z.woff2                    [39m[1m[2m   10.48 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-ext-700-normal-BjwYoWNd.woff2                    [39m[1m[2m   10.50 kB[22m[1m[22m
+[2mdist/[22m[32massets/footer-bg-Cfr4ltwR.png                                          [39m[1m[2m   11.26 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-arabic-400-normal-DN15VWMM.woff2                          [39m[1m[2m   13.29 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-ext-400-normal-DQukG94-.woff                     [39m[1m[2m   13.34 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-ext-700-normal-LO58E6JB.woff                     [39m[1m[2m   13.41 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-ext-500-normal-BmqWE9Dz.woff                     [39m[1m[2m   13.45 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-ext-600-normal-Bcila6Z-.woff                     [39m[1m[2m   13.46 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-cyrillic-ext-800-normal-Ca-gJeZY.woff                     [39m[1m[2m   13.48 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-arabic-800-normal-G1qvPr6G.woff2                          [39m[1m[2m   13.89 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-arabic-500-normal-DDl0i4Xv.woff2                          [39m[1m[2m   13.89 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-arabic-600-normal-rkrvveqO.woff2                          [39m[1m[2m   13.90 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-arabic-700-normal-D3nDedWX.woff2                          [39m[1m[2m   13.95 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-400-normal-Dh7otpdh.woff2                           [39m[1m[2m   15.02 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-500-normal-D-WQsSKQ.woff2                           [39m[1m[2m   15.24 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-600-normal-mGS0uvCM.woff2                           [39m[1m[2m   15.28 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-700-normal-C3GYtKbV.woff2                           [39m[1m[2m   15.28 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-800-normal-BBdTpBXf.woff2                           [39m[1m[2m   15.32 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-arabic-400-normal-CAYwymWN.woff                           [39m[1m[2m   16.81 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-arabic-700-normal-CyOqhaeK.woff                           [39m[1m[2m   17.26 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-arabic-800-normal-CVTPwINa.woff                           [39m[1m[2m   17.31 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-arabic-600-normal-B3EOalmC.woff                           [39m[1m[2m   17.34 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-arabic-500-normal-BADfnM6v.woff                           [39m[1m[2m   17.34 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-400-normal-b1R3q6Pf.woff                            [39m[1m[2m   19.49 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-500-normal-DkdkMETP.woff                            [39m[1m[2m   19.66 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-600-normal-buYOP1M3.woff                            [39m[1m[2m   19.68 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-700-normal-6fcUy4Rc.woff                            [39m[1m[2m   19.74 kB[22m[1m[22m
+[2mdist/[22m[32massets/cairo-latin-800-normal-ReWrxM5E.woff                            [39m[1m[2m   19.75 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-400-normal-C38fXH4l.woff2                           [39m[1m[2m   23.66 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-500-normal-Cerq10X2.woff2                           [39m[1m[2m   24.27 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-700-normal-Yt3aPRUw.woff2                           [39m[1m[2m   24.36 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-800-normal-BYj_oED-.woff2                           [39m[1m[2m   24.40 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-600-normal-LgqL8muc.woff2                           [39m[1m[2m   24.45 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-400-normal-CyCys3Eg.woff                            [39m[1m[2m   30.70 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-600-normal-CiBQ2DWP.woff                            [39m[1m[2m   31.26 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-500-normal-BL9OpVg8.woff                            [39m[1m[2m   31.28 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-800-normal-D1mf63XC.woff                            [39m[1m[2m   31.30 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-700-normal-BLAVimhd.woff                            [39m[1m[2m   31.32 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-ext-400-normal-C1nco2VV.woff2                       [39m[1m[2m   35.00 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-ext-500-normal-CV4jyFjo.woff2                       [39m[1m[2m   36.02 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-ext-800-normal-DZJjya6U.woff2                       [39m[1m[2m   36.13 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-ext-700-normal-Ca8adRJv.woff2                       [39m[1m[2m   36.24 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-ext-600-normal-D2bJ5OIk.woff2                       [39m[1m[2m   36.26 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-ext-400-normal-77YHD8bZ.woff                        [39m[1m[2m   47.56 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-ext-500-normal-BxGbmqWO.woff                        [39m[1m[2m   48.49 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-ext-800-normal-BOMpwxm3.woff                        [39m[1m[2m   48.59 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-ext-700-normal-TidjK2hL.woff                        [39m[1m[2m   48.63 kB[22m[1m[22m
+[2mdist/[22m[32massets/inter-latin-ext-600-normal-CIVaiw4L.woff                        [39m[1m[2m   48.67 kB[22m[1m[22m
+[2mdist/[22m[32massets/news-CbDehsBw.jpg                                               [39m[1m[2m  340.88 kB[22m[1m[22m
+[2mdist/[22m[32massets/herosection-3-DurcPaOf.png                                      [39m[1m[2m  346.19 kB[22m[1m[22m
+[2mdist/[22m[32massets/herosection-2-COexUalK.png                                      [39m[1m[2m  388.85 kB[22m[1m[22m
+[2mdist/[22m[32massets/herosection-4-DhZOq7n8.png                                      [39m[1m[2m  405.13 kB[22m[1m[22m
+[2mdist/[22m[32massets/activity-BllLI12H.jpg                                           [39m[1m[2m  587.67 kB[22m[1m[22m
+[2mdist/[22m[32massets/requestdDemoBg-C3WiqYOg.png                                     [39m[1m[2m1,077.20 kB[22m[1m[22m
+[2mdist/[22m[32massets/herosection-gp8D-LVN.png                                        [39m[1m[2m1,121.26 kB[22m[1m[22m
+[2mdist/[22m[32massets/Inspiring_Connecting_Empowering_Experiences_Video-DOYy0_O5.mp4  [39m[1m[2m1,623.80 kB[22m[1m[22m
+[2mdist/[22m[32massets/event-X781AHR0.jpg                                              [39m[1m[2m1,896.20 kB[22m[1m[22m
+[2mdist/[22m[35massets/PublicListingPage-BK1HmIcr.css                                  [39m[1m[2m    1.35 kB[22m[1m[22m[2m │ gzip:   0.53 kB[22m
+[2mdist/[22m[35massets/RequestDemoPage-DwQYGqwB.css                                    [39m[1m[2m    1.97 kB[22m[1m[22m[2m │ gzip:   0.71 kB[22m
+[2mdist/[22m[35massets/HomePage-DKRRxTD6.css                                           [39m[1m[2m    5.65 kB[22m[1m[22m[2m │ gzip:   1.45 kB[22m
+[2mdist/[22m[35massets/index-DxDUrVkz.css                                              [39m[1m[2m   92.95 kB[22m[1m[22m[2m │ gzip:  15.85 kB[22m
+[2mdist/[22m[36massets/check-D8lxoeMB.js                                               [39m[1m[2m    0.12 kB[22m[1m[22m[2m │ gzip:   0.14 kB[22m
+[2mdist/[22m[36massets/context-BwTli6pB.js                                             [39m[1m[2m    0.15 kB[22m[1m[22m[2m │ gzip:   0.15 kB[22m
+[2mdist/[22m[36massets/arrow-right-BYkjVDS6.js                                         [39m[1m[2m    0.17 kB[22m[1m[22m[2m │ gzip:   0.16 kB[22m
+[2mdist/[22m[36massets/Loading-DvYo1jwF.js                                             [39m[1m[2m    0.18 kB[22m[1m[22m[2m │ gzip:   0.17 kB[22m
+[2mdist/[22m[36massets/AppHome-D_KJ93tp.js                                             [39m[1m[2m    0.18 kB[22m[1m[22m[2m │ gzip:   0.17 kB[22m
+[2mdist/[22m[36massets/flame-Bn26bNGn.js                                               [39m[1m[2m    0.20 kB[22m[1m[22m[2m │ gzip:   0.18 kB[22m
+[2mdist/[22m[36massets/constants-BmOwSpN0.js                                           [39m[1m[2m    0.20 kB[22m[1m[22m[2m │ gzip:   0.18 kB[22m
+[2mdist/[22m[36massets/EventsPage-ubI48Lls.js                                          [39m[1m[2m    0.22 kB[22m[1m[22m[2m │ gzip:   0.18 kB[22m
+[2mdist/[22m[36massets/download-kPQD5UbU.js                                            [39m[1m[2m    0.23 kB[22m[1m[22m[2m │ gzip:   0.19 kB[22m
+[2mdist/[22m[36massets/circle-play-CwaQlwxn.js                                         [39m[1m[2m    0.25 kB[22m[1m[22m[2m │ gzip:   0.21 kB[22m
+[2mdist/[22m[36massets/ActivitiesPage-CQ3YGPoR.js                                      [39m[1m[2m    0.26 kB[22m[1m[22m[2m │ gzip:   0.20 kB[22m
+[2mdist/[22m[36massets/chart-pie-CwkvH500.js                                           [39m[1m[2m    0.27 kB[22m[1m[22m[2m │ gzip:   0.22 kB[22m
+[2mdist/[22m[36massets/helpers-ChyT7FvY.js                                             [39m[1m[2m    0.28 kB[22m[1m[22m[2m │ gzip:   0.23 kB[22m
+[2mdist/[22m[36massets/constants-DvdcbsmD.js                                           [39m[1m[2m    0.31 kB[22m[1m[22m[2m │ gzip:   0.24 kB[22m
+[2mdist/[22m[36massets/Spinner-CP1yT2Ou.js                                             [39m[1m[2m    0.38 kB[22m[1m[22m[2m │ gzip:   0.27 kB[22m
+[2mdist/[22m[36massets/Button-5Va49V0a.js                                              [39m[1m[2m    0.40 kB[22m[1m[22m[2m │ gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/QueryBoundary-BPs8tCrk.js                                       [39m[1m[2m    0.43 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/components-BhkZ2xi6.js                                          [39m[1m[2m    0.48 kB[22m[1m[22m[2m │ gzip:   0.32 kB[22m
+[2mdist/[22m[36massets/sparkles-CYVNaLEv.js                                            [39m[1m[2m    0.50 kB[22m[1m[22m[2m │ gzip:   0.28 kB[22m
+[2mdist/[22m[36massets/Chip-DOhFimXR.js                                                [39m[1m[2m    0.50 kB[22m[1m[22m[2m │ gzip:   0.30 kB[22m
+[2mdist/[22m[36massets/NewsPage-CuMWr4pO.js                                            [39m[1m[2m    0.50 kB[22m[1m[22m[2m │ gzip:   0.34 kB[22m
+[2mdist/[22m[36massets/Thumb-BIqGRvQC.js                                               [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:   0.39 kB[22m
+[2mdist/[22m[36massets/LeaderboardRow-DD1Y_Eav.js                                      [39m[1m[2m    0.54 kB[22m[1m[22m[2m │ gzip:   0.31 kB[22m
+[2mdist/[22m[36massets/NotEnoughData-SOjwSeQZ.js                                       [39m[1m[2m    0.56 kB[22m[1m[22m[2m │ gzip:   0.34 kB[22m
+[2mdist/[22m[36massets/Metric-DAdF9p2R.js                                              [39m[1m[2m    0.60 kB[22m[1m[22m[2m │ gzip:   0.33 kB[22m
+[2mdist/[22m[36massets/Heatmap-CMo0kem_.js                                             [39m[1m[2m    0.68 kB[22m[1m[22m[2m │ gzip:   0.37 kB[22m
+[2mdist/[22m[36massets/components-DZj6oCBk.js                                          [39m[1m[2m    0.71 kB[22m[1m[22m[2m │ gzip:   0.41 kB[22m
+[2mdist/[22m[36massets/UnitCard-CnWxW2Tc.js                                            [39m[1m[2m    0.71 kB[22m[1m[22m[2m │ gzip:   0.35 kB[22m
+[2mdist/[22m[36massets/helpers-DD0rqtLc.js                                             [39m[1m[2m    0.74 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2mdist/[22m[36massets/ParentSettingsPage-CuhLbIy3.js                                  [39m[1m[2m    0.76 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2mdist/[22m[36massets/TeacherSettingsPage-Cyp1CfD-.js                                 [39m[1m[2m    0.76 kB[22m[1m[22m[2m │ gzip:   0.45 kB[22m
+[2mdist/[22m[36massets/PageHeader-BsNwShcQ.js                                          [39m[1m[2m    0.77 kB[22m[1m[22m[2m │ gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/SchoolAuditPage-Blbmf_QU.js                                     [39m[1m[2m    0.77 kB[22m[1m[22m[2m │ gzip:   0.47 kB[22m
+[2mdist/[22m[36massets/SystemAuditPage-aE97Qt1L.js                                     [39m[1m[2m    0.77 kB[22m[1m[22m[2m │ gzip:   0.47 kB[22m
+[2mdist/[22m[36massets/SystemPlansPage-DeDSFbxj.js                                     [39m[1m[2m    0.80 kB[22m[1m[22m[2m │ gzip:   0.49 kB[22m
+[2mdist/[22m[36massets/SystemSubscriptionsPage-CjfnukyR.js                             [39m[1m[2m    0.80 kB[22m[1m[22m[2m │ gzip:   0.48 kB[22m
+[2mdist/[22m[36massets/ChildCard-DCy1abxf.js                                           [39m[1m[2m    0.81 kB[22m[1m[22m[2m │ gzip:   0.34 kB[22m
+[2mdist/[22m[36massets/DetailList-CYMbzgjv.js                                          [39m[1m[2m    0.82 kB[22m[1m[22m[2m │ gzip:   0.47 kB[22m
+[2mdist/[22m[36massets/PublicListingPage-B19aUHhc.js                                   [39m[1m[2m    0.84 kB[22m[1m[22m[2m │ gzip:   0.36 kB[22m
+[2mdist/[22m[36massets/ParentVisionPage-Co7pW5cC.js                                    [39m[1m[2m    0.86 kB[22m[1m[22m[2m │ gzip:   0.51 kB[22m
+[2mdist/[22m[36massets/SchoolSubjectsPage-BgP9123z.js                                  [39m[1m[2m    0.90 kB[22m[1m[22m[2m │ gzip:   0.52 kB[22m
+[2mdist/[22m[36massets/SystemSecurityPage-VNGV6xNe.js                                  [39m[1m[2m    0.91 kB[22m[1m[22m[2m │ gzip:   0.52 kB[22m
+[2mdist/[22m[36massets/virtual_pwa-register-BpkHUbqm.js                                [39m[1m[2m    0.92 kB[22m[1m[22m[2m │ gzip:   0.54 kB[22m
+[2mdist/[22m[36massets/SchoolCommunitiesPage-BTFKrsoL.js                               [39m[1m[2m    0.92 kB[22m[1m[22m[2m │ gzip:   0.52 kB[22m
+[2mdist/[22m[36massets/SchoolCompetitionsPage-CeDqEzJ_.js                              [39m[1m[2m    0.93 kB[22m[1m[22m[2m │ gzip:   0.52 kB[22m
+[2mdist/[22m[36massets/SchoolProfilePage-CH3_fM_B.js                                   [39m[1m[2m    0.97 kB[22m[1m[22m[2m │ gzip:   0.56 kB[22m
+[2mdist/[22m[36massets/SchoolSubscriptionPage-DdAlfDRJ.js                              [39m[1m[2m    0.97 kB[22m[1m[22m[2m │ gzip:   0.55 kB[22m
+[2mdist/[22m[36massets/StudentSettingsPage-D221q2dt.js                                 [39m[1m[2m    0.99 kB[22m[1m[22m[2m │ gzip:   0.51 kB[22m
+[2mdist/[22m[36massets/QuizCard-LtFj2OCj.js                                            [39m[1m[2m    1.02 kB[22m[1m[22m[2m │ gzip:   0.52 kB[22m
+[2mdist/[22m[36massets/SystemBackupsPage-DJHhl2V8.js                                   [39m[1m[2m    1.03 kB[22m[1m[22m[2m │ gzip:   0.58 kB[22m
+[2mdist/[22m[36massets/SystemErrorMonitoringPage-Bd2KQf7n.js                           [39m[1m[2m    1.05 kB[22m[1m[22m[2m │ gzip:   0.58 kB[22m
+[2mdist/[22m[36massets/SystemStoragePage-C4IRT521.js                                   [39m[1m[2m    1.07 kB[22m[1m[22m[2m │ gzip:   0.60 kB[22m
+[2mdist/[22m[36massets/SchoolStoragePage-PflsBWo3.js                                   [39m[1m[2m    1.07 kB[22m[1m[22m[2m │ gzip:   0.59 kB[22m
+[2mdist/[22m[36massets/Ring-IxlW1h--.js                                                [39m[1m[2m    1.08 kB[22m[1m[22m[2m │ gzip:   0.62 kB[22m
+[2mdist/[22m[36massets/TeacherOfficeHoursPage-BUC-vxyO.js                              [39m[1m[2m    1.16 kB[22m[1m[22m[2m │ gzip:   0.61 kB[22m
+[2mdist/[22m[36massets/TeacherUnitsPage-IkcKRx0c.js                                    [39m[1m[2m    1.17 kB[22m[1m[22m[2m │ gzip:   0.66 kB[22m
+[2mdist/[22m[36massets/ParentChildrenPage-Bub3l5kC.js                                  [39m[1m[2m    1.18 kB[22m[1m[22m[2m │ gzip:   0.65 kB[22m
+[2mdist/[22m[36massets/ParentConversationsPage-CcilWZXT.js                             [39m[1m[2m    1.18 kB[22m[1m[22m[2m │ gzip:   0.63 kB[22m
+[2mdist/[22m[36massets/SchoolReportsPage-dVhx9Nhq.js                                   [39m[1m[2m    1.26 kB[22m[1m[22m[2m │ gzip:   0.64 kB[22m
+[2mdist/[22m[36massets/ProfilePage-DVk4AUBS.js                                         [39m[1m[2m    1.30 kB[22m[1m[22m[2m │ gzip:   0.61 kB[22m
+[2mdist/[22m[36massets/Alert-q4XWUZct.js                                               [39m[1m[2m    1.31 kB[22m[1m[22m[2m │ gzip:   0.61 kB[22m
+[2mdist/[22m[36massets/TeacherLessonPage-B2K_D-BR.js                                   [39m[1m[2m    1.32 kB[22m[1m[22m[2m │ gzip:   0.69 kB[22m
+[2mdist/[22m[36massets/SchoolAiUsagePage-B04ab455.js                                   [39m[1m[2m    1.38 kB[22m[1m[22m[2m │ gzip:   0.69 kB[22m
+[2mdist/[22m[36massets/ParentAnnouncementsPage-Ca5UyDWx.js                             [39m[1m[2m    1.39 kB[22m[1m[22m[2m │ gzip:   0.68 kB[22m
+[2mdist/[22m[36massets/SchoolCurriculumPage-BdKT9QWk.js                                [39m[1m[2m    1.39 kB[22m[1m[22m[2m │ gzip:   0.61 kB[22m
+[2mdist/[22m[36massets/SystemAiUsagePage-BypEqMlJ.js                                   [39m[1m[2m    1.46 kB[22m[1m[22m[2m │ gzip:   0.73 kB[22m
+[2mdist/[22m[36massets/StudentAnnouncementsPage-CnYuuGOq.js                            [39m[1m[2m    1.52 kB[22m[1m[22m[2m │ gzip:   0.75 kB[22m
+[2mdist/[22m[36massets/SchoolGradesPage-CTjaJU5a.js                                    [39m[1m[2m    1.53 kB[22m[1m[22m[2m │ gzip:   0.82 kB[22m
+[2mdist/[22m[36massets/SystemUsagePage-CDJ4TDSX.js                                     [39m[1m[2m    1.57 kB[22m[1m[22m[2m │ gzip:   0.77 kB[22m
+[2mdist/[22m[36massets/StudentSuggestionsPage-DoF-Xql0.js                              [39m[1m[2m    1.63 kB[22m[1m[22m[2m │ gzip:   0.80 kB[22m
+[2mdist/[22m[36massets/states-BvlhbI7n.js                                              [39m[1m[2m    1.63 kB[22m[1m[22m[2m │ gzip:   0.77 kB[22m
+[2mdist/[22m[36massets/studentDemoData-DzDDYNuW.js                                     [39m[1m[2m    1.65 kB[22m[1m[22m[2m │ gzip:   0.71 kB[22m
+[2mdist/[22m[36massets/SystemTenantsPage-D7EaC1fb.js                                   [39m[1m[2m    1.70 kB[22m[1m[22m[2m │ gzip:   0.88 kB[22m
+[2mdist/[22m[36massets/visionApi-d-hof6N5.js                                           [39m[1m[2m    1.73 kB[22m[1m[22m[2m │ gzip:   0.62 kB[22m
+[2mdist/[22m[36massets/TeacherSubjectsPage-Dz1KJYuB.js                                 [39m[1m[2m    1.76 kB[22m[1m[22m[2m │ gzip:   0.79 kB[22m
+[2mdist/[22m[36massets/SchoolSupportPage-KbZOSM8i.js                                   [39m[1m[2m    1.76 kB[22m[1m[22m[2m │ gzip:   0.97 kB[22m
+[2mdist/[22m[36massets/SystemSupportPage-B3qxUJxI.js                                   [39m[1m[2m    1.77 kB[22m[1m[22m[2m │ gzip:   0.97 kB[22m
+[2mdist/[22m[36massets/TeacherDashboardPage-BrXewLob.js                                [39m[1m[2m    1.81 kB[22m[1m[22m[2m │ gzip:   0.76 kB[22m
+[2mdist/[22m[36massets/SystemAnnouncementsPage-CehIkXxy.js                             [39m[1m[2m    1.81 kB[22m[1m[22m[2m │ gzip:   0.88 kB[22m
+[2mdist/[22m[36massets/ParentChildPointsPage-d7RokqW6.js                               [39m[1m[2m    1.83 kB[22m[1m[22m[2m │ gzip:   0.88 kB[22m
+[2mdist/[22m[36massets/TeacherNotificationsPage-CvRpE-QT.js                            [39m[1m[2m    1.83 kB[22m[1m[22m[2m │ gzip:   0.90 kB[22m
+[2mdist/[22m[36massets/StudentVisionPage-BPcX65OR.js                                   [39m[1m[2m    1.85 kB[22m[1m[22m[2m │ gzip:   0.70 kB[22m
+[2mdist/[22m[36massets/ParentNotificationsPage-Phxbv3wj.js                             [39m[1m[2m    1.94 kB[22m[1m[22m[2m │ gzip:   0.94 kB[22m
+[2mdist/[22m[36massets/SystemHealthPage-CY9wsfyX.js                                    [39m[1m[2m    2.03 kB[22m[1m[22m[2m │ gzip:   0.82 kB[22m
+[2mdist/[22m[36massets/ParentChildProgressPage-DDhraMbo.js                             [39m[1m[2m    2.13 kB[22m[1m[22m[2m │ gzip:   0.92 kB[22m
+[2mdist/[22m[36massets/theme-C9zgOrpB.js                                               [39m[1m[2m    2.17 kB[22m[1m[22m[2m │ gzip:   1.08 kB[22m
+[2mdist/[22m[36massets/useMutation-732WnjSR.js                                         [39m[1m[2m    2.20 kB[22m[1m[22m[2m │ gzip:   0.91 kB[22m
+[2mdist/[22m[36massets/StudentNotificationsPage-B_3Wc7wy.js                            [39m[1m[2m    2.22 kB[22m[1m[22m[2m │ gzip:   0.98 kB[22m
+[2mdist/[22m[36massets/SchoolAcademicYearsPage-DDclFu2_.js                             [39m[1m[2m    2.22 kB[22m[1m[22m[2m │ gzip:   1.02 kB[22m
+[2mdist/[22m[36massets/SystemSettingsPage-Ea81HmUd.js                                  [39m[1m[2m    2.24 kB[22m[1m[22m[2m │ gzip:   1.03 kB[22m
+[2mdist/[22m[36massets/SchoolDocumentRequestsPage-CChSE-26.js                          [39m[1m[2m    2.25 kB[22m[1m[22m[2m │ gzip:   1.08 kB[22m
+[2mdist/[22m[36massets/ParentDashboardPage-DRS9uSDi.js                                 [39m[1m[2m    2.28 kB[22m[1m[22m[2m │ gzip:   0.98 kB[22m
+[2mdist/[22m[36massets/TeacherClassesPage-C4X1orNb.js                                  [39m[1m[2m    2.35 kB[22m[1m[22m[2m │ gzip:   0.98 kB[22m
+[2mdist/[22m[36massets/CommunicationPreferencesPage-9v2lqjnq.js                        [39m[1m[2m    2.37 kB[22m[1m[22m[2m │ gzip:   0.99 kB[22m
+[2mdist/[22m[36massets/StudentMaterialsPage-DZRwXjiB.js                                [39m[1m[2m    2.43 kB[22m[1m[22m[2m │ gzip:   1.15 kB[22m
+[2mdist/[22m[36massets/SchoolSettingsPage-D5csgJVH.js                                  [39m[1m[2m    2.44 kB[22m[1m[22m[2m │ gzip:   1.12 kB[22m
+[2mdist/[22m[36massets/TeacherQuizGeneratePage-DVT-XySh.js                             [39m[1m[2m    2.49 kB[22m[1m[22m[2m │ gzip:   1.16 kB[22m
+[2mdist/[22m[36massets/StudentOfficeHoursPage-CONCKRSb.js                              [39m[1m[2m    2.49 kB[22m[1m[22m[2m │ gzip:   0.93 kB[22m
+[2mdist/[22m[36massets/SchoolAnnouncementsPage-BhD4hdl-.js                             [39m[1m[2m    2.50 kB[22m[1m[22m[2m │ gzip:   1.10 kB[22m
+[2mdist/[22m[36massets/SecurityPage-C6k5tWdt.js                                        [39m[1m[2m    2.53 kB[22m[1m[22m[2m │ gzip:   1.17 kB[22m
+[2mdist/[22m[36massets/SchoolTermsPage-DTNBomJE.js                                     [39m[1m[2m    2.57 kB[22m[1m[22m[2m │ gzip:   1.15 kB[22m
+[2mdist/[22m[36massets/CommunicationNotificationsPage-CsLHwss8.js                      [39m[1m[2m    2.60 kB[22m[1m[22m[2m │ gzip:   1.09 kB[22m
+[2mdist/[22m[36massets/SchoolClassesPage-BGssGCOf.js                                   [39m[1m[2m    2.65 kB[22m[1m[22m[2m │ gzip:   1.14 kB[22m
+[2mdist/[22m[36massets/ParentChildOverviewPage-8o86y15y.js                             [39m[1m[2m    2.67 kB[22m[1m[22m[2m │ gzip:   0.97 kB[22m
+[2mdist/[22m[36massets/ResourceTable-Cm6geMN6.js                                       [39m[1m[2m    2.67 kB[22m[1m[22m[2m │ gzip:   1.11 kB[22m
+[2mdist/[22m[36massets/CommunicationThreadPage-zeg3HQMX.js                             [39m[1m[2m    2.78 kB[22m[1m[22m[2m │ gzip:   1.26 kB[22m
+[2mdist/[22m[36massets/ParentChildAttendancePage-qhlKmKbn.js                           [39m[1m[2m    2.83 kB[22m[1m[22m[2m │ gzip:   1.12 kB[22m
+[2mdist/[22m[36massets/SystemFeatureFlagsPage-BlvHtBbJ.js                              [39m[1m[2m    2.85 kB[22m[1m[22m[2m │ gzip:   1.21 kB[22m
+[2mdist/[22m[36massets/SchoolUsersPage-DQ9BWoDH.js                                     [39m[1m[2m    2.92 kB[22m[1m[22m[2m │ gzip:   1.33 kB[22m
+[2mdist/[22m[36massets/LoginPage-B4WBfZ7F.js                                           [39m[1m[2m    2.93 kB[22m[1m[22m[2m │ gzip:   1.33 kB[22m
+[2mdist/[22m[36massets/SchoolDashboardPage-8ovepNYc.js                                 [39m[1m[2m    2.98 kB[22m[1m[22m[2m │ gzip:   1.08 kB[22m
+[2mdist/[22m[36massets/CommunicationMessagesPage-BbKZrUar.js                           [39m[1m[2m    3.08 kB[22m[1m[22m[2m │ gzip:   1.26 kB[22m
+[2mdist/[22m[36massets/SystemDashboardPage-C2est16X.js                                 [39m[1m[2m    3.15 kB[22m[1m[22m[2m │ gzip:   1.22 kB[22m
+[2mdist/[22m[36massets/StudentProgressPage-3y78edK9.js                                 [39m[1m[2m    3.19 kB[22m[1m[22m[2m │ gzip:   1.36 kB[22m
+[2mdist/[22m[36massets/parentApi-CVrk5GnR.js                                           [39m[1m[2m    3.19 kB[22m[1m[22m[2m │ gzip:   1.20 kB[22m
+[2mdist/[22m[36massets/SchoolRelationshipsPage-BWi6Zhx_.js                             [39m[1m[2m    3.29 kB[22m[1m[22m[2m │ gzip:   1.30 kB[22m
+[2mdist/[22m[36massets/StudentAttendancePage-BOO-w4Hq.js                               [39m[1m[2m    3.32 kB[22m[1m[22m[2m │ gzip:   1.26 kB[22m
+[2mdist/[22m[36massets/StudentCommunitiesPage-DD0ecp1S.js                              [39m[1m[2m    3.45 kB[22m[1m[22m[2m │ gzip:   1.41 kB[22m
+[2mdist/[22m[36massets/studentUtils-DK0xpUrH.js                                        [39m[1m[2m    3.48 kB[22m[1m[22m[2m │ gzip:   1.37 kB[22m
+[2mdist/[22m[36massets/systemApi-Cchcrd7Q.js                                           [39m[1m[2m    3.48 kB[22m[1m[22m[2m │ gzip:   1.10 kB[22m
+[2mdist/[22m[36massets/fields-B93T8ZTF.js                                              [39m[1m[2m    3.70 kB[22m[1m[22m[2m │ gzip:   1.20 kB[22m
+[2mdist/[22m[36massets/TeacherSubmissionPage-T429EaO6.js                               [39m[1m[2m    3.71 kB[22m[1m[22m[2m │ gzip:   1.53 kB[22m
+[2mdist/[22m[36massets/HomePage-BrS0J2te.js                                            [39m[1m[2m    4.20 kB[22m[1m[22m[2m │ gzip:   1.40 kB[22m
+[2mdist/[22m[36massets/StudentSubjectsPage-DckUVjHR.js                                 [39m[1m[2m    4.31 kB[22m[1m[22m[2m │ gzip:   1.68 kB[22m
+[2mdist/[22m[36massets/teacherApi-Cen9o31O.js                                          [39m[1m[2m    4.33 kB[22m[1m[22m[2m │ gzip:   1.13 kB[22m
+[2mdist/[22m[36massets/StudentBadgesPage-DhkwJb39.js                                   [39m[1m[2m    4.47 kB[22m[1m[22m[2m │ gzip:   1.57 kB[22m
+[2mdist/[22m[36massets/StudentCompetitionsPage-BNCPz_9P.js                             [39m[1m[2m    4.56 kB[22m[1m[22m[2m │ gzip:   1.68 kB[22m
+[2mdist/[22m[36massets/schoolApi-DCCS080v.js                                           [39m[1m[2m    4.58 kB[22m[1m[22m[2m │ gzip:   1.31 kB[22m
+[2mdist/[22m[36massets/SystemTenantDetailsPage-Nzibr4GA.js                             [39m[1m[2m    4.59 kB[22m[1m[22m[2m │ gzip:   1.61 kB[22m
+[2mdist/[22m[36massets/SchoolTeacherAssignmentsPage-CvtFG9Bs.js                        [39m[1m[2m    4.60 kB[22m[1m[22m[2m │ gzip:   1.43 kB[22m
+[2mdist/[22m[36massets/TeacherStudentsPage-BWPBWyDX.js                                 [39m[1m[2m    5.10 kB[22m[1m[22m[2m │ gzip:   2.04 kB[22m
+[2mdist/[22m[36massets/StudentUnitsPage-O5Cd4CJ1.js                                    [39m[1m[2m    5.30 kB[22m[1m[22m[2m │ gzip:   2.18 kB[22m
+[2mdist/[22m[36massets/SystemOnboardingPage-CASIRJe_.js                                [39m[1m[2m    5.35 kB[22m[1m[22m[2m │ gzip:   1.86 kB[22m
+[2mdist/[22m[36massets/ParentDocumentsPage-0JQOe3Hv.js                                 [39m[1m[2m    5.43 kB[22m[1m[22m[2m │ gzip:   2.19 kB[22m
+[2mdist/[22m[36massets/StudentTutorPage-BDyJN8ay.js                                    [39m[1m[2m    5.47 kB[22m[1m[22m[2m │ gzip:   2.16 kB[22m
+[2mdist/[22m[36massets/RequestDemoPage-BcDMHc96.js                                     [39m[1m[2m    5.48 kB[22m[1m[22m[2m │ gzip:   1.93 kB[22m
+[2mdist/[22m[36massets/StudentQuizAttemptPage-Ksl-RpDg.js                              [39m[1m[2m    5.74 kB[22m[1m[22m[2m │ gzip:   2.43 kB[22m
+[2mdist/[22m[36massets/workbox-window.prod.es5-BBnX5xw4.js                             [39m[1m[2m    5.75 kB[22m[1m[22m[2m │ gzip:   2.36 kB[22m
+[2mdist/[22m[36massets/studentApi-EJy1-iyE.js                                          [39m[1m[2m    5.92 kB[22m[1m[22m[2m │ gzip:   1.38 kB[22m
+[2mdist/[22m[36massets/TeacherQuizzesPage-D8za-Xwh.js                                  [39m[1m[2m    6.80 kB[22m[1m[22m[2m │ gzip:   2.46 kB[22m
+[2mdist/[22m[36massets/StudentQuizResultPage-B6ZFRa8l.js                               [39m[1m[2m    6.99 kB[22m[1m[22m[2m │ gzip:   2.11 kB[22m
+[2mdist/[22m[36massets/StudentSubjectDetailsPage-DMyfj6Bm.js                           [39m[1m[2m    7.21 kB[22m[1m[22m[2m │ gzip:   2.65 kB[22m
+[2mdist/[22m[36massets/StudentLessonsPage-B9abOH0j.js                                  [39m[1m[2m    8.55 kB[22m[1m[22m[2m │ gzip:   3.27 kB[22m
+[2mdist/[22m[36massets/StudentQuizzesPage-Drx6NL8S.js                                  [39m[1m[2m    9.41 kB[22m[1m[22m[2m │ gzip:   3.18 kB[22m
+[2mdist/[22m[36massets/VisionStaffPage-BUbGHR6G.js                                     [39m[1m[2m    9.56 kB[22m[1m[22m[2m │ gzip:   2.76 kB[22m
+[2mdist/[22m[36massets/StudentHomeworkPage-BvyKPd40.js                                 [39m[1m[2m   10.04 kB[22m[1m[22m[2m │ gzip:   3.61 kB[22m
+[2mdist/[22m[36massets/StudentDashboardPage-BRtzx4fj.js                                [39m[1m[2m   10.27 kB[22m[1m[22m[2m │ gzip:   2.99 kB[22m
+[2mdist/[22m[36massets/zod-B8_TflWt.js                                                 [39m[1m[2m   28.48 kB[22m[1m[22m[2m │ gzip:  10.54 kB[22m
+[2mdist/[22m[36massets/index-CwFrb3pF.js                                               [39m[1m[2m   55.80 kB[22m[1m[22m[2m │ gzip:  14.44 kB[22m
+[2mdist/[22m[36massets/index-DcmJ1NPr.js                                               [39m[1m[33m  567.66 kB[39m[22m[2m │ gzip: 170.32 kB[22m
+[33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 4.44s[39m
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+PWA v1.3.0
+mode      generateSW
+precache  221 entries (5016.66 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-98f7a950.js

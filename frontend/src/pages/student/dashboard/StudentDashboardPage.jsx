@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, Bolt, Flame, Medal, PieChart, PlayCircle, Sparkles, Trophy } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
-import { Avatar } from '../../../components/ui/Avatar'
-import { ErrorState } from '../../../components/ui/states'
-import { Ring } from '../../../components/viz/Ring'
+import { Avatar } from '../../../shared/ui'
+import { ErrorState } from '../../../shared/feedback'
+import { Ring } from '../../../shared/charts'
 import { useAuth } from '../../../features/auth/AuthContext'
 import { percentOf, useStudentQuery } from '../../../features/student/helpers'
 import { studentApi } from '../../../features/student/studentApi'
@@ -131,7 +131,7 @@ function DashboardPage({ userId }) {
         {/* Learning progress card */}
         <div className="stats-card stats-card--progress">
           <div className="stats-card__header">
-            <PieChart size={18} className="stats-card__header-icon" style={{ color: 'var(--brand)' }} />
+            <PieChart size={18} className="stats-card__header-icon text-brand" />
             <span className="stats-card__header-title">{t('student.dashboard.learningProgress', 'Learning progress')}</span>
           </div>
           <div className="stats-card__content">
@@ -146,7 +146,7 @@ function DashboardPage({ userId }) {
         {/* Weekly streak card */}
         <div className="stats-card stats-card--streak">
           <div className="stats-card__header">
-            <Flame size={18} className="stats-card__header-icon" style={{ color: 'var(--orange)' }} />
+            <Flame size={18} className="stats-card__header-icon text-orange" />
             <span className="stats-card__header-title">{t('student.dashboard.weeklyStreak', 'Weekly streak')}</span>
           </div>
           <div className="stats-card__content">
@@ -183,7 +183,7 @@ function DashboardPage({ userId }) {
         {/* Total points card */}
         <div className="stats-card stats-card--points">
           <div className="stats-card__header">
-            <Trophy size={18} className="stats-card__header-icon" style={{ color: 'var(--purple)' }} />
+            <Trophy size={18} className="stats-card__header-icon text-purple" />
             <span className="stats-card__header-title">{t('student.dashboard.totalPoints', 'Total points')}</span>
           </div>
           <div className="stats-card__content">

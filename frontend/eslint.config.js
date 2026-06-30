@@ -58,6 +58,34 @@ export default defineConfig([
     },
   },
   {
+    // Architecture guard (Phase 13.2): pages / features / layouts consume UI
+    // ONLY through the `src/shared/*` public facade — never directly from the
+    // `src/components/*` implementation layer. This keeps `src/components`
+    // internal and prevents new direct-import regressions. Test files are exempt
+    // (they legitimately test/wrap the implementation). See
+    // docs/frontend/phase13/SHARED_UI_ADOPTION_MAP.md.
+    files: [
+      'src/pages/**/*.{js,jsx,ts,tsx}',
+      'src/features/**/*.{js,jsx,ts,tsx}',
+      'src/layouts/**/*.{js,jsx,ts,tsx}',
+    ],
+    ignores: ['**/*.test.{js,jsx,ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['**/components/*', '**/components/**', '*/components/*'],
+              message:
+                'Import UI through src/shared/* (the public facade), not directly from src/components/*. See docs/frontend/phase13/SHARED_UI_ADOPTION_MAP.md',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Test files (vitest) + setup get vitest + node globals.
     files: ['**/*.test.{js,jsx,ts,tsx}', 'src/test/**/*.{js,jsx,ts,tsx}'],
     languageOptions: {

@@ -3,9 +3,8 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, Search } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
-import { Avatar } from '../../../components/ui/Avatar'
-import { QueryBoundary } from '../../../components/ui/QueryBoundary'
-import { EmptyState, ErrorState } from '../../../components/ui/states'
+import { Avatar } from '../../../shared/ui'
+import { QueryBoundary, EmptyState, ErrorState } from '../../../shared/feedback'
 import { percentOf, useStudentQuery } from '../../../features/student/helpers'
 import { Loading } from '../../../features/student/Loading'
 import { studentApi } from '../../../features/student/studentApi'
@@ -62,12 +61,12 @@ function SubjectsPage({ userId }) {
 
   return (
     <>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '14px', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: '22px' }}>
+      <div className="flex flex-wrap gap-3.5 items-end justify-between mb-[22px]">
         <div>
-          <h1 style={{ margin: 0, fontSize: '30px', fontWeight: 800, color: 'var(--text)', letterSpacing: '-.02em' }}>
+          <h1 className="m-0 text-3xl font-extrabold text-ink tracking-[-.02em]">
             {t('student.subjects.title')}
           </h1>
-          <p style={{ margin: '6px 0 0', color: 'var(--brand)', fontSize: '15px' }}>
+          <p className="[margin:6px_0_0] text-brand text-[15px]">
             {t('student.subjects.subtitle')}
           </p>
         </div>

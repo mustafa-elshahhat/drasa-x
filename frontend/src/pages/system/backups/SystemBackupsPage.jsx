@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { Alert } from '../../../components/ui/Alert'
-import { ErrorState } from '../../../components/ui/states'
+import { Alert } from '../../../shared/ui'
+import { ErrorState } from '../../../shared/feedback'
 import { Head, Loading } from '../../../features/system/components'
 import { useSystemQuery } from '../../../features/system/helpers'
 import { systemApi } from '../../../features/system/systemApi'

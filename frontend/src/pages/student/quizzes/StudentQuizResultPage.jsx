@@ -2,12 +2,9 @@ import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Check, Sparkles, Trophy } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
-import { Chip } from '../../../components/ui/Chip'
-import { NotEnoughData } from '../../../components/ui/NotEnoughData'
-import { Card } from '../../../components/ui/PageHeader'
-import { QueryBoundary } from '../../../components/ui/QueryBoundary'
-import { ErrorState } from '../../../components/ui/states'
-import { Ring } from '../../../components/viz/Ring'
+import { Chip, Card } from '../../../shared/ui'
+import { NotEnoughData, QueryBoundary, ErrorState } from '../../../shared/feedback'
+import { Ring } from '../../../shared/charts'
 import { percentOf, useStudentQuery } from '../../../features/student/helpers'
 import { Loading } from '../../../features/student/Loading'
 import { studentApi } from '../../../features/student/studentApi'
@@ -26,12 +23,12 @@ function QuizResultPage({ userId, locale }) {
   return (
     <>
       {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '22px', fontSize: '14px', color: 'var(--text-dim)' }}>
+      <div className="flex items-center gap-2 mb-[22px] text-sm text-muted">
         <Link to="/app/student/quizzes" style={{ textDecoration: 'none', color: 'var(--text-dim)' }}>
           {t('student.quizzes.title', 'Quizzes')}
         </Link>
-        <span style={{ color: 'var(--faint)' }}>{isAr ? '‹' : '›'}</span>
-        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{t('student.quizzes.result', 'Result')}</span>
+        <span className="text-faint">{isAr ? '‹' : '›'}</span>
+        <span className="font-semibold text-ink">{t('student.quizzes.result', 'Result')}</span>
       </div>
 
       <QueryBoundary query={query} loadingFallback={<Loading />} emptyWhen={(d) => !d}>
@@ -45,10 +42,10 @@ function QuizResultPage({ userId, locale }) {
           const answers = toItems(getField(data, 'answers') || getField(data, 'questions') || [])
 
           return (
-            <div style={{ maxWidth: '760px' }}>
+            <div className="max-w-[760px]">
               {/* Result Hero Card */}
               <Card>
-                <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div className="flex gap-6 items-center flex-wrap">
                   <Ring
                     value={pct}
                     size={140}
@@ -56,15 +53,15 @@ function QuizResultPage({ userId, locale }) {
                     stroke={12}
                     color={pct >= 85 ? 'var(--success)' : 'var(--warning)'}
                   />
-                  <div style={{ flex: '1 1 240px' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--success-bg)', color: 'var(--success)', padding: '6px 12px', borderRadius: '20px', fontWeight: 700, fontSize: '13px', marginBottom: '10px' }}>
+                  <div className="flex-[1_1_240px]">
+                    <div className="inline-flex items-center gap-2 bg-[var(--success-bg)] text-success [padding:6px_12px] rounded-[20px] font-bold text-[13px] mb-2.5">
                       <Check size={15} />
                       <span>{t('student.quizzes.passed', 'Passed')}</span>
                     </div>
-                    <h1 style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: 800, color: 'var(--text)' }}>
+                    <h1 className="[margin:0_0_6px] text-[28px] font-extrabold text-ink">
                       {t('student.quizzes.congrats', 'Great work!')}
                     </h1>
-                    <p style={{ color: 'var(--text-dim)', margin: 0, fontSize: '15px' }}>
+                    <p className="text-muted m-0 text-[15px]">
                       {isAr
                         ? `لقد حصلت على ${correct} من ${total} في ${title}.`
                         : `You scored ${correct} out of ${total} on the ${title}.`}
@@ -76,46 +73,46 @@ function QuizResultPage({ userId, locale }) {
               {/* Score Stats Grid */}
               <div className="student-grid student-grid--3cols" style={{ margin: '16px 0' }}>
                 {/* Correct */}
-                <Card style={{ padding: '18px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--success)', marginBottom: '8px' }}>
+                <Card className="p-[18px]">
+                  <div className="flex items-center gap-2 text-success mb-2">
                     <Check size={18} />
-                    <span style={{ fontSize: '13px', color: 'var(--text-dim)', fontWeight: 600 }}>
+                    <span className="text-[13px] text-muted font-semibold">
                       {t('student.quizzes.correct', 'Correct')}
                     </span>
                   </div>
-                  <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text)' }}>{correct}</div>
+                  <div className="text-[26px] font-extrabold text-ink">{correct}</div>
                 </Card>
 
                 {/* Incorrect */}
-                <Card style={{ padding: '18px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)', marginBottom: '8px' }}>
+                <Card className="p-[18px]">
+                  <div className="flex items-center gap-2 text-danger mb-2">
                     <span style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '18px', lineBreak: 'none', display: 'inline-flex', width: '18px', height: '18px', alignItems: 'center', justifyContent: 'center' }}>×</span>
-                    <span style={{ fontSize: '13px', color: 'var(--text-dim)', fontWeight: 600 }}>
+                    <span className="text-[13px] text-muted font-semibold">
                       {t('student.quizzes.incorrect', 'Incorrect')}
                     </span>
                   </div>
-                  <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text)' }}>{total - correct}</div>
+                  <div className="text-[26px] font-extrabold text-ink">{total - correct}</div>
                 </Card>
 
                 {/* Points */}
-                <Card style={{ padding: '18px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--purple)', marginBottom: '8px' }}>
+                <Card className="p-[18px]">
+                  <div className="flex items-center gap-2 text-purple mb-2">
                     <Trophy size={18} />
-                    <span style={{ fontSize: '13px', color: 'var(--text-dim)', fontWeight: 600 }}>
+                    <span className="text-[13px] text-muted font-semibold">
                       {t('student.quizzes.pointsEarned', 'Points earned')}
                     </span>
                   </div>
-                  <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text)' }}>{pts}</div>
+                  <div className="text-[26px] font-extrabold text-ink">{pts}</div>
                 </Card>
               </div>
 
               {/* Questions Review */}
               <Card>
-                <h3 style={{ margin: '0 0 14px', fontWeight: 700, color: 'var(--text)', fontSize: '16px' }}>
+                <h3 className="[margin:0_0_14px] font-bold text-ink text-base">
                   {t('student.quizzes.questionReview', 'Question review')}
                 </h3>
 
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <div className="flex flex-col">
                   {answers.length > 0 ? (
                     answers.map((ans, i) => {
                       const isCorrect = getField(ans, 'isCorrect') ?? getField(ans, 'IsCorrect') ?? (i !== 2)
@@ -144,12 +141,12 @@ function QuizResultPage({ userId, locale }) {
                             }}
                           >
                             {isCorrect ? (
-                              <Check size={16} style={{ color: 'var(--success)' }} />
+                              <Check size={16} className="text-success" />
                             ) : (
-                              <span style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '14px' }}>×</span>
+                              <span className="text-danger font-bold text-sm">×</span>
                             )}
                           </div>
-                          <span style={{ flex: 1, fontSize: '14px', color: 'var(--text-2)' }}>{qText}</span>
+                          <span className="flex-1 text-sm text-ink-2">{qText}</span>
                           <Chip tone={isCorrect ? 'success' : 'danger'}>
                             {isCorrect ? t('student.quizzes.correctState', 'Correct') : t('student.quizzes.reviewState', 'Review')}
                           </Chip>
@@ -182,12 +179,12 @@ function QuizResultPage({ userId, locale }) {
                           }}
                         >
                           {item.correct ? (
-                            <Check size={16} style={{ color: 'var(--success)' }} />
+                            <Check size={16} className="text-success" />
                           ) : (
-                            <span style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '14px' }}>×</span>
+                            <span className="text-danger font-bold text-sm">×</span>
                           )}
                         </div>
-                        <span style={{ flex: 1, fontSize: '14px', color: 'var(--text-2)' }}>{item.q}</span>
+                        <span className="flex-1 text-sm text-ink-2">{item.q}</span>
                         <Chip tone={item.correct ? 'success' : 'danger'}>
                           {item.correct ? t('student.quizzes.correctState', 'Correct') : t('student.quizzes.reviewState', 'Review')}
                         </Chip>
@@ -198,7 +195,7 @@ function QuizResultPage({ userId, locale }) {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', marginTop: '18px', flexWrap: 'wrap' }}>
+                <div className="flex gap-2.5 mt-[18px] flex-wrap">
                   <Link
                     to="/app/student/ai-tutor"
                     className="ui-btn"

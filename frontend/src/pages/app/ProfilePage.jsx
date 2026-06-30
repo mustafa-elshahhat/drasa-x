@@ -3,9 +3,7 @@ import { Link } from 'react-router-dom'
 import { ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../features/auth/AuthContext'
 import { useDocumentTitle } from '../../app/useDocumentTitle'
-import { PageHeader, Card } from '../../components/ui/PageHeader'
-import { Avatar } from '../../components/ui/Avatar'
-import { Chip } from '../../components/ui/Chip'
+import { PageHeader, Card, Avatar, Chip } from '../../shared/ui'
 
 // Profile page (Phase 7). Renders ONLY real identity derived from the signed-in
 // session — no hardcoded user, tenant, or fabricated stats.

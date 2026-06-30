@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ShieldCheck } from 'lucide-react'
-import { Card, PageHeader } from '../../../components/ui/PageHeader'
-import { ErrorState } from '../../../components/ui/states'
+import { Card, PageHeader } from '../../../shared/ui'
+import { ErrorState } from '../../../shared/feedback'
 import { usePortalContext } from '../../../features/portal/context'
 
 function SettingsPage() {

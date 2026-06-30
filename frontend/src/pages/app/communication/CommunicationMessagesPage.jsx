@@ -3,11 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { MessageSquare } from 'lucide-react'
-import { Alert } from '../../../components/ui/Alert'
-import { Button } from '../../../components/ui/Button'
-import { Card, PageHeader } from '../../../components/ui/PageHeader'
-import { Spinner } from '../../../components/ui/Spinner'
-import { EmptyState, ErrorState } from '../../../components/ui/states'
+import { Alert, Button, Card, PageHeader, Spinner } from '../../../shared/ui'
+import { EmptyState, ErrorState } from '../../../shared/feedback'
 import { useAuth } from '../../../features/auth/AuthContext'
 import { notificationsApi } from '../../../features/notifications/notificationsApi'
 import { STALE, queryKeys } from '../../../lib/query/keys'
@@ -85,7 +82,7 @@ function NewConversation() {
 
   if (!open) {
     return (
-      <div className="cluster" style={{ marginBottom: '1rem' }}>
+      <div className="cluster mb-[1rem]">
         <Button onClick={() => setOpen(true)}>{t('messages.new')}</Button>
       </div>
     )

@@ -2,13 +2,10 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { DetailList } from '../../../components/data/DetailList'
-import { TextField } from '../../../components/form/fields'
-import { Alert } from '../../../components/ui/Alert'
-import { Button } from '../../../components/ui/Button'
-import { Chip } from '../../../components/ui/Chip'
-import { Card } from '../../../components/ui/PageHeader'
-import { EmptyState, ErrorState } from '../../../components/ui/states'
+import { DetailList } from '../../../shared/data-display'
+import { TextField } from '../../../shared/form'
+import { Alert, Button, Chip, Card } from '../../../shared/ui'
+import { EmptyState, ErrorState } from '../../../shared/feedback'
 import { Head, Loading } from '../../../features/system/components'
 import { TENANT_STATUS, TENANT_TONE } from '../../../features/system/constants'
 import { useSystemQuery } from '../../../features/system/helpers'
@@ -51,7 +48,7 @@ function TenantDetailsPage({ userId, locale }) {
       {tenant.data && (
         <>
           <Card title={tenant.data.name || tenantId}>
-            <div className="cluster" style={{ marginBottom: 12 }}>
+            <div className="cluster mb-3">
               {status != null && <Chip tone={TENANT_TONE[status] || 'muted'}>{t(`system.status.${TENANT_STATUS[status] || 'Active'}`)}</Chip>}
             </div>
             <DetailList item={tenant.data} locale={locale} />

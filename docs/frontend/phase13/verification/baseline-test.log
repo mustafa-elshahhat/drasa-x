@@ -1,0 +1,76 @@
+
+> schoolui@0.0.0 test
+> vitest run
+
+
+[1m[46m RUN [49m[22m [36mv3.2.6 [39m[90mD:/projects/drasa x/frontend[39m
+
+ [32m✓[39m src/features/phase18/phase18Security.test.js [2m([22m[2m5 tests[22m[2m)[22m[32m 90[2mms[22m[39m
+ [32m✓[39m src/features/student/studentUtils.test.js [2m([22m[2m5 tests[22m[2m)[22m[32m 105[2mms[22m[39m
+ [32m✓[39m src/lib/api/client.test.js [2m([22m[2m7 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m✓[39m src/features/phase17/phase17Contracts.test.js [2m([22m[2m5 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m src/components/feedback/ToastProvider.test.jsx [2m([22m[2m4 tests[22m[2m)[22m[32m 188[2mms[22m[39m
+ [32m✓[39m src/components/ui/Modal.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[32m 298[2mms[22m[39m
+ [32m✓[39m src/components/ui/states.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[32m 247[2mms[22m[39m
+ [32m✓[39m src/layouts/Sidebar.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 378[2mms[22m[39m
+ [32m✓[39m src/components/files/files.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[33m 421[2mms[22m[39m
+ [32m✓[39m src/test/a11y.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 445[2mms[22m[39m
+ [32m✓[39m src/pages/vision/vision.test.jsx [2m([22m[2m10 tests[22m[2m)[22m[33m 622[2mms[22m[39m
+ [32m✓[39m src/pages/public/publicRtl.test.jsx [2m([22m[2m1 test[22m[2m)[22m[32m 196[2mms[22m[39m
+ [32m✓[39m src/pages/public/HomePage.test.jsx [2m([22m[2m2 tests[22m[2m)[22m[32m 228[2mms[22m[39m
+ [32m✓[39m src/shared/shared.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[32m 253[2mms[22m[39m
+ [32m✓[39m src/layouts/PublicLayout.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[32m 297[2mms[22m[39m
+ [32m✓[39m src/pages/app/CommunicationPage.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 536[2mms[22m[39m
+ [32m✓[39m src/features/student/studentApi.gamification.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/features/student/studentSecurityContracts.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/features/auth/authFlows.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1058[2mms[22m[39m
+   [33m[2m✓[22m[39m auth + guard integration flows[2m > [22mlogs in via the backend contract and lands on the student home [33m 417[2mms[22m[39m
+ [32m✓[39m src/components/library.test.jsx [2m([22m[2m15 tests[22m[2m)[22m[33m 590[2mms[22m[39m
+ [32m✓[39m src/features/teacher/teacherApi.gamification.test.js [2m([22m[2m4 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/features/student/studentSchemas.test.js [2m([22m[2m5 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/features/files/filesApi.test.js [2m([22m[2m5 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/app/router/schoolRoutes.test.js [2m([22m[2m4 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m src/features/vision/visionApi.test.js [2m([22m[2m2 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/features/parent/parentApi.gamification.test.js [2m([22m[2m3 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/i18n/locales/parity.test.js [2m([22m[2m1 test[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/app/router/systemRoutes.test.js [2m([22m[2m4 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+[90mstderr[2m | src/pages/student/StudentPortalPage.test.jsx[2m > [22m[2mStudentPortalPage Phase 8 contracts[2m > [22m[2mcalls the explicit lesson completion command and waits for server success
+[22m[39mQuery data cannot be undefined. Please make sure to return a value other than undefined from your query function. Affected query key: ["student","student-1","lessons-in-unit","u3"]
+
+ [32m✓[39m src/lib/api/problemDetails.test.js [2m([22m[2m5 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/features/student/studentApi.test.js [2m([22m[2m2 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/features/teacher/teacherApi.test.js [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/app/router/routeInventory.test.js [2m([22m[2m5 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/app/router/parentRoutes.test.js [2m([22m[2m4 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/app/router/teacherRoutes.test.js [2m([22m[2m4 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/lib/forms/errors.test.js [2m([22m[2m3 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/pages/student/StudentPortalPage.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1347[2mms[22m[39m
+   [33m[2m✓[22m[39m StudentPortalPage Phase 8 contracts[2m > [22mcalls the explicit lesson completion command and waits for server success [33m 360[2mms[22m[39m
+   [33m[2m✓[22m[39m StudentPortalPage Phase 8 contracts[2m > [22mPhase 14 closure — submits durable competition work through the backend submissions endpoint [33m 444[2mms[22m[39m
+ [32m✓[39m src/pages/parent/ParentPortalPage.test.jsx [2m([22m[2m8 tests[22m[2m)[22m[33m 2407[2mms[22m[39m
+   [33m[2m✓[22m[39m ParentPortalPage Phase 10 contracts[2m > [22msubmits a document request for a selected child through the backend [33m 1838[2mms[22m[39m
+ [32m✓[39m src/pages/school/SchoolAdminPortalPage.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1595[2mms[22m[39m
+   [33m[2m✓[22m[39m SchoolAdminPortalPage Phase 11 contracts[2m > [22mcreates a parent–student link through the backend with the selected ids [33m 497[2mms[22m[39m
+   [33m[2m✓[22m[39m SchoolAdminPortalPage Phase 11 contracts[2m > [22mcreates an academic year through the backend [33m 601[2mms[22m[39m
+ [32m✓[39m src/features/notifications/notificationsApi.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m✓[39m src/app/router/publicRoutes.test.js [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m src/navigation/navConfig.test.js [2m([22m[2m4 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/config/env.test.js [2m([22m[2m4 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32m✓[39m src/app/router/communicationRoutes.test.js [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/pages/teacher/TeacherPortalPage.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[33m 2413[2mms[22m[39m
+   [33m[2m✓[22m[39m TeacherPortalPage Phase 9 contracts[2m > [22mAI quiz generation is presented as draft-only and posts a draft request [33m 326[2mms[22m[39m
+   [33m[2m✓[22m[39m TeacherPortalPage Phase 9 contracts[2m > [22mPhase 14 closure — awards points to an assigned student via the tested gamification API [33m 794[2mms[22m[39m
+   [33m[2m✓[22m[39m TeacherPortalPage Phase 9 contracts[2m > [22msends teacher feedback to the backend [33m 429[2mms[22m[39m
+ [32m✓[39m src/pages/system/SystemAdminPortalPage.test.jsx [2m([22m[2m8 tests[22m[2m)[22m[33m 2083[2mms[22m[39m
+   [33m[2m✓[22m[39m SystemAdminPortalPage Phase 12 contracts[2m > [22monboards a tenant and creates its initial school admin through the backend [33m 1377[2mms[22m[39m
+ [32m✓[39m src/lib/security/returnUrl.test.js [2m([22m[2m7 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/features/auth/roles.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m src/lib/query/keys.test.js [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m src/i18n/direction.test.js [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m src/lib/telemetry/telemetry.test.js [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m50 passed[39m[22m[90m (50)[39m
+[2m      Tests [22m [1m[32m243 passed[39m[22m[90m (243)[39m
+[2m   Start at [22m 17:24:14
+[2m   Duration [22m 8.42s[2m (transform 15.40s, setup 28.90s, collect 42.06s, tests 16.25s, environment 61.98s, prepare 9.54s)[22m
+

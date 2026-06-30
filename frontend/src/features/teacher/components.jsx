@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { Spinner } from '../../components/ui/Spinner'
-import { ErrorState, EmptyState } from '../../components/ui/states'
+import { Spinner } from '../../shared/ui'
+import { ErrorState, EmptyState } from '../../shared/feedback'
 
 // Shared teacher-portal presentational helpers (components only).
 

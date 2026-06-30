@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { ErrorState } from '../../components/ui/states'
+import { ErrorState } from '../../shared/feedback'
 import { useAuth } from '../auth/AuthContext'
 import { STALE } from '../../lib/query/keys'
 import { getField } from './studentUtils'

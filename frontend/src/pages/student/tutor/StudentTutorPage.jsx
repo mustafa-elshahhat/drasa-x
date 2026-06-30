@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { FileText, Send, Sparkles } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
-import { ErrorState } from '../../../components/ui/states'
+import { ErrorState } from '../../../shared/feedback'
 import { studentApi } from '../../../features/student/studentApi'
 import { toItems } from '../../../features/student/studentSchemas'
 import { displayValue } from '../../../features/student/studentUtils'
@@ -82,29 +82,29 @@ function TutorPage() {
   return (
     <>
       {/* AI Tutor Header info */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
+      <div className="flex items-center gap-3 mb-[18px]">
         <div style={{ width: '48px', height: '48px', borderRadius: '13px', background: 'var(--purple-bg)', display: 'flex', alignItems: 'center', justify: 'center', color: 'var(--purple)' }}>
           <Sparkles size={26} />
         </div>
         <div>
-          <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>
+          <h1 className="m-0 text-2xl font-extrabold text-ink">
             {t('student.tutor.title', 'AI Tutor')}
           </h1>
-          <div style={{ color: 'var(--success)', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
+          <div className="text-success text-[13px] flex items-center gap-1.5 mt-0.5">
+            <span className="w-2 h-2 rounded-full bg-success inline-block" />
             <span>{t('student.tutor.onlineStatus', 'Online · Answers cite your curriculum')}</span>
           </div>
         </div>
       </div>
 
       {/* Main chat panel */}
-      <div className="student-ai-tutor-container" style={{ height: '560px' }}>
+      <div className="student-ai-tutor-container h-[560px]">
         {/* Chat thread messages */}
         <div id="dxchat" className="student-ai-tutor-thread">
           {chatHistory.length === 0 ? (
             <div className="student-ai-tutor-empty">
               <div className="student-ai-tutor-empty__icon-wrapper">
-                <Sparkles size={32} style={{ color: 'var(--purple)' }} />
+                <Sparkles size={32} className="text-purple" />
               </div>
               <h3 className="student-ai-tutor-empty__title">
                 {t('student.tutor.ask', 'Ask me anything about your courses')}
@@ -170,7 +170,7 @@ function TutorPage() {
                 style={{ display: 'flex', gap: '5px', padding: '14px 18px' }}
               >
                 <span className="ui-spinner__circle" style={{ width: '16px', height: '16px', borderWidth: '2px' }} />
-                <span style={{ fontSize: '13px', color: 'var(--text-dim)' }}>
+                <span className="text-[13px] text-muted">
                   {t('student.tutor.loading', 'Thinking...')}
                 </span>
               </div>

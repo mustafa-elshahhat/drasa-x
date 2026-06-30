@@ -3,13 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, Check, Download, FileText, PlayCircle, Sparkles } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
-import { Thumb } from '../../../components/domain/Thumb'
-import { Alert } from '../../../components/ui/Alert'
-import { Button } from '../../../components/ui/Button'
-import { Card, PageHeader } from '../../../components/ui/PageHeader'
-import { QueryBoundary } from '../../../components/ui/QueryBoundary'
-import { ErrorState } from '../../../components/ui/states'
-import { Ring } from '../../../components/viz/Ring'
+import { Thumb } from '../../../shared/domain'
+import { Alert, Button, Card, PageHeader } from '../../../shared/ui'
+import { QueryBoundary, ErrorState } from '../../../shared/feedback'
+import { Ring } from '../../../shared/charts'
 import { percentOf, useStudentQuery } from '../../../features/student/helpers'
 import { Loading } from '../../../features/student/Loading'
 import { studentApi } from '../../../features/student/studentApi'
@@ -108,20 +105,20 @@ function LessonsPage({ userId, locale }) {
   return (
     <>
       {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '22px', fontSize: '14px', color: 'var(--text-dim)' }}>
+      <div className="flex items-center gap-2 mb-[22px] text-sm text-muted">
         <Link to="/app/student/subjects" style={{ textDecoration: 'none', color: 'var(--text-dim)' }}>
           {t('student.subjects.title', 'Subjects')}
         </Link>
-        <span style={{ color: 'var(--faint)' }}>{isAr ? '‹' : '›'}</span>
+        <span className="text-faint">{isAr ? '‹' : '›'}</span>
         <Link to={`/app/student/subjects/${subjectId}`} style={{ textDecoration: 'none', color: 'var(--text-dim)' }}>
           {subjectName}
         </Link>
-        <span style={{ color: 'var(--faint)' }}>{isAr ? '‹' : '›'}</span>
+        <span className="text-faint">{isAr ? '‹' : '›'}</span>
         <Link to={`/app/student/units/${unitId}`} style={{ textDecoration: 'none', color: 'var(--text-dim)' }}>
           {unitName}
         </Link>
-        <span style={{ color: 'var(--faint)' }}>{isAr ? '‹' : '›'}</span>
-        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{lessonName}</span>
+        <span className="text-faint">{isAr ? '‹' : '›'}</span>
+        <span className="font-semibold text-ink">{lessonName}</span>
       </div>
 
       <div className="ui-split">
@@ -129,42 +126,35 @@ function LessonsPage({ userId, locale }) {
         <div>
           {/* Lesson Video player placeholder */}
           <div
-            style={{
-              borderRadius: 'var(--radius)',
-              overflow: 'hidden',
-              marginBottom: '18px',
-              position: 'relative',
-              cursor: 'pointer',
-              boxShadow: 'var(--shadow)',
-            }}
+            className="rounded-card overflow-hidden mb-[18px] relative cursor-pointer shadow-card"
             onClick={() => firstMaterial && navigate(`/app/student/materials/${itemId(firstMaterial)}`)}
           >
             <Thumb seed={lessonId} icon={PlayCircle} height={300} className="student-lesson__hero" style={{ marginBottom: 0, width: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(12, 114, 136, 0.15)' }}>
+            <div className="absolute inset-0 flex items-center justify-center bg-[rgba(12,_114,_136,_0.15)]">
               <div className="student-video-player__btn">
-                <PlayCircle size={30} style={{ color: 'var(--brand)' }} />
+                <PlayCircle size={30} className="text-brand" />
               </div>
             </div>
           </div>
 
-          <h1 style={{ margin: '0 0 10px', fontSize: '26px', fontWeight: 800, color: 'var(--text)' }}>
+          <h1 className="[margin:0_0_10px] text-[26px] font-extrabold text-ink">
             {lessonName}
           </h1>
 
-          <p style={{ color: 'var(--text-dim)', lineHeight: 1.7, fontSize: '15px', marginBottom: '24px' }}>
+          <p className="text-muted leading-[1.7] text-[15px] mb-6">
             {isAr
               ? 'في هذا الدرس ستتعلم كيفية حساب التكاملات المحددة وفهم النظرية الأساسية في التفاضل والتكامل وتطبيق التكامل لإيجاد المساحات. شاهد المحاضرة، وراجع الأمثلة المحلولة، ثم أكمل الدرس.'
               : 'In this lesson you will learn how to evaluate definite integrals, understand the fundamental theorem of calculus, and apply integration to find areas under curves. Watch the lecture, review the worked examples, then complete the lesson.'}
           </p>
 
-          <h2 style={{ margin: '24px 0 12px', fontSize: '18px', fontWeight: 700, color: 'var(--text)' }}>
+          <h2 className="[margin:24px_0_12px] text-lg font-bold text-ink">
             {t('student.materials.title', 'Lesson materials')}
           </h2>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="flex flex-col gap-2.5">
             <QueryBoundary query={materials} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.materials')} emptyIcon={FileText}>
               {(items) => (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="flex flex-col gap-2.5">
                   {items.map((item) => {
                     const type = getField(item, 'type') || getField(item, 'materialType') || 'video'
                     const dur = getField(item, 'dur') || getField(item, 'duration') || (type === 'pdf' ? '8 pages' : type === 'slides' ? '22 slides' : '18:24')
@@ -172,8 +162,8 @@ function LessonsPage({ userId, locale }) {
                       <Link
                         key={itemId(item)}
                         to={`/app/student/materials/${itemId(item)}`}
-                        className="student-material-row"
-                        style={{ textDecoration: 'none' }}
+                        className="student-material-row no-underline"
+                       
                       >
                         <div className="student-material-row__icon-tile">
                           <FileText size={20} />
@@ -198,7 +188,7 @@ function LessonsPage({ userId, locale }) {
         <div>
           {/* Progress Card */}
           <Card>
-            <h3 style={{ margin: '0 0 14px', fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>
+            <h3 className="[margin:0_0_14px] text-base font-bold text-ink">
               {t('student.lessons.progress', 'Your progress')}
             </h3>
 
@@ -213,8 +203,8 @@ function LessonsPage({ userId, locale }) {
             </div>
 
             {isCompleted ? (
-              <div style={{ textAlign: 'center', color: 'var(--success)', fontWeight: 700, marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <Check size={18} style={{ color: 'var(--success)' }} />
+              <div className="text-center text-success font-bold mb-3.5 flex items-center justify-center gap-2">
+                <Check size={18} className="text-success" />
                 <span>{t('student.lessons.completed', 'Lesson completed!')}</span>
               </div>
             ) : (
@@ -222,7 +212,7 @@ function LessonsPage({ userId, locale }) {
                 onClick={() => complete.mutate()}
                 loading={complete.isPending}
                 disabled={complete.isPending}
-                style={{ width: '100%', marginBottom: '14px' }}
+                className="w-full mb-3.5"
               >
                 {t('student.lessons.markComplete', 'Mark as complete')}
               </Button>
@@ -231,7 +221,7 @@ function LessonsPage({ userId, locale }) {
             {complete.isSuccess && <Alert variant="success" title={t('student.lessons.saved', 'Progress saved')} />}
             {complete.isError && <ErrorState error={complete.error} />}
 
-            <div style={{ height: '1px', background: 'var(--border)', margin: '16px 0' }} />
+            <div className="h-[1px] bg-line [margin:16px_0]" />
 
             <Link
               to="/app/student/ai-tutor"
@@ -271,9 +261,9 @@ function LessonsPage({ userId, locale }) {
           </Card>
 
           {/* Up Next Card */}
-          <div style={{ marginTop: '16px' }}>
+          <div className="mt-4">
             <Card>
-              <h3 style={{ margin: '0 0 12px', fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>
+              <h3 className="[margin:0_0_12px] text-base font-bold text-ink">
                 {t('student.lessons.upNext', 'Up next')}
               </h3>
 
@@ -293,7 +283,7 @@ function LessonsPage({ userId, locale }) {
                   </div>
                 </button>
               ) : (
-                <div style={{ fontSize: '13px', color: 'var(--text-dim)' }}>
+                <div className="text-[13px] text-muted">
                   {isAr ? 'لا توجد دروس تالية في هذه الوحدة.' : 'No more lessons in this unit.'}
                 </div>
               )}

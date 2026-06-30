@@ -6,6 +6,11 @@ import type { IconType } from '../ui'
 // =============================================================================
 import { DataTable as RawDataTable } from '../../components/ui/DataTable'
 import { Metric as RawMetric } from '../../components/ui/Metric'
+import { DetailList as RawDetailList } from '../../components/data/DetailList'
+import { ResourceTable as RawResourceTable } from '../../components/data/ResourceTable'
+// Crud carries a rich required-prop contract owned by the implementation; it is
+// re-exported as-is (no lossy retyping).
+export { Crud } from '../../components/data/Crud'
 
 export interface DataTableColumn<Row> {
   key: string
@@ -41,6 +46,63 @@ export interface MetricCardProps {
 /** KPI tile (prototype `metric()`); renders as a Link when `to` is provided. */
 export const MetricCard = RawMetric as FC<MetricCardProps>
 export const Metric = MetricCard
+
+/** Chip descriptor a `chip`/status mapper resolves to. */
+export interface ChipDescriptor {
+  tone?: string
+  label?: ReactNode
+  labelKey?: string
+}
+
+/** A `DetailList` field descriptor (typed/translated, never a raw API key). */
+export interface DetailField {
+  key?: string
+  label?: ReactNode
+  labelKey?: string
+  value?: ReactNode
+  format?: string
+  accessor?: (item: unknown) => unknown
+  chip?: Record<string, ChipDescriptor> | ((value: unknown, item: unknown) => ChipDescriptor | null)
+  render?: (item: unknown) => ReactNode
+}
+export interface DetailListProps {
+  item: unknown
+  fields?: DetailField[]
+  locale?: string
+  autoOptions?: { include?: string[]; exclude?: string[] }
+}
+/** Typed key/value detail grid (translated labels, honest humanized fallback). */
+export const DetailList = RawDetailList as FC<DetailListProps>
+
+/** A `ResourceTable` column descriptor (typed/translated headers). */
+export interface ResourceColumn<Row = unknown> {
+  key: string
+  header?: ReactNode
+  headerKey?: string
+  align?: 'left' | 'right' | 'center' | 'start' | 'end'
+  format?: string
+  kind?: 'bool' | 'status' | 'role'
+  accessor?: (row: Row) => unknown
+  bool?: { trueKey?: string; falseKey?: string; trueTone?: string; falseTone?: string }
+  chip?: Record<string, ChipDescriptor> | ((value: unknown, row: Row) => ChipDescriptor | null)
+  render?: (row: Row) => ReactNode
+}
+export interface ResourceTableProps<Row = Record<string, unknown>> {
+  rows?: Row[] | null
+  columns?: ResourceColumn<Row>[]
+  loading?: boolean
+  error?: unknown
+  onRetry?: () => void
+  rowKey?: (row: Row, index: number) => string | number
+  emptyTitle?: ReactNode
+  emptyMessage?: ReactNode
+  caption?: string
+  locale?: string
+}
+/** Binds records to the responsive DataTable via typed, translated columns. */
+export const ResourceTable = RawResourceTable as <Row = Record<string, unknown>>(
+  props: ResourceTableProps<Row>
+) => ReactNode
 
 export interface StatGridProps {
   children: ReactNode

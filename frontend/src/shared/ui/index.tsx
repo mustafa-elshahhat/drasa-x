@@ -23,6 +23,10 @@ export { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 export { FormModal } from '../../components/ui/FormModal'
 import { Spinner as RawSpinner } from '../../components/ui/Spinner'
 import { Skeleton as RawSkeleton, SkeletonText as RawSkeletonText } from '../../components/ui/Skeleton'
+import { Toggle as RawToggle } from '../../components/ui/Toggle'
+import { Stepper as RawStepper } from '../../components/ui/Stepper'
+import { SearchInput as RawSearchInput } from '../../components/ui/SearchInput'
+import { Toolbar as RawToolbar } from '../../components/ui/Toolbar'
 
 /** Icon component prop shape (lucide-react icons satisfy this). */
 export type IconType = ComponentType<{ size?: number | string; className?: string }>
@@ -119,6 +123,52 @@ export interface SkeletonProps {
 }
 export const Skeleton = RawSkeleton as FC<SkeletonProps>
 export const SkeletonText = RawSkeletonText as FC<{ lines?: number }>
+
+export interface ToggleProps {
+  checked?: boolean
+  onChange?: (checked: boolean) => void
+  label?: ReactNode
+  disabled?: boolean
+  id?: string
+}
+/** Accessible on/off switch (prototype toggle). */
+export const Toggle = RawToggle as FC<ToggleProps>
+
+export interface StepperStep {
+  label: ReactNode
+  description?: ReactNode
+}
+export interface StepperProps {
+  steps?: (StepperStep | string)[]
+  current?: number
+}
+/** Horizontal multi-step progress indicator. */
+export const Stepper = RawStepper as FC<StepperProps>
+
+export interface SearchInputProps {
+  value?: string
+  onChange?: (value: string) => void
+  placeholder?: string
+  id?: string
+  label?: ReactNode
+}
+/** Labelled search box (debounce/clearing handled by the caller). */
+export const SearchInput = RawSearchInput as FC<SearchInputProps>
+
+export interface ToolbarFilter {
+  id: string
+  label: ReactNode
+  options: { value: string; label: ReactNode }[]
+  value?: string
+}
+export interface ToolbarProps {
+  search?: ReactNode
+  filters?: ToolbarFilter[]
+  onFilter?: (id: string, value: string) => void
+  action?: ReactNode
+}
+/** Page toolbar: search + filter selects + a trailing action slot. */
+export const Toolbar = RawToolbar as FC<ToolbarProps>
 
 // --- Net-new typed primitives -------------------------------------------------
 

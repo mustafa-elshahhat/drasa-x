@@ -4,13 +4,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Check, ClipboardCheck, Clock, Download, FileText } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
-import { DetailList } from '../../../components/data/DetailList'
-import { TextareaField } from '../../../components/form/fields'
-import { Button } from '../../../components/ui/Button'
-import { Chip } from '../../../components/ui/Chip'
-import { Card } from '../../../components/ui/PageHeader'
-import { QueryBoundary } from '../../../components/ui/QueryBoundary'
-import { EmptyState, ErrorState } from '../../../components/ui/states'
+import { DetailList } from '../../../shared/data-display'
+import { TextareaField } from '../../../shared/form'
+import { Button, Chip, Card } from '../../../shared/ui'
+import { QueryBoundary, EmptyState, ErrorState } from '../../../shared/feedback'
 import { useStudentQuery } from '../../../features/student/helpers'
 import { Loading } from '../../../features/student/Loading'
 import { studentApi } from '../../../features/student/studentApi'
@@ -85,7 +82,7 @@ function HomeworkPage({ userId, locale }) {
           }
 
           return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="flex flex-col gap-3">
               {filteredItems.map((item) => {
                 const theme = getSubjectTheme(item)
                 const status = String(getField(item, 'status') || 'pending').toLowerCase()
@@ -125,7 +122,7 @@ function HomeworkPage({ userId, locale }) {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <div className="flex items-center gap-3 flex-wrap">
                       <Chip tone={statusPillTone}>{statusPillText}</Chip>
                       <Link
                         to={`/app/student/homework/${itemId(item)}`}
@@ -210,12 +207,12 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
   return (
     <>
       {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '22px', fontSize: '14px', color: 'var(--text-dim)' }}>
+      <div className="flex items-center gap-2 mb-[22px] text-sm text-muted">
         <Link to="/app/student/homework" style={{ textDecoration: 'none', color: 'var(--text-dim)' }}>
           {t('student.homework.title', 'Homework')}
         </Link>
-        <span style={{ color: 'var(--faint)' }}>{isAr ? '‹' : '›'}</span>
-        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{displayValue(item) || 'Homework Detail'}</span>
+        <span className="text-faint">{isAr ? '‹' : '›'}</span>
+        <span className="font-semibold text-ink">{displayValue(item) || 'Homework Detail'}</span>
       </div>
 
       {list.isError && <ErrorState error={list.error} onRetry={list.refetch} />}
@@ -223,45 +220,45 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
       <div className="ui-split">
         {/* Left Column: Main Homework Details & Submission Card */}
         <Card>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
-            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>
+          <div className="flex justify-between items-start flex-wrap gap-2.5 mb-3.5">
+            <h1 className="m-0 text-2xl font-extrabold text-ink">
               {displayValue(item)}
             </h1>
             <Chip tone="purple">{points} {t('student.homework.pointsText', 'points')}</Chip>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '18px' }}>
+          <div className="flex gap-2.5 mb-[18px]">
             <Chip tone="warning">
               {t('student.homework.due', 'Due')}: {formatDate(getField(item, 'dueDate') || getField(item, 'dueAt'), locale)}
             </Chip>
           </div>
 
-          <p style={{ color: 'var(--text-dim)', lineHeight: 1.7, fontSize: '15px' }}>
+          <p className="text-muted leading-[1.7] text-[15px]">
             {desc || (isAr ? 'حل التمارين وأظهر الحل كاملاً.' : 'Solve problems and show full working.')}
           </p>
 
-          <div style={{ height: '1px', background: 'var(--border)', margin: '18px 0' }} />
+          <div className="h-[1px] bg-line [margin:18px_0]" />
 
           {hasSubmitted ? (
-            <div style={{ textAlign: 'center', padding: '20px' }}>
+            <div className="text-center p-5">
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--success-bg)', display: 'flex', alignItems: 'center', justify: 'center', margin: '0 auto 14px' }}>
-                <Check size={32} style={{ color: 'var(--success)' }} />
+                <Check size={32} className="text-success" />
               </div>
-              <h3 style={{ margin: '0 0 6px', color: 'var(--text)', fontWeight: 800 }}>
+              <h3 className="[margin:0_0_6px] text-ink font-extrabold">
                 {t('student.homework.submissionReceived', 'Submission received')}
               </h3>
-              <p style={{ color: 'var(--text-dim)', fontSize: '14px', margin: 0 }}>
+              <p className="text-muted text-sm m-0">
                 {isAr ? 'تم استلام تسليمك بنجاح. سيقوم معلمك بمراجعته قريباً.' : 'Submitted. Your teacher will review it soon.'}
               </p>
               {subData && (
-                <div style={{ marginTop: '16px', background: 'var(--surface-2)', padding: '12px', borderRadius: '8px', textAlign: 'start' }}>
+                <div className="mt-4 bg-surface-2 p-3 rounded-lg text-start">
                   <DetailList item={subData} locale={locale} />
                 </div>
               )}
             </div>
           ) : (
             <div>
-              <div style={{ fontWeight: 700, color: 'var(--text-2)', marginBottom: '10px' }}>
+              <div className="font-bold text-ink-2 mb-2.5">
                 {t('student.homework.yourSubmission', 'Your submission')}
               </div>
 
@@ -270,14 +267,14 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
                 type="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                style={{ display: 'none' }}
+                className="hidden"
                 accept=".pdf,.docx,.png,.jpg,.jpeg"
               />
               <div onClick={handleUploadClick} className="student-upload-area">
                 <Download size={30} className="student-upload-area__icon" />
                 <div className="student-upload-area__text">
                   {fileName ? (
-                    <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className="text-success flex items-center gap-1.5">
                       <Check size={16} /> {fileName}
                     </span>
                   ) : (
@@ -290,7 +287,7 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
               </div>
 
               {/* Notes field */}
-              <div style={{ marginTop: '14px' }}>
+              <div className="mt-3.5">
                 <TextareaField
                   label={t('student.homework.notes', 'Notes (optional)')}
                   value={content}
@@ -301,13 +298,13 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
               </div>
 
               {/* Submission actions */}
-              <div style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
+              <div className="mt-4 flex gap-2.5">
                 <Button
                   onClick={handleSubmit}
                   loading={mutation.isPending}
                   disabled={mutation.isPending || (!content.trim() && !fileName)}
                 >
-                  <Check size={16} style={{ marginInlineEnd: '4px' }} />
+                  <Check size={16} className="me-1" />
                   {t('student.homework.submitAction', 'Submit homework')}
                 </Button>
                 <Button
@@ -325,7 +322,7 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
 
         {/* Right Column: Status Card */}
         <Card>
-          <h3 style={{ margin: '0 0 16px', fontWeight: 700, color: 'var(--text)', fontSize: '16px' }}>
+          <h3 className="[margin:0_0_16px] font-bold text-ink text-base">
             {t('student.homework.statusCardTitle', 'Status')}
           </h3>
 

@@ -9,7 +9,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import { roleHasPermission } from './roles'
-import { FullPageLoader } from '../../components/ui/FullPageLoader'
+import { FullPageLoader } from '../../shared/feedback'
 
 /** Requires an authenticated session. Anonymous -> /login (remembers origin). */
 export function ProtectedRoute({ children }) {

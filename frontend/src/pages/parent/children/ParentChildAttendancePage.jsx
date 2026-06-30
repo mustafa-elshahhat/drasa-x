@@ -1,10 +1,8 @@
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Alert } from '../../../components/ui/Alert'
-import { Chip } from '../../../components/ui/Chip'
-import { Card, PageHeader } from '../../../components/ui/PageHeader'
-import { EmptyState, ErrorState } from '../../../components/ui/states'
-import { Heatmap } from '../../../components/viz/Heatmap'
+import { Alert, Chip, Card, PageHeader } from '../../../shared/ui'
+import { EmptyState, ErrorState } from '../../../shared/feedback'
+import { Heatmap } from '../../../shared/charts'
 import { Loading, Stat } from '../../../features/parent/components'
 import { ATTENDANCE_TONE, useParentQuery } from '../../../features/parent/helpers'
 import { parentApi } from '../../../features/parent/parentApi'
@@ -44,7 +42,7 @@ function ChildAttendancePage({ userId, locale }) {
               <Stat label={t('parent.attendance.excused')} value={att.summary.excused} />
               <Stat label={t('parent.attendance.percentage')} value={att.summary.attendancePercentage} />
             </div>
-            {cells.length > 0 && <div style={{ marginTop: 18 }}><Heatmap cells={cells} legend={legend} /></div>}
+            {cells.length > 0 && <div className="mt-[18px]"><Heatmap cells={cells} legend={legend} /></div>}
           </Card>
           <Card title={t('parent.attendance.records')}>
             {(att.records || []).length === 0 ? <EmptyState title={t('parent.attendance.empty')} /> : (

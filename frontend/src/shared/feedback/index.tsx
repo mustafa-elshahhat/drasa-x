@@ -6,6 +6,12 @@ import { Spinner, type IconType } from '../ui'
 // =============================================================================
 import { ErrorState as RawErrorState, EmptyState as RawEmptyState } from '../../components/ui/states'
 import { QueryBoundary as RawQueryBoundary } from '../../components/ui/QueryBoundary'
+import { NotEnoughData as RawNotEnoughData } from '../../components/ui/NotEnoughData'
+import { FullPageLoader as RawFullPageLoader } from '../../components/ui/FullPageLoader'
+
+// The app-level toast provider + `useToast` hook are exposed from the sibling
+// non-component module `shared/feedback/toast` — re-exporting the hook from this
+// JSX-bearing barrel would trip react-refresh's only-export-components rule.
 
 export interface LoadingStateProps {
   label?: string
@@ -61,3 +67,20 @@ export interface QueryStateProps<T> {
  * data to a render-prop child. (DerasaX `QueryBoundary` with typed props.)
  */
 export const QueryState = RawQueryBoundary as <T = unknown>(props: QueryStateProps<T>) => ReactNode
+/** Back-compat alias: `QueryBoundary` is the original name for `QueryState`. */
+export const QueryBoundary = QueryState
+
+export interface NotEnoughDataProps {
+  title?: ReactNode
+  message?: ReactNode
+  icon?: IconType
+  compact?: boolean
+}
+/** Honest "not enough data yet" placeholder for charts/widgets with sparse data. */
+export const NotEnoughData = RawNotEnoughData as FC<NotEnoughDataProps>
+
+export interface FullPageLoaderProps {
+  label?: string
+}
+/** Full-viewport loading state (route-level Suspense fallback). */
+export const FullPageLoader = RawFullPageLoader as FC<FullPageLoaderProps>

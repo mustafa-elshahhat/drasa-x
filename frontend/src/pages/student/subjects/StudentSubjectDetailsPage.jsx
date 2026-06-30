@@ -2,10 +2,8 @@ import { Link, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { BookOpen, FileText, Layers, PieChart, Sparkles, Trophy } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
-import { Avatar } from '../../../components/ui/Avatar'
-import { Chip } from '../../../components/ui/Chip'
-import { QueryBoundary } from '../../../components/ui/QueryBoundary'
-import { ErrorState } from '../../../components/ui/states'
+import { Avatar, Chip } from '../../../shared/ui'
+import { QueryBoundary, ErrorState } from '../../../shared/feedback'
 import { percentOf, useStudentQuery } from '../../../features/student/helpers'
 import { Loading } from '../../../features/student/Loading'
 import { studentApi } from '../../../features/student/studentApi'
@@ -46,7 +44,7 @@ function LocalUnitCard({ to, title, stats, subjectColor, isAr }) {
         }
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+      <div className="flex justify-between items-start mb-3">
         <div
           style={{
             width: '42px',
@@ -62,15 +60,15 @@ function LocalUnitCard({ to, title, stats, subjectColor, isAr }) {
         </div>
         <Chip tone={stats.tone}>{stats.label}</Chip>
       </div>
-      <h3 style={{ margin: '0 0 6px', fontSize: '16px', fontWeight: 700, color: 'var(--text)', flexGrow: 1 }}>
+      <h3 className="[margin:0_0_6px] text-base font-bold text-ink grow">
         {title}
       </h3>
       {stats.total != null && (
-        <div style={{ fontSize: '13px', color: 'var(--text-dim)', marginBottom: '14px' }}>
+        <div className="text-[13px] text-muted mb-3.5">
           {stats.done}/{stats.total} {isAr ? 'درس مكتمل' : 'lessons completed'}
         </div>
       )}
-      <div style={{ height: '8px', borderRadius: '8px', background: 'var(--border-2)', overflow: 'hidden' }}>
+      <div className="h-2 rounded-lg bg-line-2 overflow-hidden">
         <div
           style={{
             width: `${Math.max(2, stats.progress)}%`,
@@ -159,12 +157,12 @@ function SubjectDetailsPage({ userId, locale }) {
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '22px', fontSize: '14px', color: 'var(--text-dim)' }}>
+      <div className="flex items-center gap-2 mb-[22px] text-sm text-muted">
         <Link to="/app/student/subjects" style={{ textDecoration: 'none', color: 'var(--text-dim)' }}>
           {t('student.subjects.title')}
         </Link>
-        <span style={{ color: 'var(--faint)' }}>{isAr ? '‹' : '›'}</span>
-        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{subjectName || '...'}</span>
+        <span className="text-faint">{isAr ? '‹' : '›'}</span>
+        <span className="font-semibold text-ink">{subjectName || '...'}</span>
       </div>
 
       {subject.isError && <ErrorState error={subject.error} onRetry={subject.refetch} />}
@@ -185,28 +183,21 @@ function SubjectDetailsPage({ userId, locale }) {
             }}
           >
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.25), transparent 60%)' }} />
-            {IconComponent && <IconComponent size={44} style={{ color: 'rgba(255, 255, 255, 0.92)', position: 'relative', zIndex: 1 }} />}
+            {IconComponent && <IconComponent size={44} className="text-[rgba(255,_255,_255,_0.92)] relative z-[1]" />}
           </div>
 
           <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              gap: '14px',
-              alignItems: 'center',
-              marginBottom: '22px'
-            }}
+            className="flex flex-wrap justify-between gap-3.5 items-center mb-[22px]"
           >
             <div>
-              <h1 style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: 800, color: 'var(--text)' }}>
+              <h1 className="[margin:0_0_6px] text-[28px] font-extrabold text-ink">
                 {subjectName}
               </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-dim)' }}>
+              <div className="flex items-center gap-2 text-muted">
                 <Avatar name={teacher} size={26} color={color} />
-                <span style={{ fontSize: '13px' }}>{teacher}</span>
-                <span style={{ color: 'var(--faint)' }}>·</span>
-                <span style={{ fontSize: '13px' }}>{grade}</span>
+                <span className="text-[13px]">{teacher}</span>
+                <span className="text-faint">·</span>
+                <span className="text-[13px]">{grade}</span>
               </div>
             </div>
             <Link
@@ -253,9 +244,9 @@ function SubjectDetailsPage({ userId, locale }) {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: color }}>
                     {StatIcon && <StatIcon size={18} />}
-                    <span style={{ fontSize: '13px', color: 'var(--text-dim)', fontWeight: 600 }}>{stat.label}</span>
+                    <span className="text-[13px] text-muted font-semibold">{stat.label}</span>
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>{stat.value}</div>
+                  <div className="text-2xl font-extrabold text-ink">{stat.value}</div>
                 </div>
               )
             })}

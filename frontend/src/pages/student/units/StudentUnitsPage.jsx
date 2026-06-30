@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Check, ChevronRight, Clock, FileText, PlayCircle } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
-import { Chip } from '../../../components/ui/Chip'
-import { EmptyState, ErrorState } from '../../../components/ui/states'
+import { Chip } from '../../../shared/ui'
+import { EmptyState, ErrorState } from '../../../shared/feedback'
 import { useStudentQuery } from '../../../features/student/helpers'
 import { Loading } from '../../../features/student/Loading'
 import { studentApi } from '../../../features/student/studentApi'
@@ -119,24 +119,24 @@ function UnitsPage({ userId, locale }) {
   return (
     <>
       {/* Breadcrumb */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '22px', fontSize: '14px', color: 'var(--text-dim)', flexWrap: 'wrap' }}>
+      <div className="flex items-center gap-2 mb-[22px] text-sm text-muted flex-wrap">
         <Link to="/app/student/subjects" style={{ textDecoration: 'none', color: 'var(--text-dim)' }}>
           {t('student.subjects.title')}
         </Link>
-        <span style={{ color: 'var(--faint)' }}>{isAr ? '‹' : '›'}</span>
+        <span className="text-faint">{isAr ? '‹' : '›'}</span>
         <Link to={`/app/student/subjects/${subjectId}`} style={{ textDecoration: 'none', color: 'var(--text-dim)' }}>
           {subjectName}
         </Link>
-        <span style={{ color: 'var(--faint)' }}>{isAr ? '‹' : '›'}</span>
-        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{unitName}</span>
+        <span className="text-faint">{isAr ? '‹' : '›'}</span>
+        <span className="font-semibold text-ink">{unitName}</span>
       </div>
 
       {/* Header */}
-      <div style={{ marginBottom: '22px' }}>
-        <h1 style={{ margin: '0 0 6px', fontSize: '28px', fontWeight: 800, color: 'var(--text)' }}>
+      <div className="mb-[22px]">
+        <h1 className="[margin:0_0_6px] text-[28px] font-extrabold text-ink">
           {unitName}
         </h1>
-        <div style={{ color: 'var(--brand)', fontWeight: 600, fontSize: '15px' }}>
+        <div className="text-brand font-semibold text-[15px]">
           {subtitleText}
         </div>
       </div>
@@ -149,7 +149,7 @@ function UnitsPage({ userId, locale }) {
           icon={PlayCircle}
         />
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="flex flex-col gap-3">
           {lessonItems.map((item, i) => {
             const lessonId = itemId(item)
             const lessonName = isAr
@@ -211,27 +211,27 @@ function UnitsPage({ userId, locale }) {
                   }}
                 >
                   {isCompleted ? (
-                    <Check size={20} style={{ color: 'var(--success)' }} />
+                    <Check size={20} className="text-success" />
                   ) : (
-                    <span style={{ fontWeight: 800, color: 'var(--brand)', fontSize: '15px' }}>
+                    <span className="font-extrabold text-brand text-[15px]">
                       {i + 1}
                     </span>
                   )}
                 </div>
 
                 {/* Lesson Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, color: 'var(--text)', fontSize: '15px' }}>
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-ink text-[15px]">
                     {lessonName}
                   </div>
                   {meta && (
-                    <div style={{ display: 'flex', gap: '14px', color: 'var(--text-dim)', fontSize: '12px', marginTop: '4px', flexWrap: 'wrap' }}>
-                      <span style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                        <Clock size={13} style={{ color: 'var(--text-dim)' }} />
+                    <div className="flex gap-3.5 text-muted text-xs mt-1 flex-wrap">
+                      <span className="flex gap-[5px] items-center">
+                        <Clock size={13} className="text-muted" />
                         {durationText}
                       </span>
-                      <span style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
-                        <FileText size={13} style={{ color: 'var(--text-dim)' }} />
+                      <span className="flex gap-[5px] items-center">
+                        <FileText size={13} className="text-muted" />
                         {resourcesText}
                       </span>
                     </div>
@@ -239,7 +239,7 @@ function UnitsPage({ userId, locale }) {
                 </div>
 
                 {/* Status Chip / Pill */}
-                <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                <div className="flex items-center shrink-0">
                   {isCompleted ? (
                     <Chip tone="success">{isAr ? 'مكتمل' : 'Completed'}</Chip>
                   ) : percent > 0 ? (

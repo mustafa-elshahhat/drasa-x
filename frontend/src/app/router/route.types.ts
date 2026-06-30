@@ -18,6 +18,11 @@ export type RouteComponent = ReturnType<(typeof import('react'))['lazy']>
 /** `layout: 'public'` renders the page inside the marketing PublicLayout. */
 export type RouteLayout = 'public'
 
+// Role/Permission are the recognized backend role + frontend permission unions
+// (single source of truth: features/auth/roles.ts). Importing them here makes the
+// route registry's guard metadata strongly typed.
+import type { Role, Permission } from '../../features/auth/roles'
+
 export interface AppRoute {
   /** URL path (React Router pattern; may contain `:params`). */
   path: string
@@ -30,11 +35,18 @@ export interface AppRoute {
   /** Marketing layout opt-in. */
   layout?: RouteLayout
   /** Allowed roles (undefined = any authenticated role). */
-  roles?: string[]
+  roles?: Role[]
   /** Required frontend permission (used when `roles` is absent). */
-  permission?: string
+  permission?: Permission
   /** Lazily-loaded page component. */
   Component?: RouteComponent
-  /** Static props passed to the component (e.g. the temporary `{ view }`). */
+  /**
+   * Static props passed to the component (e.g. a small page variant like
+   * `{ mode: 'progress' }`). NOTE: this is NOT the old `props.view` dispatcher —
+   * production routes carry no `view` prop (see routeInventory regression test).
+   */
   props?: Record<string, unknown>
 }
+
+/** Alias used where "route metadata" reads better than "AppRoute". */
+export type RouteMeta = AppRoute
