@@ -1,16 +1,72 @@
 /* Shared simple marketing content pages (Events/Activities/News) — scoped (Phase 20). */
 .public-root .public-page {
-  width: min(900px, 92%);
-  margin: 40px auto;
-  min-height: 40vh;
+  width: min(1100px, 92%);
+  margin: 48px auto;
+  min-height: 50vh;
+}
+.public-root .public-page__header {
+  text-align: center;
+  margin-bottom: 32px;
 }
 .public-root .public-page__title {
-  color: var(--public-primary);
-  font-size: 32px;
-  margin-bottom: 16px;
+  color: var(--public-primary, #0c7288);
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
 }
 .public-root .public-page__body {
-  color: var(--public-paragraph);
+  color: var(--public-paragraph, #4b5563);
   font-size: 18px;
   line-height: 1.6;
+  max-width: 640px;
+  margin: 0 auto;
 }
+
+/* Honest empty state for the (not-yet-populated) public listing feed. */
+.public-root .public-page__empty {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid rgba(12, 114, 136, 0.12);
+  border-radius: 18px;
+  padding: 56px 28px;
+  box-shadow: 0 8px 30px rgba(16, 40, 60, 0.06);
+}
+.public-root .public-page__empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: rgba(12, 114, 136, 0.1);
+  color: var(--public-primary, #0c7288);
+}
+.public-root .public-page__empty-title {
+  margin: 6px 0 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #1d2026;
+}
+.public-root .public-page__empty-body {
+  margin: 0;
+  max-width: 460px;
+  color: var(--public-paragraph, #4b5563);
+  line-height: 1.6;
+}
+.public-root .public-page__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 12px 22px;
+  border-radius: 10px;
+  background: var(--public-primary, #0c7288);
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.public-root .public-page__cta:hover { filter: brightness(0.96); }

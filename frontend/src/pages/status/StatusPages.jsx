@@ -2,16 +2,21 @@
 // (Phase 7 §5). Localized, accessible, no fabricated content.
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { Lock, Clock, TriangleAlert, Compass } from 'lucide-react'
 import { useDocumentTitle } from '../../app/useDocumentTitle'
 
-function StatusLayout({ titleKey, bodyKey, linkTo, linkLabelKey }) {
+function StatusLayout({ icon, tone = 'brand', titleKey, bodyKey, linkTo, linkLabelKey }) {
   const { t } = useTranslation()
+  const Icon = icon
   useDocumentTitle({ titleKey })
   return (
     <main className="status-page" role="main">
       <div className="status-page__card">
-        <h1>{t(titleKey)}</h1>
-        <p>{t(bodyKey)}</p>
+        <span className={`status-page__icon status-page__icon--${tone}`}>
+          <Icon size={42} aria-hidden="true" />
+        </span>
+        <h1 className="status-page__title">{t(titleKey)}</h1>
+        <p className="status-page__body">{t(bodyKey)}</p>
         <Link className="ui-btn ui-btn--primary" to={linkTo}>
           {t(linkLabelKey)}
         </Link>
@@ -23,6 +28,8 @@ function StatusLayout({ titleKey, bodyKey, linkTo, linkLabelKey }) {
 export function ForbiddenPage() {
   return (
     <StatusLayout
+      icon={Lock}
+      tone="warning"
       titleKey="pages.forbiddenTitle"
       bodyKey="pages.forbiddenBody"
       linkTo="/app"
@@ -34,6 +41,8 @@ export function ForbiddenPage() {
 export function SessionExpiredPage() {
   return (
     <StatusLayout
+      icon={Clock}
+      tone="info"
       titleKey="pages.sessionExpiredTitle"
       bodyKey="pages.sessionExpiredBody"
       linkTo="/login"
@@ -45,6 +54,8 @@ export function SessionExpiredPage() {
 export function SuspendedTenantPage() {
   return (
     <StatusLayout
+      icon={TriangleAlert}
+      tone="danger"
       titleKey="pages.suspendedTitle"
       bodyKey="pages.suspendedBody"
       linkTo="/login"
@@ -56,6 +67,8 @@ export function SuspendedTenantPage() {
 export function NotFoundPage() {
   return (
     <StatusLayout
+      icon={Compass}
+      tone="brand"
       titleKey="pages.notFoundTitle"
       bodyKey="pages.notFoundBody"
       linkTo="/app"

@@ -12,15 +12,20 @@
   --public-paragraph: #585858;
   --public-muted: #959595;
   --public-bg: #ffffff;
-  /* Poppins falls back to the host system stack — no external font origin is
-     loaded, so the strict CSP (font-src 'self' data:) stays intact. */
-  --public-font: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, 'Noto Sans Arabic', sans-serif;
+  /* Inter (Latin) is self-hosted via @fontsource, so the strict CSP
+     (font-src 'self' data:) stays intact — no external font origin is loaded.
+     Cairo drives the Arabic/RTL marketing pages (see the [dir='rtl'] rule). */
+  --public-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --public-font-ar: 'Cairo', 'Segoe UI', system-ui, -apple-system, 'Noto Sans Arabic', sans-serif;
 
   min-height: 100vh;
   background: var(--public-bg);
   color: var(--public-paragraph);
   font-family: var(--public-font);
+}
+[dir='rtl'] .public-root {
+  font-family: var(--public-font-ar);
 }
 
 /* The migrated marketing CSS assumed a global margin/padding reset that the

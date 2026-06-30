@@ -2,18 +2,27 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
+import { Building2, GraduationCap, Users, UserCog, Grid3x3, CreditCard, Bot, MessageSquare, ScrollText } from 'lucide-react'
 import { PageHeader, Card } from '../../components/ui/PageHeader'
+import { Metric } from '../../components/ui/Metric'
 import { EmptyState, ErrorState } from '../../components/ui/states'
 import { Button } from '../../components/ui/Button'
 import { Alert } from '../../components/ui/Alert'
+import { Chip } from '../../components/ui/Chip'
+import { Spinner } from '../../components/ui/Spinner'
+import { Stepper } from '../../components/ui/Stepper'
+import { Toggle } from '../../components/ui/Toggle'
+import { DetailList } from '../../components/data/DetailList'
+import { ResourceTable } from '../../components/data/ResourceTable'
 import { TextField, TextareaField, SelectField, CheckboxField } from '../../components/form/fields'
 import { useAuth } from '../../features/auth/AuthContext'
 import { systemApi } from '../../features/system/systemApi'
-import { displayValue, itemId, statusLabel, formatDate } from '../../features/student/studentUtils'
+import { displayValue, itemId, getField } from '../../features/student/studentUtils'
 import { queryKeys, STALE } from '../../lib/query/keys'
 
 // Numeric enum maps (the backend binds enums numerically — no JsonStringEnumConverter).
 const TENANT_STATUS = ['Active', 'Suspended', 'Archived'] // value == index
+const TENANT_TONE = ['success', 'danger', 'muted']
 const CURRICULUM = [{ value: 0, label: 'National' }]
 const SETTING_TYPE = { String: 0, Number: 1, Boolean: 2, Json: 3 }
 const SUPPORT_STATUS = { Completed: 4 }
@@ -24,43 +33,9 @@ function useSystemQuery(key, fn, options = {}) {
   return useQuery({ queryKey: key, queryFn: ({ signal }) => fn(signal), staleTime: options.staleTime ?? STALE.short, enabled: options.enabled ?? true })
 }
 
-function Field({ label, value }) {
-  return (
-    <div className="student-kv">
-      <dt>{label}</dt>
-      <dd>{value ?? '—'}</dd>
-    </div>
-  )
-}
-
-function DetailGrid({ item, locale }) {
-  if (!item || typeof item !== 'object') return null
-  const fields = Object.entries(item).filter(([, v]) => v !== null && v !== undefined && typeof v !== 'object')
-  return (
-    <dl className="student-grid">
-      {fields.slice(0, 20).map(([key, value]) => (
-        <Field key={key} label={key} value={String(key).toLowerCase().includes('date') || String(key).toLowerCase().endsWith('at') ? formatDate(value, locale) : statusLabel(value)} />
-      ))}
-    </dl>
-  )
-}
-
-function ItemsList({ items, empty, renderItem }) {
-  if (!items?.length) return <EmptyState title={empty} />
-  return <div className="student-list">{items.map((item, i) => <div className="student-list__item" key={itemId(item) || i}>{renderItem(item)}</div>)}</div>
-}
-
-function QueryResult({ query, empty, children }) {
+function Loading() {
   const { t } = useTranslation()
-  if (query.isLoading) return <p role="status">{t('states.loading')}</p>
-  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
-  const data = Array.isArray(query.data) ? query.data : query.data ? query.data : []
-  if (Array.isArray(data) && !data.length) return <EmptyState title={empty} />
-  return children(data)
-}
-
-function MetricLink({ to, value, label }) {
-  return <Link className="student-metric" to={to}><strong>{value}</strong><span>{label}</span></Link>
+  return <Spinner label={t('states.loading')} />
 }
 
 function Head({ view }) {
@@ -68,13 +43,18 @@ function Head({ view }) {
   return <PageHeader title={t(`system.pages.${view}.title`)} description={t(`system.pages.${view}.description`)} />
 }
 
-function ListSection({ title, query, empty, locale }) {
+function List({ query, columns, empty, rowActions, locale }) {
   return (
-    <Card title={title}>
-      <QueryResult query={query} empty={empty}>
-        {(items) => <ItemsList items={items} empty={empty} renderItem={(item) => <DetailGrid item={item} locale={locale} />} />}
-      </QueryResult>
-    </Card>
+    <ResourceTable
+      rows={Array.isArray(query.data) ? query.data : []}
+      columns={columns}
+      rowActions={rowActions}
+      loading={query.isLoading}
+      error={query.error}
+      onRetry={() => query.refetch()}
+      emptyTitle={empty}
+      locale={locale}
+    />
   )
 }
 
@@ -89,29 +69,30 @@ function DashboardPage({ userId, locale }) {
   return (
     <>
       <Head view="dashboard" />
-      {dashboard.isLoading && <p role="status">{t('states.loading')}</p>}
+      {dashboard.isLoading && <Loading />}
       {dashboard.isError && <ErrorState error={dashboard.error} onRetry={dashboard.refetch} />}
       {dashboard.data && (
         <>
-          <Alert title={t('system.dashboard.tenants')}>
+          <Alert variant="info" title={t('system.dashboard.tenants')}>
             {t('system.dashboard.active')}: <strong>{d.tenantsActive ?? 0}</strong> ·{' '}
             {t('system.dashboard.suspended')}: <strong>{d.tenantsSuspended ?? 0}</strong> ·{' '}
             {t('system.dashboard.archived')}: <strong>{d.tenantsArchived ?? 0}</strong>
           </Alert>
           <div className="student-dashboard">
-            <Card title={t('system.dashboard.tenants')}><MetricLink to="/app/system/tenants" value={d.tenantsTotal ?? 0} label={t('system.pages.tenants.title')} /></Card>
-            <Card title={t('system.dashboard.students')}><MetricLink to="/app/system/usage" value={d.students ?? 0} label={t('roles.Student')} /></Card>
-            <Card title={t('system.dashboard.teachers')}><MetricLink to="/app/system/usage" value={d.teachers ?? 0} label={t('roles.Teacher')} /></Card>
-            <Card title={t('system.dashboard.schoolAdmins')}><MetricLink to="/app/system/usage" value={d.schoolAdmins ?? 0} label={t('roles.SchoolAdmin')} /></Card>
-            <Card title={t('system.dashboard.plans')}><MetricLink to="/app/system/plans" value={d.plansTotal ?? 0} label={t('system.pages.plans.title')} /></Card>
-            <Card title={t('system.dashboard.subscriptions')}><MetricLink to="/app/system/subscriptions" value={d.subscriptionsTotal ?? 0} label={t('system.pages.subscriptions.title')} /></Card>
-            <Card title={t('system.dashboard.aiRecords')}><MetricLink to="/app/system/ai-usage" value={d.aiUsageRecords ?? 0} label={t('system.dashboard.aiTokens', { tokens: d.aiTotalTokens ?? 0 })} /></Card>
-            <Card title={t('system.dashboard.support')}><MetricLink to="/app/system/support" value={d.supportOpen ?? 0} label={t('system.pages.support.title')} /></Card>
-            <Card title={t('system.dashboard.auditEvents')}><MetricLink to="/app/system/audit" value={d.recentAuditEvents ?? 0} label={t('system.pages.audit.title')} /></Card>
+            <Metric to="/app/system/tenants" icon={Building2} accent="var(--success)" value={d.tenantsTotal ?? 0} label={t('system.pages.tenants.title')} />
+            <Metric to="/app/system/usage" icon={GraduationCap} accent="var(--brand)" value={d.students ?? 0} label={t('roles.Student')} />
+            <Metric to="/app/system/usage" icon={Users} accent="var(--purple)" value={d.teachers ?? 0} label={t('roles.Teacher')} />
+            <Metric to="/app/system/usage" icon={UserCog} accent="var(--info)" value={d.schoolAdmins ?? 0} label={t('roles.SchoolAdmin')} />
+            <Metric to="/app/system/plans" icon={Grid3x3} accent="var(--orange)" value={d.plansTotal ?? 0} label={t('system.pages.plans.title')} />
+            <Metric to="/app/system/subscriptions" icon={CreditCard} accent="var(--success)" value={d.subscriptionsTotal ?? 0} label={t('system.pages.subscriptions.title')} />
+            <Metric to="/app/system/ai-usage" icon={Bot} accent="var(--purple)" value={d.aiUsageRecords ?? 0} label={t('system.dashboard.aiRecords')} sub={t('system.dashboard.aiTokens', { tokens: d.aiTotalTokens ?? 0 })} />
+            <Metric to="/app/system/support" icon={MessageSquare} accent="var(--warning)" value={d.supportOpen ?? 0} label={t('system.pages.support.title')} />
+            <Metric to="/app/system/audit" icon={ScrollText} accent="var(--info)" value={d.recentAuditEvents ?? 0} label={t('system.pages.audit.title')} />
           </div>
-          <Card title={t('system.dashboard.recentActivity')}>
-            <ItemsList items={recent} empty={t('system.empty.audit')} renderItem={(item) => <DetailGrid item={item} locale={locale} />} />
-          </Card>
+          <section className="ui-section">
+            <div className="ui-section__head"><h2 className="ui-section__title">{t('system.dashboard.recentActivity')}</h2></div>
+            <ResourceTable rows={recent} emptyTitle={t('system.empty.audit')} locale={locale} />
+          </section>
         </>
       )}
     </>
@@ -125,24 +106,31 @@ function TenantsPage({ userId, locale }) {
   const { t } = useTranslation()
   const [status, setStatus] = useState('')
   const query = useSystemQuery(queryKeys.system.tenants(userId, status || 'all'), (s) => systemApi.tenants(status === '' ? undefined : Number(status), s))
+  const columns = [
+    { key: 'name', header: t('system.common.tenantName') },
+    {
+      key: 'status',
+      header: t('system.common.status'),
+      chip: (v) => ({ tone: TENANT_TONE[v] || 'muted', label: t(`system.status.${TENANT_STATUS[v] || 'Active'}`) }),
+    },
+  ]
   return (
     <>
       <Head view="tenants" />
       <Card title={t('system.tenants.filter')}>
-        <SelectField label={t('system.common.status')} value={status} onChange={(e) => setStatus(e.target.value)}
-          options={[{ value: '', label: t('system.tenants.all') }, ...TENANT_STATUS.map((s, i) => ({ value: i, label: t(`system.status.${s}`) }))]} />
-        <Link className="ui-btn ui-btn--primary" to="/app/system/onboarding">{t('system.tenants.onboard')}</Link>
+        <div className="ui-form-row">
+          <SelectField label={t('system.common.status')} value={status} onChange={(e) => setStatus(e.target.value)}
+            options={[{ value: '', label: t('system.tenants.all') }, ...TENANT_STATUS.map((s, i) => ({ value: i, label: t(`system.status.${s}`) }))]} />
+          <Link className="ui-btn ui-btn--primary" to="/app/system/onboarding">{t('system.tenants.onboard')}</Link>
+        </div>
       </Card>
-      <Card title={t('system.pages.tenants.title')}>
-        <QueryResult query={query} empty={t('system.empty.tenants')}>
-          {(items) => <ItemsList items={items} empty={t('system.empty.tenants')} renderItem={(item) => (
-            <div className="student-item">
-              <div><DetailGrid item={item} locale={locale} /></div>
-              <div><Link className="ui-btn ui-btn--secondary" to={`/app/system/tenants/${encodeURIComponent(itemId(item))}`}>{t('system.common.open')}</Link></div>
-            </div>
-          )} />}
-        </QueryResult>
-      </Card>
+      <List
+        query={query}
+        columns={columns}
+        empty={t('system.empty.tenants')}
+        locale={locale}
+        rowActions={(item) => <Link className="ui-btn ui-btn--secondary" to={`/app/system/tenants/${encodeURIComponent(itemId(item))}`}>{t('system.common.open')}</Link>}
+      />
     </>
   )
 }
@@ -180,32 +168,38 @@ function TenantDetailsPage({ userId, locale }) {
   return (
     <>
       <Head view="tenantDetails" />
-      {tenant.isLoading && <p role="status">{t('states.loading')}</p>}
+      {tenant.isLoading && <Loading />}
       {tenant.isError && <ErrorState error={tenant.error} onRetry={tenant.refetch} />}
       {tenant.data && (
         <>
-          <Card title={tenant.data.name || tenantId}><DetailGrid item={tenant.data} locale={locale} /></Card>
+          <Card title={tenant.data.name || tenantId}>
+            <div className="cluster" style={{ marginBottom: 12 }}>
+              {status != null && <Chip tone={TENANT_TONE[status] || 'muted'}>{t(`system.status.${TENANT_STATUS[status] || 'Active'}`)}</Chip>}
+            </div>
+            <DetailList item={tenant.data} locale={locale} />
+          </Card>
 
           <Card title={t('system.tenant.lifecycle')}>
             {lifecycle.isError && <ErrorState error={lifecycle.error} onRetry={() => lifecycle.reset()} />}
             {lifecycle.isSuccess && <Alert variant="success" title={t('system.common.saved')}>{t('system.tenant.lifecycleSaved')}</Alert>}
-            <div className="student-item">
+            <div className="cluster">
               <Button onClick={() => lifecycle.mutate('activate')} loading={lifecycle.isPending} disabled={status === 0}>{t('system.tenant.activate')}</Button>
               <Button variant="secondary" onClick={() => lifecycle.mutate('suspend')} loading={lifecycle.isPending} disabled={status === 1}>{t('system.tenant.suspend')}</Button>
               <Button variant="secondary" onClick={() => lifecycle.mutate('reactivate')} loading={lifecycle.isPending} disabled={status === 0}>{t('system.tenant.reactivate')}</Button>
             </div>
           </Card>
 
-          <Card title={t('system.tenant.subscription')}>
-            {subscription.isLoading && <p role="status">{t('states.loading')}</p>}
-            {subscription.isError && <EmptyState title={t('system.empty.subscription')} />}
-            {subscription.data && <DetailGrid item={subscription.data} locale={locale} />}
-          </Card>
-
-          <Card title={t('system.tenant.usage')}>
-            {usage.isLoading && <p role="status">{t('states.loading')}</p>}
-            {usage.data && <DetailGrid item={usage.data} locale={locale} />}
-          </Card>
+          <div className="ui-split ui-split--even">
+            <Card title={t('system.tenant.subscription')}>
+              {subscription.isLoading && <Loading />}
+              {subscription.isError && <EmptyState title={t('system.empty.subscription')} />}
+              {subscription.data && <DetailList item={subscription.data} locale={locale} />}
+            </Card>
+            <Card title={t('system.tenant.usage')}>
+              {usage.isLoading && <Loading />}
+              {usage.data && <DetailList item={usage.data} locale={locale} />}
+            </Card>
+          </div>
 
           <Card title={t('system.tenant.createAdmin')}>
             {credential && (
@@ -214,8 +208,10 @@ function TenantDetailsPage({ userId, locale }) {
               </Alert>
             )}
             {createAdmin.isError && <ErrorState error={createAdmin.error} onRetry={() => createAdmin.reset()} />}
-            <TextField label={t('system.common.name')} value={adminForm.fullName} onChange={(e) => setAdminForm((f) => ({ ...f, fullName: e.target.value }))} />
-            <TextField label={t('system.common.loginCode')} value={adminForm.loginCode} onChange={(e) => setAdminForm((f) => ({ ...f, loginCode: e.target.value }))} />
+            <div className="ui-formgrid ui-formgrid--2">
+              <TextField label={t('system.common.name')} value={adminForm.fullName} onChange={(e) => setAdminForm((f) => ({ ...f, fullName: e.target.value }))} />
+              <TextField label={t('system.common.loginCode')} value={adminForm.loginCode} onChange={(e) => setAdminForm((f) => ({ ...f, loginCode: e.target.value }))} />
+            </div>
             <Button onClick={() => createAdmin.mutate()} loading={createAdmin.isPending} disabled={!adminForm.fullName.trim() || !adminForm.loginCode.trim()}>{t('system.tenant.createAdmin')}</Button>
           </Card>
 
@@ -225,10 +221,10 @@ function TenantDetailsPage({ userId, locale }) {
             {dataResult && (
               <Alert variant="success" title={dataResult.requestType === 'deletion-request' ? t('system.tenant.deletionRecorded') : t('system.tenant.exportPreview')}>
                 {dataResult.note}
-                <DetailGrid item={dataResult.preview} locale={locale} />
+                <DetailList item={dataResult.preview} locale={locale} />
               </Alert>
             )}
-            <div className="student-item">
+            <div className="cluster">
               <Button onClick={() => exportData.mutate()} loading={exportData.isPending}>{t('system.tenant.exportData')}</Button>
               <Button variant="secondary" onClick={() => deletionRequest.mutate()} loading={deletionRequest.isPending}>{t('system.tenant.requestDeletion')}</Button>
             </div>
@@ -268,17 +264,29 @@ function OnboardingPage({ userId }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.system.tenants(userId, 'all') }); qc.invalidateQueries({ queryKey: queryKeys.system.dashboard(userId) }) },
   })
   const planItems = Array.isArray(plans.data) ? plans.data : []
+  const current = activate.isSuccess ? 4 : credential ? 3 : assignPlan.isSuccess ? 2 : createdTenantId ? 1 : 0
 
   return (
     <>
       <Head view="onboarding" />
+      <Stepper
+        current={current}
+        steps={[
+          { title: t('system.onboarding.step1') },
+          { title: t('system.onboarding.step2') },
+          { title: t('system.onboarding.step3') },
+          { title: t('system.onboarding.step4') },
+        ]}
+      />
 
       <Card title={t('system.onboarding.step1')}>
         {createTenant.isSuccess && <Alert variant="success" title={t('system.common.created')}>{t('system.onboarding.tenantCreated', { id: createdTenantId })}</Alert>}
         {createTenant.isError && <ErrorState error={createTenant.error} onRetry={() => createTenant.reset()} />}
-        <TextField label={t('system.common.tenantId')} value={tenantForm.id} onChange={(e) => setTenantForm((f) => ({ ...f, id: e.target.value }))} />
-        <TextField label={t('system.common.tenantName')} value={tenantForm.name} onChange={(e) => setTenantForm((f) => ({ ...f, name: e.target.value }))} />
-        <SelectField label={t('system.common.curriculum')} value={tenantForm.type} onChange={(e) => setTenantForm((f) => ({ ...f, type: e.target.value }))} options={CURRICULUM} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <TextField label={t('system.common.tenantId')} value={tenantForm.id} onChange={(e) => setTenantForm((f) => ({ ...f, id: e.target.value }))} />
+          <TextField label={t('system.common.tenantName')} value={tenantForm.name} onChange={(e) => setTenantForm((f) => ({ ...f, name: e.target.value }))} />
+          <SelectField label={t('system.common.curriculum')} value={tenantForm.type} onChange={(e) => setTenantForm((f) => ({ ...f, type: e.target.value }))} options={CURRICULUM} />
+        </div>
         <Button onClick={() => createTenant.mutate()} loading={createTenant.isPending} disabled={!tenantForm.id.trim() || !tenantForm.name.trim() || Boolean(createdTenantId)}>{t('system.onboarding.createTenant')}</Button>
       </Card>
 
@@ -298,16 +306,20 @@ function OnboardingPage({ userId }) {
           </Alert>
         )}
         {createAdmin.isError && <ErrorState error={createAdmin.error} onRetry={() => createAdmin.reset()} />}
-        <TextField label={t('system.common.name')} value={adminForm.fullName} onChange={(e) => setAdminForm((f) => ({ ...f, fullName: e.target.value }))} />
-        <TextField label={t('system.common.loginCode')} value={adminForm.loginCode} onChange={(e) => setAdminForm((f) => ({ ...f, loginCode: e.target.value }))} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <TextField label={t('system.common.name')} value={adminForm.fullName} onChange={(e) => setAdminForm((f) => ({ ...f, fullName: e.target.value }))} />
+          <TextField label={t('system.common.loginCode')} value={adminForm.loginCode} onChange={(e) => setAdminForm((f) => ({ ...f, loginCode: e.target.value }))} />
+        </div>
         <Button onClick={() => createAdmin.mutate()} loading={createAdmin.isPending} disabled={!createdTenantId || !adminForm.fullName.trim() || !adminForm.loginCode.trim()}>{t('system.onboarding.createAdmin')}</Button>
       </Card>
 
       <Card title={t('system.onboarding.step4')}>
         {activate.isSuccess && <Alert variant="success" title={t('system.common.saved')}>{t('system.onboarding.activated')}</Alert>}
         {activate.isError && <ErrorState error={activate.error} onRetry={() => activate.reset()} />}
-        <Button onClick={() => activate.mutate()} loading={activate.isPending} disabled={!createdTenantId}>{t('system.onboarding.activate')}</Button>
-        {createdTenantId && <Link className="ui-btn ui-btn--secondary" to={`/app/system/tenants/${encodeURIComponent(createdTenantId)}`}>{t('system.common.open')}</Link>}
+        <div className="cluster">
+          <Button onClick={() => activate.mutate()} loading={activate.isPending} disabled={!createdTenantId}>{t('system.onboarding.activate')}</Button>
+          {createdTenantId && <Link className="ui-btn ui-btn--secondary" to={`/app/system/tenants/${encodeURIComponent(createdTenantId)}`}>{t('system.common.open')}</Link>}
+        </div>
       </Card>
     </>
   )
@@ -319,13 +331,13 @@ function OnboardingPage({ userId }) {
 function PlansPage({ userId, locale }) {
   const { t } = useTranslation()
   const query = useSystemQuery(queryKeys.system.plans(userId), (s) => systemApi.plans(s), { staleTime: STALE.medium })
-  return (<><Head view="plans" /><ListSection title={t('system.pages.plans.title')} query={query} empty={t('system.empty.plans')} locale={locale} /></>)
+  return (<><Head view="plans" /><List query={query} empty={t('system.empty.plans')} locale={locale} /></>)
 }
 
 function SubscriptionsPage({ userId, locale }) {
   const { t } = useTranslation()
   const query = useSystemQuery(queryKeys.system.subscriptions(userId), (s) => systemApi.subscriptions(s))
-  return (<><Head view="subscriptions" /><ListSection title={t('system.pages.subscriptions.title')} query={query} empty={t('system.empty.subscriptions')} locale={locale} /></>)
+  return (<><Head view="subscriptions" /><List query={query} empty={t('system.empty.subscriptions')} locale={locale} /></>)
 }
 
 function UsagePage({ userId, locale }) {
@@ -335,16 +347,19 @@ function UsagePage({ userId, locale }) {
   return (
     <>
       <Head view="usage" />
-      {query.isLoading && <p role="status">{t('states.loading')}</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {query.data && (
         <>
-          <Alert title={t('system.usage.totals')}>
-            {t('roles.Student')}: <strong>{query.data.totalStudents ?? 0}</strong> · {t('roles.Teacher')}: <strong>{query.data.totalTeachers ?? 0}</strong> · {t('system.dashboard.aiRecords')}: <strong>{query.data.totalAiGenerations ?? 0}</strong>
-          </Alert>
-          <Card title={t('system.pages.usage.title')}>
-            <ItemsList items={rows} empty={t('system.empty.usage')} renderItem={(item) => <DetailGrid item={item} locale={locale} />} />
-          </Card>
+          <div className="student-dashboard">
+            <Metric icon={GraduationCap} accent="var(--brand)" value={query.data.totalStudents ?? 0} label={t('roles.Student')} />
+            <Metric icon={Users} accent="var(--purple)" value={query.data.totalTeachers ?? 0} label={t('roles.Teacher')} />
+            <Metric icon={Bot} accent="var(--purple)" value={query.data.totalAiGenerations ?? 0} label={t('system.dashboard.aiRecords')} />
+          </div>
+          <section className="ui-section">
+            <div className="ui-section__head"><h2 className="ui-section__title">{t('system.pages.usage.title')}</h2></div>
+            <ResourceTable rows={rows} emptyTitle={t('system.empty.usage')} locale={locale} />
+          </section>
         </>
       )}
     </>
@@ -358,16 +373,18 @@ function AiUsagePage({ userId, locale }) {
   return (
     <>
       <Head view="aiUsage" />
-      {query.isLoading && <p role="status">{t('states.loading')}</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {query.data && (
         <>
-          <Alert title={t('system.aiUsage.totals')}>
-            {t('system.aiUsage.records')}: <strong>{query.data.records ?? 0}</strong> · {t('system.aiUsage.tokens')}: <strong>{query.data.totalTokens ?? 0}</strong>
-          </Alert>
-          <Card title={t('system.aiUsage.byTenant')}>
-            <ItemsList items={rows} empty={t('system.empty.generic')} renderItem={(item) => <DetailGrid item={item} locale={locale} />} />
-          </Card>
+          <div className="student-dashboard">
+            <Metric icon={Bot} accent="var(--purple)" value={query.data.records ?? 0} label={t('system.aiUsage.records')} />
+            <Metric icon={Bot} accent="var(--brand)" value={query.data.totalTokens ?? 0} label={t('system.aiUsage.tokens')} />
+          </div>
+          <section className="ui-section">
+            <div className="ui-section__head"><h2 className="ui-section__title">{t('system.aiUsage.byTenant')}</h2></div>
+            <ResourceTable rows={rows} emptyTitle={t('system.empty.generic')} locale={locale} />
+          </section>
         </>
       )}
     </>
@@ -382,13 +399,9 @@ function StoragePage({ userId, locale }) {
     <>
       <Head view="storage" />
       <Alert title={t('system.notes.storageTitle')}>{query.data?.note || t('system.notes.storage')}</Alert>
-      {query.isLoading && <p role="status">{t('states.loading')}</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
-      {query.data && (
-        <Card title={t('system.pages.storage.title')}>
-          <ItemsList items={rows} empty={t('system.empty.generic')} renderItem={(item) => <DetailGrid item={item} locale={locale} />} />
-        </Card>
-      )}
+      {query.data && <ResourceTable rows={rows} emptyTitle={t('system.empty.generic')} locale={locale} />}
     </>
   )
 }
@@ -405,23 +418,26 @@ function SupportPage({ userId, locale }) {
     mutationFn: ({ id, responseMessage }) => systemApi.respondSupportTicket(id, { responseMessage, status: SUPPORT_STATUS.Completed }),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.system.support(userId) }),
   })
+  const items = Array.isArray(query.data) ? query.data : []
   return (
     <>
       <Head view="support" />
-      <Card title={t('system.pages.support.title')}>
-        <QueryResult query={query} empty={t('system.empty.support')}>
-          {(items) => <ItemsList items={items} empty={t('system.empty.support')} renderItem={(item) => {
+      {query.isLoading && <Loading />}
+      {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
+      {query.data && (items.length === 0 ? <EmptyState icon={MessageSquare} title={t('system.empty.support')} /> : (
+        <div className="student-list">
+          {items.map((item) => {
             const id = itemId(item)
             return (
-              <div>
-                <DetailGrid item={item} locale={locale} />
+              <Card key={id}>
+                <DetailList item={item} locale={locale} />
                 <TextareaField label={t('system.support.reply')} value={replyById[id] || ''} onChange={(e) => setReplyById((m) => ({ ...m, [id]: e.target.value }))} />
                 <Button onClick={() => respond.mutate({ id, responseMessage: replyById[id] || '' })} loading={respond.isPending} disabled={!(replyById[id] || '').trim()}>{t('system.support.respond')}</Button>
-              </div>
+              </Card>
             )
-          }} />}
-        </QueryResult>
-      </Card>
+          })}
+        </div>
+      ))}
     </>
   )
 }
@@ -435,21 +451,46 @@ function FeatureFlagsPage({ userId, locale }) {
   const query = useSystemQuery(queryKeys.system.featureFlags(userId), (s) => systemApi.featureFlags(s))
   const [form, setForm] = useState({ key: '', isEnabled: true, targetTenantId: '' })
   const upsert = useMutation({
-    mutationFn: () => systemApi.upsertFeatureFlag({ key: form.key.trim(), isEnabled: form.isEnabled, targetTenantId: form.targetTenantId.trim() || null }),
-    onSuccess: () => { setForm({ key: '', isEnabled: true, targetTenantId: '' }); qc.invalidateQueries({ queryKey: queryKeys.system.featureFlags(userId) }) },
+    mutationFn: (payload) => systemApi.upsertFeatureFlag(payload),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.system.featureFlags(userId) }) },
   })
+  const createFlag = () => upsert.mutate({ key: form.key.trim(), isEnabled: form.isEnabled, targetTenantId: form.targetTenantId.trim() || null }, { onSuccess: () => { setForm({ key: '', isEnabled: true, targetTenantId: '' }); qc.invalidateQueries({ queryKey: queryKeys.system.featureFlags(userId) }) } })
+  const columns = [
+    { key: 'key', header: t('system.common.key') },
+    { key: 'targetTenantId', header: t('system.featureFlags.targetTenant') },
+    { key: 'isEnabled', header: t('system.featureFlags.enabled'), kind: 'bool' },
+  ]
   return (
     <>
       <Head view="featureFlags" />
       <Card title={t('system.featureFlags.upsert')}>
         {upsert.isSuccess && <Alert variant="success" title={t('system.common.saved')}>{t('system.featureFlags.saved')}</Alert>}
         {upsert.isError && <ErrorState error={upsert.error} onRetry={() => upsert.reset()} />}
-        <TextField label={t('system.common.key')} value={form.key} onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <TextField label={t('system.common.key')} value={form.key} onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))} />
+          <TextField label={t('system.featureFlags.targetTenant')} value={form.targetTenantId} onChange={(e) => setForm((f) => ({ ...f, targetTenantId: e.target.value }))} />
+        </div>
         <CheckboxField label={t('system.featureFlags.enabled')} checked={form.isEnabled} onChange={(e) => setForm((f) => ({ ...f, isEnabled: e.target.checked }))} />
-        <TextField label={t('system.featureFlags.targetTenant')} value={form.targetTenantId} onChange={(e) => setForm((f) => ({ ...f, targetTenantId: e.target.value }))} />
-        <Button onClick={() => upsert.mutate()} loading={upsert.isPending} disabled={!form.key.trim()}>{t('system.common.save')}</Button>
+        <Button onClick={createFlag} loading={upsert.isPending} disabled={!form.key.trim()}>{t('system.common.save')}</Button>
       </Card>
-      <ListSection title={t('system.pages.featureFlags.title')} query={query} empty={t('system.empty.featureFlags')} locale={locale} />
+      <List
+        query={query}
+        columns={columns}
+        empty={t('system.empty.featureFlags')}
+        locale={locale}
+        rowActions={(item) => {
+          const enabled = Boolean(getField(item, 'isEnabled'))
+          const key = getField(item, 'key')
+          return (
+            <Toggle
+              checked={enabled}
+              label={key}
+              disabled={upsert.isPending}
+              onChange={(next) => upsert.mutate({ key, isEnabled: next, targetTenantId: getField(item, 'targetTenantId') || null })}
+            />
+          )
+        }}
+      />
     </>
   )
 }
@@ -473,7 +514,7 @@ function AnnouncementsPage({ userId, locale }) {
         <TextareaField label={t('system.common.message')} value={form.body} onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))} />
         <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.title.trim() || !form.body.trim()}>{t('system.announcements.create')}</Button>
       </Card>
-      <ListSection title={t('system.pages.announcements.title')} query={query} empty={t('system.empty.announcements')} locale={locale} />
+      <List query={query} empty={t('system.empty.announcements')} locale={locale} />
     </>
   )
 }
@@ -493,14 +534,16 @@ function SettingsPage({ userId, locale }) {
       <Card title={t('system.settings.upsert')}>
         {upsert.isSuccess && <Alert variant="success" title={t('system.common.saved')}>{t('system.settings.saved')}</Alert>}
         {upsert.isError && <ErrorState error={upsert.error} onRetry={() => upsert.reset()} />}
-        <TextField label={t('system.common.key')} value={form.key} onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))} />
-        <TextField label={t('system.common.value')} value={form.value} onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))} />
-        <SelectField label={t('system.common.valueType')} value={form.valueType} onChange={(e) => setForm((f) => ({ ...f, valueType: e.target.value }))}
-          options={Object.entries(SETTING_TYPE).map(([k, v]) => ({ value: v, label: k }))} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <TextField label={t('system.common.key')} value={form.key} onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))} />
+          <TextField label={t('system.common.value')} value={form.value} onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))} />
+          <SelectField label={t('system.common.valueType')} value={form.valueType} onChange={(e) => setForm((f) => ({ ...f, valueType: e.target.value }))}
+            options={Object.entries(SETTING_TYPE).map(([k, v]) => ({ value: v, label: k }))} />
+        </div>
         <CheckboxField label={t('system.common.secret')} checked={form.isSecret} onChange={(e) => setForm((f) => ({ ...f, isSecret: e.target.checked }))} />
         <Button onClick={() => upsert.mutate()} loading={upsert.isPending} disabled={!form.key.trim()}>{t('system.common.save')}</Button>
       </Card>
-      <ListSection title={t('system.pages.settings.title')} query={query} empty={t('system.empty.settings')} locale={locale} />
+      <List query={query} empty={t('system.empty.settings')} locale={locale} />
     </>
   )
 }
@@ -511,7 +554,7 @@ function SettingsPage({ userId, locale }) {
 function AuditPage({ userId, locale }) {
   const { t } = useTranslation()
   const query = useSystemQuery(queryKeys.system.audit(userId), (s) => systemApi.audit(s))
-  return (<><Head view="audit" /><ListSection title={t('system.pages.audit.title')} query={query} empty={t('system.empty.audit')} locale={locale} /></>)
+  return (<><Head view="audit" /><List query={query} empty={t('system.empty.audit')} locale={locale} /></>)
 }
 
 function SecurityPage({ userId, locale }) {
@@ -521,7 +564,7 @@ function SecurityPage({ userId, locale }) {
     <>
       <Head view="security" />
       <Alert title={t('system.notes.securityTitle')}>{t('system.notes.security')}</Alert>
-      <ListSection title={t('system.pages.security.title')} query={query} empty={t('system.empty.security')} locale={locale} />
+      <List query={query} empty={t('system.empty.security')} locale={locale} />
     </>
   )
 }
@@ -534,7 +577,7 @@ function PostureCard({ posture, locale }) {
   if (!posture) return null
   return (
     <Card title={posture.configured ? t('system.posture.configured') : t('system.posture.notConfigured')}>
-      <DetailGrid item={posture} locale={locale} />
+      <DetailList item={posture} locale={locale} />
     </Card>
   )
 }
@@ -546,22 +589,22 @@ function HealthPage({ userId, locale }) {
   return (
     <>
       <Head view="health" />
-      {query.isLoading && <p role="status">{t('states.loading')}</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {query.data && (
         <>
           <Alert variant={h?.databaseReachable ? 'success' : 'error'} title={t('system.health.title')}>
             {t('system.health.api')}: <strong>{h?.api}</strong> · {t('system.health.database')}: <strong>{h?.databaseReachable ? t('system.health.reachable') : t('system.health.unreachable')}</strong>
           </Alert>
-          <Card title={t('system.pages.health.title')}><DetailGrid item={h} locale={locale} /></Card>
+          <Card title={t('system.pages.health.title')}><DetailList item={h} locale={locale} /></Card>
           {/* Phase 19 — dependency health (storage / AI / background jobs), request metrics, deployment. */}
-          {query.data.storage && <Card title={t('system.health.storage')}><DetailGrid item={query.data.storage} locale={locale} /></Card>}
-          {query.data.aiService && <Card title={t('system.health.aiService')}><DetailGrid item={query.data.aiService} locale={locale} /></Card>}
-          {query.data.backgroundJobs && <Card title={t('system.health.backgroundJobs')}><DetailGrid item={query.data.backgroundJobs} locale={locale} /></Card>}
-          {query.data.metrics && <Card title={t('system.health.metrics')}><DetailGrid item={query.data.metrics} locale={locale} /></Card>}
+          {query.data.storage && <Card title={t('system.health.storage')}><DetailList item={query.data.storage} locale={locale} /></Card>}
+          {query.data.aiService && <Card title={t('system.health.aiService')}><DetailList item={query.data.aiService} locale={locale} /></Card>}
+          {query.data.backgroundJobs && <Card title={t('system.health.backgroundJobs')}><DetailList item={query.data.backgroundJobs} locale={locale} /></Card>}
+          {query.data.metrics && <Card title={t('system.health.metrics')}><DetailList item={query.data.metrics} locale={locale} /></Card>}
           {(query.data.version || query.data.environment) && (
             <Card title={t('system.health.deployment')}>
-              <DetailGrid item={{ version: query.data.version, environment: query.data.environment, uptimeSeconds: query.data.uptimeSeconds }} locale={locale} />
+              <DetailList item={{ version: query.data.version, environment: query.data.environment, uptimeSeconds: query.data.uptimeSeconds }} locale={locale} />
             </Card>
           )}
         </>
@@ -576,7 +619,7 @@ function ErrorMonitoringPage({ userId, locale }) {
   return (
     <>
       <Head view="errorMonitoring" />
-      {query.isLoading && <p role="status">{t('states.loading')}</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {query.data && (
         <>
@@ -594,7 +637,7 @@ function BackupsPage({ userId, locale }) {
   return (
     <>
       <Head view="backups" />
-      {query.isLoading && <p role="status">{t('states.loading')}</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {query.data && (
         <>

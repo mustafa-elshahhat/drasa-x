@@ -18,6 +18,7 @@ import { EmptyState, ErrorState } from '../../components/ui/states'
 import { Spinner } from '../../components/ui/Spinner'
 import { Button } from '../../components/ui/Button'
 import { Alert } from '../../components/ui/Alert'
+import { MessageThread } from '../../components/chat/MessageThread'
 import { useAuth } from '../../features/auth/AuthContext'
 import { queryKeys, STALE } from '../../lib/query/keys'
 import { notificationsApi } from '../../features/notifications/notificationsApi'
@@ -384,16 +385,9 @@ function ThreadView() {
       ) : (messages.data?.length ?? 0) === 0 ? (
         <EmptyState title={t('messages.threadEmptyTitle')} message={t('messages.threadEmptyBody')} />
       ) : (
-        <ul className="ui-list ui-thread" data-testid="thread-messages">
-          {[...messages.data]
-            .sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt))
-            .map((m) => (
-              <li key={m.id} className={`ui-thread__msg${m.senderId === userId ? ' ui-thread__msg--mine' : ''}`}>
-                <div className="ui-thread__body">{m.body}</div>
-                <div className="ui-list__meta ui-muted">{formatWhen(m.sentAt)}</div>
-              </li>
-            ))}
-        </ul>
+        <Card>
+          <MessageThread messages={messages.data} currentUserId={userId} formatWhen={formatWhen} />
+        </Card>
       )}
 
       {!conversation.data?.isClosed && (

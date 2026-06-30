@@ -2,15 +2,38 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Bot, CheckCircle2, FileText } from 'lucide-react'
+import {
+  Bot, FileText, BookOpen, ClipboardCheck, ClipboardList, Bell, CalendarClock, Medal, Users, Trophy,
+  Layers, PlayCircle, GraduationCap, Megaphone, Lightbulb, MessageSquare, Send, Flame, Sparkles, ShieldCheck,
+} from 'lucide-react'
 import { PageHeader, Card } from '../../components/ui/PageHeader'
+import { Metric } from '../../components/ui/Metric'
 import { EmptyState, ErrorState } from '../../components/ui/states'
+import { NotEnoughData } from '../../components/ui/NotEnoughData'
 import { Button } from '../../components/ui/Button'
 import { Alert } from '../../components/ui/Alert'
+import { Chip } from '../../components/ui/Chip'
+import { Spinner } from '../../components/ui/Spinner'
+import { QueryBoundary } from '../../components/ui/QueryBoundary'
 import { TextField, TextareaField } from '../../components/form/fields'
+import { DetailList } from '../../components/data/DetailList'
+import { Ring } from '../../components/viz/Ring'
+import { ProgressBar } from '../../components/viz/ProgressBar'
+import { Heatmap } from '../../components/viz/Heatmap'
+import { StreakStrip } from '../../components/viz/StreakStrip'
+import { SubjectCard } from '../../components/domain/SubjectCard'
+import { UnitCard } from '../../components/domain/UnitCard'
+import { LessonRow } from '../../components/domain/LessonRow'
+import { QuizCard } from '../../components/domain/QuizCard'
+import { LeaderboardRow } from '../../components/domain/LeaderboardRow'
+import { Thumb } from '../../components/domain/Thumb'
+import { AITutorMessage } from '../../components/chat/AITutorMessage'
+import { OptionCard } from '../../components/quiz/OptionCard'
 import { useAuth } from '../../features/auth/AuthContext'
 import { studentApi } from '../../features/student/studentApi'
-import { answerPayloadFromForm, displayValue, formatDate, itemId, settledData, settledError, statusLabel } from '../../features/student/studentUtils'
+import {
+  answerPayloadFromForm, displayValue, formatDate, getField, itemId, settledData, settledError,
+} from '../../features/student/studentUtils'
 import { queryKeys, STALE } from '../../lib/query/keys'
 import { toItems, toObject } from '../../features/student/studentSchemas'
 
@@ -18,38 +41,27 @@ function useStudentQuery(key, fn, options = {}) {
   return useQuery({ queryKey: key, queryFn: ({ signal }) => fn(signal), staleTime: options.staleTime ?? STALE.short, enabled: options.enabled ?? true })
 }
 
-function Field({ label, value }) {
-  return (
-    <div className="student-kv">
-      <dt>{label}</dt>
-      <dd>{value ?? '—'}</dd>
-    </div>
-  )
+function Loading() {
+  const { t } = useTranslation()
+  return <Spinner label={t('states.loading')} />
 }
 
-function ItemsList({ items, empty, renderItem }) {
-  if (!items?.length) return <EmptyState title={empty} />
-  return <div className="student-list">{items.map((item, index) => <div className="student-list__item" key={itemId(item) || index}>{renderItem(item)}</div>)}</div>
+// Common percentage-style fields on untyped progress records. Used to show a real
+// ProgressBar where the backend returns one — and NotEnoughData where it does not.
+function percentOf(item) {
+  const keys = ['completionPercentage', 'CompletionPercentage', 'progress', 'Progress', 'percentage', 'Percentage', 'masteryPercent', 'MasteryPercent', 'score', 'Score', 'averageScore', 'AverageScore']
+  for (const k of keys) {
+    const v = getField(item, k)
+    if (v != null && v !== '' && Number.isFinite(Number(v))) return Number(v)
+  }
+  return null
 }
 
-function QueryCard({ title, query, empty, children }) {
-  if (query.isLoading) return <Card title={title}><p role="status">Loading...</p></Card>
-  if (query.isError) return <Card title={title}><ErrorState error={query.error} onRetry={query.refetch} /></Card>
-  return <Card title={title}>{children(query.data) || <EmptyState title={empty} />}</Card>
-}
+const ATTENDANCE_TONE = { present: 'success', late: 'warning', absent: 'danger', excused: 'info' }
 
-function DetailGrid({ item, locale }) {
-  if (!item) return null
-  const fields = Object.entries(item).filter(([, value]) => value !== null && value !== undefined && typeof value !== 'object')
-  return (
-    <dl className="student-grid">
-      {fields.slice(0, 12).map(([key, value]) => (
-        <Field key={key} label={key} value={String(key).toLowerCase().includes('date') || String(key).toLowerCase().includes('at') ? formatDate(value, locale) : statusLabel(value)} />
-      ))}
-    </dl>
-  )
-}
-
+// =============================================================================
+// Dashboard
+// =============================================================================
 function DashboardPage({ userId, locale }) {
   const { t } = useTranslation()
   const subjects = useStudentQuery(queryKeys.student.subjects(userId), (signal) => studentApi.subjects(signal), { staleTime: STALE.medium })
@@ -66,36 +78,66 @@ function DashboardPage({ userId, locale }) {
   const unread = notifications.data ? toObject(settledData(notifications.data.count))?.unreadCount : null
   const officeAvailable = office.data ? toItems(settledData(office.data.available)) : []
   const earnedBadges = badges.data ? toItems(settledData(badges.data.earned)) : []
+  const subjectItems = toItems(subjects.data)
 
+  // Honest KPI value: a placeholder while loading / on error, the real count otherwise.
+  const count = (q) => (q.isLoading ? '…' : q.isError ? '—' : q.data?.length ?? 0)
   return (
     <>
       <PageHeader title={t('student.dashboard.title')} description={t('student.dashboard.description')} />
       <div className="student-dashboard">
-        <QueryCard title={t('student.subjects.title')} query={subjects} empty={t('student.empty.subjects')}>{(items) => <MetricLink to="/app/student/subjects" value={items.length} label={t('student.dashboard.assignedSubjects')} />}</QueryCard>
-        <QueryCard title={t('student.homework.title')} query={homework} empty={t('student.empty.homework')}>{(items) => <MetricLink to="/app/student/homework" value={items.length} label={t('student.dashboard.upcomingHomework')} />}</QueryCard>
-        <QueryCard title={t('student.quizzes.title')} query={quizzes} empty={t('student.empty.quizzes')}>{(items) => <MetricLink to="/app/student/quizzes" value={items.length} label={t('student.dashboard.assignedQuizzes')} />}</QueryCard>
-        <Card title={t('student.notifications.title')}><MetricLink to="/app/student/notifications" value={unread ?? '—'} label={t('student.dashboard.unreadNotifications')} /></Card>
-        <Card title={t('student.recommendations.title')}><MetricLink to="/app/student/recommendations" value={progressRecommendations.length} label={t('student.dashboard.activeRecommendations')} /></Card>
-        <Card title={t('student.officeHours.title')}><MetricLink to="/app/student/office-hours" value={officeAvailable.length} label={t('student.dashboard.availableOfficeHours')} /></Card>
-        <Card title={t('student.badges.title')}><MetricLink to="/app/student/badges" value={earnedBadges.length} label={t('student.dashboard.earnedBadges')} /></Card>
-        <QueryCard title={t('student.communities.title')} query={communities} empty={t('student.empty.communities')}>{(items) => <MetricLink to="/app/student/communities" value={items.length} label={t('student.dashboard.availableCommunities')} />}</QueryCard>
-        <QueryCard title={t('student.competitions.title')} query={competitions} empty={t('student.empty.competitions')}>{(items) => <MetricLink to="/app/student/competitions" value={items.length} label={t('student.dashboard.activeCompetitions')} />}</QueryCard>
+        <Metric to="/app/student/subjects" icon={BookOpen} accent="var(--brand)" value={count(subjects)} label={t('student.dashboard.assignedSubjects')} />
+        <Metric to="/app/student/homework" icon={ClipboardCheck} accent="var(--orange)" value={count(homework)} label={t('student.dashboard.upcomingHomework')} />
+        <Metric to="/app/student/quizzes" icon={ClipboardList} accent="var(--purple)" value={count(quizzes)} label={t('student.dashboard.assignedQuizzes')} />
+        <Metric to="/app/student/notifications" icon={Bell} accent="var(--info)" value={unread ?? '—'} label={t('student.dashboard.unreadNotifications')} />
+        <Metric to="/app/student/recommendations" icon={Bot} accent="var(--purple)" value={progressRecommendations.length} label={t('student.dashboard.activeRecommendations')} />
+        <Metric to="/app/student/office-hours" icon={CalendarClock} accent="var(--brand)" value={officeAvailable.length} label={t('student.dashboard.availableOfficeHours')} />
+        <Metric to="/app/student/badges" icon={Medal} accent="var(--warning)" value={earnedBadges.length} label={t('student.dashboard.earnedBadges')} />
+        <Metric to="/app/student/communities" icon={Users} accent="var(--success)" value={count(communities)} label={t('student.dashboard.availableCommunities')} />
+        <Metric to="/app/student/competitions" icon={Trophy} accent="var(--orange)" value={count(competitions)} label={t('student.dashboard.activeCompetitions')} />
       </div>
+
+      {subjectItems.length > 0 && (
+        <section className="ui-section">
+          <div className="ui-section__head">
+            <h2 className="ui-section__title">{t('student.subjects.title')}</h2>
+            <Link to="/app/student/subjects" className="ui-btn ui-btn--soft">{t('student.viewAll', 'View all')}</Link>
+          </div>
+          <div className="ui-grid ui-grid--auto">
+            {subjectItems.slice(0, 6).map((item) => (
+              <SubjectCard key={itemId(item) || displayValue(item)} to={`/app/student/subjects/${itemId(item)}`} name={displayValue(item)} progress={percentOf(item)} progressLabel={t('student.progress.title')} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <Card title={t('student.progress.title')} description={t('student.progress.description')}>
-        {progress.isError ? <ErrorState error={progress.error} onRetry={progress.refetch} /> : <ProgressSections progress={progress.data} locale={locale} />}
+        {progress.isError ? <ErrorState error={progress.error} onRetry={progress.refetch} /> : progress.isLoading ? <Loading /> : <ProgressSections progress={progress.data} locale={locale} />}
       </Card>
     </>
   )
 }
 
-function MetricLink({ to, value, label }) {
-  return <Link className="student-metric" to={to}><strong>{value}</strong><span>{label}</span></Link>
-}
-
+// =============================================================================
+// Subjects / units / lessons / materials
+// =============================================================================
 function SubjectsPage({ userId }) {
   const { t } = useTranslation()
   const query = useStudentQuery(queryKeys.student.subjects(userId), (signal) => studentApi.subjects(signal), { staleTime: STALE.medium })
-  return <ListPage title={t('student.subjects.title')} description={t('student.subjects.description')} query={query} empty={t('student.empty.subjects')} itemLink={(item) => `/app/student/subjects/${itemId(item)}`} />
+  return (
+    <>
+      <PageHeader title={t('student.subjects.title')} description={t('student.subjects.description')} />
+      <QueryBoundary query={query} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.subjects')} emptyIcon={BookOpen}>
+        {(items) => (
+          <div className="ui-grid ui-grid--auto">
+            {items.map((item) => (
+              <SubjectCard key={itemId(item) || displayValue(item)} to={`/app/student/subjects/${itemId(item)}`} name={displayValue(item)} progress={percentOf(item)} progressLabel={t('student.progress.title')} />
+            ))}
+          </div>
+        )}
+      </QueryBoundary>
+    </>
+  )
 }
 
 function SubjectDetailsPage({ userId, locale }) {
@@ -105,10 +147,27 @@ function SubjectDetailsPage({ userId, locale }) {
   const units = useStudentQuery(queryKeys.student.units(userId, subjectId), (signal) => studentApi.units(subjectId, signal), { enabled: Boolean(subjectId), staleTime: STALE.medium })
   return (
     <>
-      <PageHeader title={displayValue(subject.data) || t('student.subjects.details')} description={t('student.subjects.secureDescription')} />
+      <PageHeader
+        title={displayValue(subject.data) || t('student.subjects.details')}
+        description={t('student.subjects.secureDescription')}
+        actions={<Link to="/app/student/ai-tutor" className="ui-btn ui-btn--soft"><Sparkles size={16} aria-hidden="true" /> {t('student.tutor.title')}</Link>}
+      />
       {subject.isError && <ErrorState error={subject.error} onRetry={subject.refetch} />}
-      <Card title={t('student.details')}><DetailGrid item={subject.data} locale={locale} /></Card>
-      <QueryCard title={t('student.units.title')} query={units} empty={t('student.empty.units')}>{(items) => <ItemsList items={items} empty={t('student.empty.units')} renderItem={(item) => <LinkedItem item={item} to={`/app/student/units/${itemId(item)}`} />} />}</QueryCard>
+      {subject.data && (
+        <Card title={t('student.details')}><DetailList item={subject.data} locale={locale} /></Card>
+      )}
+      <section className="ui-section">
+        <div className="ui-section__head"><h2 className="ui-section__title">{t('student.units.title')}</h2></div>
+        <QueryBoundary query={units} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.units')} emptyIcon={Layers}>
+          {(items) => (
+            <div className="student-list">
+              {items.map((item) => (
+                <UnitCard key={itemId(item)} to={`/app/student/units/${itemId(item)}`} title={displayValue(item)} icon={Layers} />
+              ))}
+            </div>
+          )}
+        </QueryBoundary>
+      </section>
     </>
   )
 }
@@ -118,10 +177,23 @@ function UnitsPage({ userId }) {
   const { unitId } = useParams()
   const lessons = useStudentQuery(queryKeys.student.lessons(userId, unitId), (signal) => studentApi.lessons(unitId, signal), { enabled: Boolean(unitId), staleTime: STALE.medium })
   if (!unitId) return <SubjectsPage userId={userId} />
-  return <ListPage title={t('student.lessons.title')} description={t('student.lessons.description')} query={lessons} empty={t('student.empty.lessons')} itemLink={(item) => `/app/student/lessons/${itemId(item)}`} />
+  return (
+    <>
+      <PageHeader title={t('student.lessons.title')} description={t('student.lessons.description')} />
+      <QueryBoundary query={lessons} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.lessons')} emptyIcon={PlayCircle}>
+        {(items) => (
+          <div className="student-list">
+            {items.map((item, i) => (
+              <LessonRow key={itemId(item)} to={`/app/student/lessons/${itemId(item)}`} index={i + 1} title={displayValue(item)} />
+            ))}
+          </div>
+        )}
+      </QueryBoundary>
+    </>
+  )
 }
 
-function LessonsPage({ userId, locale }) {
+function LessonsPage({ userId }) {
   const { t } = useTranslation()
   const { lessonId } = useParams()
   const qc = useQueryClient()
@@ -136,12 +208,34 @@ function LessonsPage({ userId, locale }) {
   if (!lessonId) return <PageHeader title={t('student.lessons.title')} description={t('student.lessons.chooseUnit')} />
   return (
     <>
-      <PageHeader title={t('student.lessons.details')} description={t('student.lessons.progressRule')} actions={<Button onClick={() => complete.mutate()} loading={complete.isPending} disabled={complete.isPending || isCompleted}>{isCompleted ? t('student.lessons.completed') : t('student.lessons.markComplete')}</Button>} />
-      <Card title={t('student.details')}><DetailGrid item={{ lessonId }} locale={locale} /></Card>
-      {isCompleted && <Alert variant="success" title={t('student.lessons.completed')}>{t('student.lessons.completedBody')}</Alert>}
-      {complete.isSuccess && <Alert variant="success" title={t('student.lessons.saved')}>{t('student.lessons.savedBody')}</Alert>}
-      {complete.isError && <ErrorState error={complete.error} />}
-      <QueryCard title={t('student.materials.title')} query={materials} empty={t('student.empty.materials')}>{(items) => <ItemsList items={items} empty={t('student.empty.materials')} renderItem={(item) => <LinkedItem item={item} to={`/app/student/materials/${itemId(item)}`} />} />}</QueryCard>
+      <PageHeader title={t('student.lessons.details')} description={t('student.lessons.progressRule')} />
+      <div className="ui-split">
+        <div>
+          <Thumb seed={lessonId} icon={PlayCircle} height={200} className="student-lesson__hero" />
+          <Card title={t('student.materials.title')}>
+            <QueryBoundary query={materials} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.materials')} emptyIcon={FileText}>
+              {(items) => (
+                <div className="student-list">
+                  {items.map((item) => (
+                    <LessonRow key={itemId(item)} to={`/app/student/materials/${itemId(item)}`} title={displayValue(item)} />
+                  ))}
+                </div>
+              )}
+            </QueryBoundary>
+          </Card>
+        </div>
+        <Card title={t('student.lessons.progress', 'Progress')}>
+          <div className="student-lesson__rail">
+            <Button onClick={() => complete.mutate()} loading={complete.isPending} disabled={complete.isPending || isCompleted}>
+              {isCompleted ? t('student.lessons.completed') : t('student.lessons.markComplete')}
+            </Button>
+            {isCompleted && <Alert variant="success" title={t('student.lessons.completed')}>{t('student.lessons.completedBody')}</Alert>}
+            {complete.isSuccess && <Alert variant="success" title={t('student.lessons.saved')}>{t('student.lessons.savedBody')}</Alert>}
+            {complete.isError && <ErrorState error={complete.error} />}
+            <Link to="/app/student/ai-tutor" className="ui-btn ui-btn--soft ui-btn--block"><Sparkles size={16} aria-hidden="true" /> {t('student.tutor.title')}</Link>
+          </div>
+        </Card>
+      </div>
     </>
   )
 }
@@ -156,25 +250,65 @@ function MaterialsPage({ userId, locale }) {
   return (
     <>
       <PageHeader title={t('student.materials.details')} description={t('student.materials.description')} />
-      <Card title={t('student.details')}><DetailGrid item={{ materialId }} locale={locale} /></Card>
-      <Card title={t('student.comments.title')}>
-        <form onSubmit={(event) => { event.preventDefault(); if (body.trim()) mutation.mutate() }}>
-          <TextareaField label={t('student.comments.add')} value={body} onChange={(e) => setBody(e.target.value)} maxLength={1000} />
-          <Button type="submit" loading={mutation.isPending} disabled={!body.trim()}>{t('actions.submit')}</Button>
-        </form>
-        {mutation.isError && <ErrorState error={mutation.error} />}
-        <QueryResult query={comments} empty={t('student.empty.comments')}>{(items) => <ItemsList items={items} empty={t('student.empty.comments')} renderItem={(item) => <PlainItem item={item} locale={locale} />} />}</QueryResult>
-      </Card>
+      <div className="ui-split">
+        <div>
+          <Thumb seed={materialId} icon={PlayCircle} height={220} className="student-lesson__hero" />
+        </div>
+        <Card title={t('student.comments.title')}>
+          <form className="stack" onSubmit={(event) => { event.preventDefault(); if (body.trim()) mutation.mutate() }}>
+            <TextareaField label={t('student.comments.add')} value={body} onChange={(e) => setBody(e.target.value)} maxLength={1000} />
+            <Button type="submit" loading={mutation.isPending} disabled={!body.trim()}>{t('actions.submit')}</Button>
+          </form>
+          {mutation.isError && <ErrorState error={mutation.error} />}
+          <QueryBoundary query={comments} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.comments')} emptyIcon={MessageSquare}>
+            {(items) => (
+              <ul className="ui-list">
+                {items.map((item) => (
+                  <li className="ui-list__item" key={itemId(item)}>
+                    <div className="ui-list__body">
+                      <div className="ui-list__title">{displayValue(item, ['authorName', 'AuthorName', 'author', 'Author']) || t('student.comments.title')}</div>
+                      <div className="ui-list__meta">{displayValue(item, ['body', 'Body', 'content', 'Content', 'text', 'Text'])}</div>
+                      <div className="ui-list__meta ui-muted">{formatDate(getField(item, 'createdAt'), locale)}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </QueryBoundary>
+        </Card>
+      </div>
     </>
   )
 }
 
+// =============================================================================
+// Homework
+// =============================================================================
 function HomeworkPage({ userId, locale }) {
   const { t } = useTranslation()
   const { homeworkId } = useParams()
   const list = useStudentQuery(queryKeys.student.homework(userId), (signal) => studentApi.homework(signal))
-  if (!homeworkId) return <ListPage title={t('student.homework.title')} description={t('student.homework.description')} query={list} empty={t('student.empty.homework')} itemLink={(item) => `/app/student/homework/${itemId(item)}`} />
-  return <HomeworkDetails userId={userId} homeworkId={homeworkId} list={list} locale={locale} />
+  if (homeworkId) return <HomeworkDetails userId={userId} homeworkId={homeworkId} list={list} locale={locale} />
+  return (
+    <>
+      <PageHeader title={t('student.homework.title')} description={t('student.homework.description')} />
+      <QueryBoundary query={list} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.homework')} emptyIcon={ClipboardCheck}>
+        {(items) => (
+          <div className="ui-grid ui-grid--auto">
+            {items.map((item) => (
+              <QuizCard
+                key={itemId(item)}
+                to={`/app/student/homework/${itemId(item)}`}
+                icon={ClipboardCheck}
+                title={displayValue(item)}
+                meta={formatDate(getField(item, 'dueDate') || getField(item, 'dueAt'), locale)}
+              />
+            ))}
+          </div>
+        )}
+      </QueryBoundary>
+    </>
+  )
 }
 
 function HomeworkDetails({ userId, homeworkId, list, locale }) {
@@ -188,25 +322,51 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
     <>
       <PageHeader title={displayValue(item) || t('student.homework.details')} description={t('student.homework.submitDescription')} />
       {list.isError && <ErrorState error={list.error} onRetry={list.refetch} />}
-      <Card title={t('student.details')}><DetailGrid item={item || { homeworkId }} locale={locale} /></Card>
-      <Card title={t('student.homework.submission')}>
-        <QueryResult query={submission} empty={t('student.homework.noSubmission')}>{(data) => <DetailGrid item={data} locale={locale} />}</QueryResult>
-        <form onSubmit={(event) => { event.preventDefault(); if (content.trim()) mutation.mutate() }}>
-          <TextareaField label={t('student.homework.answer')} value={content} onChange={(e) => setContent(e.target.value)} maxLength={4000} />
-          <Button type="submit" loading={mutation.isPending} disabled={!content.trim()}>{t('student.homework.submit')}</Button>
-        </form>
-        {mutation.isError && <ErrorState error={mutation.error} />}
-      </Card>
+      <div className="ui-split">
+        <Card title={t('student.homework.submission')}>
+          <QueryBoundary query={submission} loadingFallback={<Loading />} emptyWhen={(d) => !d} emptyTitle={t('student.homework.noSubmission')}>
+            {(data) => <DetailList item={data} locale={locale} />}
+          </QueryBoundary>
+          <form className="stack" onSubmit={(event) => { event.preventDefault(); if (content.trim()) mutation.mutate() }}>
+            <TextareaField label={t('student.homework.answer')} value={content} onChange={(e) => setContent(e.target.value)} maxLength={4000} />
+            <Button type="submit" loading={mutation.isPending} disabled={!content.trim()}>{t('student.homework.submit')}</Button>
+          </form>
+          {mutation.isError && <ErrorState error={mutation.error} />}
+        </Card>
+        {item && <Card title={t('student.details')}><DetailList item={item} locale={locale} /></Card>}
+      </div>
     </>
   )
 }
 
+// =============================================================================
+// Quizzes
+// =============================================================================
 function QuizzesPage({ userId, locale }) {
   const { t } = useTranslation()
   const { quizId } = useParams()
   const query = useStudentQuery(queryKeys.student.quizzes(userId), (signal) => studentApi.assignedQuizzes(signal))
-  if (!quizId) return <ListPage title={t('student.quizzes.title')} description={t('student.quizzes.description')} query={query} empty={t('student.empty.quizzes')} itemLink={(item) => `/app/student/quizzes/${itemId(item, ['quizId', 'QuizId', 'id', 'Id'])}`} />
-  return <QuizDetails userId={userId} quizId={quizId} list={query} locale={locale} />
+  if (quizId) return <QuizDetails userId={userId} quizId={quizId} list={query} locale={locale} />
+  return (
+    <>
+      <PageHeader title={t('student.quizzes.title')} description={t('student.quizzes.description')} />
+      <QueryBoundary query={query} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.quizzes')} emptyIcon={ClipboardList}>
+        {(items) => (
+          <div className="ui-grid ui-grid--auto">
+            {items.map((item) => (
+              <QuizCard
+                key={itemId(item, ['quizId', 'QuizId', 'id', 'Id'])}
+                to={`/app/student/quizzes/${itemId(item, ['quizId', 'QuizId', 'id', 'Id'])}`}
+                icon={ClipboardList}
+                title={displayValue(item)}
+                meta={formatDate(getField(item, 'dueDate') || getField(item, 'dueAt'), locale)}
+              />
+            ))}
+          </div>
+        )}
+      </QueryBoundary>
+    </>
+  )
 }
 
 function QuizDetails({ userId, quizId, list, locale }) {
@@ -220,8 +380,18 @@ function QuizDetails({ userId, quizId, list, locale }) {
     <>
       <PageHeader title={displayValue(item) || t('student.quizzes.details')} description={t('student.quizzes.instructions')} actions={<Button onClick={() => start.mutate()} loading={start.isPending}>{t('student.quizzes.start')}</Button>} />
       {start.isError && <ErrorState error={start.error} />}
-      <Card title={t('student.details')}><DetailGrid item={item || { quizId }} locale={locale} /></Card>
-      <QueryCard title={t('student.quizzes.previousAttempts')} query={history} empty={t('student.empty.attempts')}>{(items) => <ItemsList items={items} empty={t('student.empty.attempts')} renderItem={(item) => <LinkedItem item={item} to={`/app/student/quiz-attempts/${itemId(item)}/result`} />} />}</QueryCard>
+      {item && <Card title={t('student.details')}><DetailList item={item} locale={locale} /></Card>}
+      <Card title={t('student.quizzes.previousAttempts')}>
+        <QueryBoundary query={history} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.attempts')}>
+          {(items) => (
+            <div className="student-list">
+              {items.map((attempt) => (
+                <LessonRow key={itemId(attempt)} to={`/app/student/quiz-attempts/${itemId(attempt)}/result`} title={displayValue(attempt) || itemId(attempt)} icon={FileText} />
+              ))}
+            </div>
+          )}
+        </QueryBoundary>
+      </Card>
     </>
   )
 }
@@ -234,7 +404,7 @@ function QuizAttemptPage({ userId, locale }) {
   const query = useStudentQuery(queryKeys.student.attempt(userId, attemptId), (signal) => studentApi.attempt(attemptId, signal), { enabled: Boolean(attemptId) })
   const save = useMutation({ mutationFn: (answers) => studentApi.saveAttempt(attemptId, answers) })
   const submit = useMutation({ mutationFn: () => studentApi.submitAttempt(attemptId), onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.student.attemptResult(userId, attemptId) }); navigate(`/app/student/quiz-attempts/${attemptId}/result`) } })
-  if (query.isLoading) return <PageHeader title={t('student.quizzes.attempt')} description="Loading..." />
+  if (query.isLoading) return (<><PageHeader title={t('student.quizzes.attempt')} /><Loading /></>)
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   const questions = Array.isArray(query.data?.questions || query.data?.Questions) ? query.data.questions || query.data.Questions : []
   // Previously-saved answers, keyed by question id, so a reloaded attempt shows
@@ -247,27 +417,46 @@ function QuizAttemptPage({ userId, locale }) {
   return (
     <>
       <PageHeader title={t('student.quizzes.attempt')} description={t('student.quizzes.noCorrectAnswers')} />
-      <form onSubmit={(event) => { event.preventDefault(); const answers = answerPayloadFromForm(new FormData(event.currentTarget)); save.mutate(answers) }}>
-        {questions.length ? questions.map((q) => <QuestionBlock key={itemId(q)} question={q} saved={savedAnswers[itemId(q)]} />) : <DetailGrid item={query.data} locale={locale} />}
+      {questions.length > 0 && <Chip tone="muted">{t('student.quizzes.questionCount', { count: questions.length })}</Chip>}
+      <form className="student-quiz" onSubmit={(event) => { event.preventDefault(); const answers = answerPayloadFromForm(new FormData(event.currentTarget)); save.mutate(answers) }}>
+        {questions.length ? questions.map((q, i) => <QuestionBlock key={itemId(q)} index={i} question={q} saved={savedAnswers[itemId(q)]} />) : <DetailList item={query.data} locale={locale} />}
         <div className="student-actions">
           <Button type="submit" variant="secondary" loading={save.isPending}>{t('student.quizzes.save')}</Button>
           <Button type="button" loading={submit.isPending} onClick={() => submit.mutate()}>{t('student.quizzes.submit')}</Button>
         </div>
       </form>
+      {save.isSuccess && <Alert variant="success" title={t('student.quizzes.saved', 'Answers saved')} />}
       {(save.isError || submit.isError) && <ErrorState error={save.error || submit.error} />}
     </>
   )
 }
 
-function QuestionBlock({ question, saved }) {
+const OPTION_MARKERS = ['A', 'B', 'C', 'D', 'E', 'F']
+
+function QuestionBlock({ question, index, saved }) {
+  const { t } = useTranslation()
   const questionId = itemId(question)
   const options = question.options || question.Options || []
   const savedOptionId = saved?.selectedOptionId ?? saved?.SelectedOptionId ?? null
   const savedText = saved?.answerText ?? saved?.AnswerText ?? ''
   return (
-    <Card title={displayValue(question, ['text', 'Text', 'title', 'Title'])}>
-      {options.map((option) => <label className="student-answer" key={itemId(option)}><input type="radio" name={`q:${questionId}`} value={itemId(option)} defaultChecked={itemId(option) === savedOptionId} /> <span>{displayValue(option, ['text', 'Text', 'label', 'Label'])}</span></label>)}
-      {!options.length && <TextareaField label="Answer" name={`qt:${questionId}`} defaultValue={savedText} />}
+    <Card title={`${index + 1}. ${displayValue(question, ['text', 'Text', 'title', 'Title'])}`}>
+      {options.length > 0 ? (
+        <div className="student-quiz__options">
+          {options.map((option, oi) => (
+            <OptionCard
+              key={itemId(option)}
+              name={`q:${questionId}`}
+              value={itemId(option)}
+              marker={OPTION_MARKERS[oi] || oi + 1}
+              label={displayValue(option, ['text', 'Text', 'label', 'Label'])}
+              defaultChecked={itemId(option) === savedOptionId}
+            />
+          ))}
+        </div>
+      ) : (
+        <TextareaField label={t('student.quizzes.answer', 'Answer')} name={`qt:${questionId}`} defaultValue={savedText} />
+      )}
     </Card>
   )
 }
@@ -276,49 +465,81 @@ function QuizResultPage({ userId, locale }) {
   const { t } = useTranslation()
   const { attemptId } = useParams()
   const query = useStudentQuery(queryKeys.student.attemptResult(userId, attemptId), (signal) => studentApi.attemptResult(attemptId, signal), { enabled: Boolean(attemptId) })
-  return <SingleDataPage title={t('student.quizzes.result')} description={t('student.quizzes.serverScore')} query={query} locale={locale} />
+  return (
+    <>
+      <PageHeader title={t('student.quizzes.result')} description={t('student.quizzes.serverScore')} />
+      <QueryBoundary query={query} loadingFallback={<Loading />} emptyWhen={(d) => !d}>
+        {(data) => {
+          const pct = percentOf(data)
+          return (
+            <Card>
+              {pct != null ? (
+                <div className="quiz-result__head">
+                  <Ring value={pct} centerLabel={`${pct}%`} caption={t('student.quizzes.score', 'Score')} />
+                </div>
+              ) : null}
+              <DetailList item={data} locale={locale} />
+            </Card>
+          )
+        }}
+      </QueryBoundary>
+    </>
+  )
 }
 
+// =============================================================================
+// AI tutor
+// =============================================================================
 function TutorPage() {
   const { t, i18n } = useTranslation()
   const [message, setMessage] = useState('')
   const [subject, setSubject] = useState('')
   const mutation = useMutation({ mutationFn: () => studentApi.tutor({ message, subject: subject || undefined, language: i18n.language }) })
+  const response = mutation.data
+  const citations = response ? toItems(response.citations).map((c) => ({ label: displayValue(c, ['title', 'Title', 'source', 'Source', 'label', 'Label']) || displayValue(c) })) : []
   return (
     <>
       <PageHeader title={t('student.tutor.title')} description={t('student.tutor.description')} />
-      <Card title={t('student.tutor.ask')}>
-        <form onSubmit={(event) => { event.preventDefault(); if (message.trim()) mutation.mutate() }}>
-          <TextField label={t('student.tutor.context')} value={subject} onChange={(e) => setSubject(e.target.value)} />
-          <TextareaField label={t('student.tutor.question')} value={message} onChange={(e) => setMessage(e.target.value)} required maxLength={2000} />
-          <Button type="submit" loading={mutation.isPending} disabled={!message.trim()}>{t('student.tutor.send')}</Button>
-        </form>
-      </Card>
-      {mutation.isError && <ErrorState error={mutation.error} />}
-      {mutation.data && <TutorAnswer response={mutation.data} />}
+      <div className="student-tutor">
+        <Chip tone="purple" icon={Bot}>{t('student.tutor.title')}</Chip>
+        <div className="chat-thread">
+          {response && (
+            <AITutorMessage
+              answer={response.answer || response.noAnswerReason}
+              grounded={response.grounded}
+              citations={citations}
+              sourcesLabel={t('student.tutor.citations')}
+              meta={response.correlationId ? `${t('errors.referenceId')}: ${response.correlationId}` : undefined}
+            />
+          )}
+          {!response && !mutation.isPending && (
+            <EmptyState icon={Sparkles} title={t('student.tutor.ask')} message={t('student.tutor.description')} />
+          )}
+          {mutation.isPending && <Loading />}
+        </div>
+        {mutation.isError && <ErrorState error={mutation.error} />}
+        <Card>
+          <form className="stack" onSubmit={(event) => { event.preventDefault(); if (message.trim()) mutation.mutate() }}>
+            <TextField label={t('student.tutor.context')} value={subject} onChange={(e) => setSubject(e.target.value)} />
+            <TextareaField label={t('student.tutor.question')} value={message} onChange={(e) => setMessage(e.target.value)} required maxLength={2000} />
+            <Button type="submit" loading={mutation.isPending} disabled={!message.trim()}><Send size={16} aria-hidden="true" /> {t('student.tutor.send')}</Button>
+          </form>
+        </Card>
+      </div>
     </>
   )
 }
 
-function TutorAnswer({ response }) {
-  const { t } = useTranslation()
-  return (
-    <Card title={response.grounded ? t('student.tutor.grounded') : t('student.tutor.noAnswer')}>
-      <p>{response.answer || response.noAnswerReason}</p>
-      {response.correlationId && <p className="ui-alert__meta">{t('errors.referenceId')}: <code>{response.correlationId}</code></p>}
-      <h3>{t('student.tutor.citations')}</h3>
-      <ItemsList items={response.citations} empty={t('student.tutor.noCitations')} renderItem={(item) => <PlainItem item={item} />} />
-    </Card>
-  )
-}
-
+// =============================================================================
+// Progress / recommendations / engagement
+// =============================================================================
 function ProgressPage({ userId, locale, mode = 'progress' }) {
   const { t } = useTranslation()
   const query = useStudentQuery(queryKeys.student.progress(userId), (signal) => studentApi.progress(userId, signal))
   return (
     <>
       <PageHeader title={t(`student.${mode}.title`)} description={t(`student.${mode}.description`)} />
-      {query.isLoading && <p role="status">Loading...</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {query.data && <ProgressSections progress={query.data} locale={locale} mode={mode} />}
     </>
@@ -332,18 +553,53 @@ function ProgressSections({ progress, locale, mode }) {
     : mode === 'engagement'
       ? [['metrics', t('student.engagement.metrics')], ['insights', t('student.engagement.insights')], ['painPoints', t('student.engagement.painPoints')]]
       : [['summary', t('student.progress.summary')], ['subjects', t('student.progress.subjectProgress')], ['lessons', t('student.progress.lessonProgress')], ['attempts', t('student.progress.attemptHistory')]]
-  return <>{sections.map(([key, title]) => <PartialSection key={key} title={title} result={progress?.[key]} locale={locale} />)}</>
+  return <>{sections.map(([key, title]) => <PartialSection key={key} sectionKey={key} title={title} result={progress?.[key]} locale={locale} />)}</>
 }
 
-function PartialSection({ title, result, locale }) {
+function PartialSection({ sectionKey, title, result, locale }) {
   const { t } = useTranslation()
   const error = settledError(result)
   const data = settledData(result)
   const items = toItems(data)
   const object = toObject(data)
-  return <Card title={title}>{error ? <ErrorState error={error} /> : items.length ? <ItemsList items={items} empty={t('states.emptyTitle')} renderItem={(item) => <PlainItem item={item} locale={locale} />} /> : object ? <DetailGrid item={object} locale={locale} /> : <EmptyState title={t('student.empty.noData')} />}</Card>
+
+  let content
+  if (error) {
+    content = <ErrorState error={error} />
+  } else if (sectionKey === 'subjects' && items.length) {
+    // Real mastery bars where the backend returns a percentage; honest otherwise.
+    content = (
+      <div className="domain-usage">
+        {items.map((item, i) => {
+          const pct = percentOf(item)
+          return pct != null
+            ? <ProgressBar key={i} label={displayValue(item)} value={pct} />
+            : <DetailList key={i} item={item} locale={locale} />
+        })}
+      </div>
+    )
+  } else if (items.length) {
+    content = (
+      <div className="student-list">
+        {items.map((item, i) => (
+          <div className="student-list__item" key={itemId(item) || i}>
+            <strong className="domain-row__title">{displayValue(item) || itemId(item) || t('states.emptyTitle')}</strong>
+            <DetailList item={item} locale={locale} />
+          </div>
+        ))}
+      </div>
+    )
+  } else if (object) {
+    content = <DetailList item={object} locale={locale} />
+  } else {
+    content = <NotEnoughData />
+  }
+  return <Card title={title}>{content}</Card>
 }
 
+// =============================================================================
+// Attendance
+// =============================================================================
 function AttendancePage({ userId, locale }) {
   const { t } = useTranslation()
   const query = useStudentQuery(queryKeys.student.attendance(userId), (signal) => studentApi.attendance(signal))
@@ -351,7 +607,7 @@ function AttendancePage({ userId, locale }) {
     <>
       <PageHeader title={t('student.attendance.title')} description={t('student.attendance.description')} />
       <Alert title={t('student.attendance.noCvTitle')}>{t('student.attendance.noCvBody')}</Alert>
-      {query.isLoading && <p role="status">{t('states.loading')}</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {query.data && <AttendanceContent data={query.data} locale={locale} />}
     </>
@@ -362,44 +618,89 @@ function AttendanceContent({ data, locale }) {
   const { t } = useTranslation()
   const records = data.records || []
   const summary = data.summary || {}
+  const pct = summary.attendancePercentage ?? 0
+  const legend = [
+    { level: 'present', label: t('student.attendance.present') },
+    { level: 'late', label: t('student.attendance.late') },
+    { level: 'absent', label: t('student.attendance.absent') },
+    { level: 'excused', label: t('student.attendance.excused') },
+  ]
+  const cells = records.map((r, i) => {
+    const level = (String(r.status || '').toLowerCase()) in ATTENDANCE_TONE ? String(r.status).toLowerCase() : 'none'
+    return { key: r.id ?? i, level, title: `${formatDate(r.attendanceDate, locale)} — ${r.status}` }
+  })
   return (
     <>
       <Card title={t('student.attendance.summary')}>
-        <dl className="student-grid">
-          <Field label={t('student.attendance.total')} value={summary.total ?? 0} />
-          <Field label={t('student.attendance.present')} value={summary.present ?? 0} />
-          <Field label={t('student.attendance.absent')} value={summary.absent ?? 0} />
-          <Field label={t('student.attendance.late')} value={summary.late ?? 0} />
-          <Field label={t('student.attendance.excused')} value={summary.excused ?? 0} />
-          <Field label={t('student.attendance.percentage')} value={`${summary.attendancePercentage ?? 0}%`} />
-        </dl>
+        <div className="student-attendance">
+          <Ring value={pct} centerLabel={`${pct}%`} caption={t('student.attendance.percentage')} />
+          <div className="student-attendance__stats">
+            <Stat label={t('student.attendance.total')} value={summary.total ?? 0} />
+            <Stat label={t('student.attendance.present')} value={summary.present ?? 0} />
+            <Stat label={t('student.attendance.absent')} value={summary.absent ?? 0} />
+            <Stat label={t('student.attendance.late')} value={summary.late ?? 0} />
+            <Stat label={t('student.attendance.excused')} value={summary.excused ?? 0} />
+          </div>
+        </div>
+        {cells.length > 0 && <div style={{ marginTop: 18 }}><Heatmap cells={cells} legend={legend} /></div>}
       </Card>
       <Card title={t('student.attendance.records')}>
-        <ItemsList items={records} empty={t('student.attendance.empty')} renderItem={(item) => <AttendanceItem item={item} locale={locale} />} />
+        {records.length === 0 ? (
+          <EmptyState title={t('student.attendance.empty')} />
+        ) : (
+          <ul className="ui-list">
+            {records.map((item) => {
+              const tone = ATTENDANCE_TONE[String(item.status || '').toLowerCase()] || 'muted'
+              return (
+                <li className="ui-list__item" key={item.id || item.attendanceDate}>
+                  <div className="ui-list__body">
+                    <div className="ui-list__title">{formatDate(item.attendanceDate, locale)}</div>
+                    {(item.source || item.notes) && (
+                      <div className="ui-list__meta ui-muted">{[item.source, item.notes].filter(Boolean).join(' · ')}</div>
+                    )}
+                  </div>
+                  <Chip tone={tone} aria-label={`${t('student.attendance.status')}: ${item.status}`}>{item.status}</Chip>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </Card>
     </>
   )
 }
 
-function AttendanceItem({ item, locale }) {
-  const { t } = useTranslation()
+function Stat({ label, value }) {
   return (
-    <div className="student-item">
-      <div>
-        <strong>{formatDate(item.attendanceDate, locale)}</strong>
-        <p><span className="student-status" aria-label={`${t('student.attendance.status')}: ${item.status}`}>{item.status}</span></p>
-        <DetailGrid item={{ source: item.source, sessionKey: item.sessionKey, schoolClassId: item.schoolClassId, recordedAt: item.recordedAt, notes: item.notes }} locale={locale} />
-      </div>
+    <div className="domain-child__stat">
+      <span className="domain-child__stat-value">{value}</span>
+      <span className="domain-child__stat-label">{label}</span>
     </div>
   )
 }
 
+// =============================================================================
+// Communities
+// =============================================================================
 function CommunitiesPage({ userId, locale }) {
   const { t } = useTranslation()
   const { communityId } = useParams()
   const query = useStudentQuery(queryKeys.student.communities(userId), (signal) => studentApi.communities(signal), { staleTime: STALE.medium })
-  if (!communityId) return <ListPage title={t('student.communities.title')} description={t('student.communities.description')} query={query} empty={t('student.empty.communities')} itemLink={(item) => `/app/student/communities/${itemId(item)}`} />
-  return <CommunityDetails userId={userId} communityId={communityId} locale={locale} />
+  if (communityId) return <CommunityDetails userId={userId} communityId={communityId} locale={locale} />
+  return (
+    <>
+      <PageHeader title={t('student.communities.title')} description={t('student.communities.description')} />
+      <QueryBoundary query={query} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.communities')} emptyIcon={Users}>
+        {(items) => (
+          <div className="ui-grid ui-grid--auto">
+            {items.map((item) => (
+              <QuizCard key={itemId(item)} to={`/app/student/communities/${itemId(item)}`} icon={Users} title={displayValue(item)} meta={displayValue(item, ['description', 'Description'])} />
+            ))}
+          </div>
+        )}
+      </QueryBoundary>
+    </>
+  )
 }
 
 function CommunityDetails({ userId, communityId, locale }) {
@@ -414,25 +715,57 @@ function CommunityDetails({ userId, communityId, locale }) {
     <>
       <PageHeader title={displayValue(community.data) || t('student.communities.details')} description={t('student.communities.safeRendering')} actions={<Button onClick={() => join.mutate()} loading={join.isPending}>{t('student.communities.join')}</Button>} />
       {(community.isError || join.isError) && <ErrorState error={community.error || join.error} onRetry={community.refetch} />}
-      <Card title={t('student.details')}><DetailGrid item={community.data || { communityId }} locale={locale} /></Card>
-      <Card title={t('student.communities.posts')}>
-        <form onSubmit={(event) => { event.preventDefault(); if (content.trim()) post.mutate() }}>
-          <TextareaField label={t('student.communities.newPost')} value={content} onChange={(e) => setContent(e.target.value)} maxLength={2000} />
-          <Button type="submit" loading={post.isPending} disabled={!content.trim()}>{t('actions.submit')}</Button>
-        </form>
-        {post.isError && <ErrorState error={post.error} />}
-        <QueryResult query={posts} empty={t('student.empty.posts')}>{(items) => <ItemsList items={items} empty={t('student.empty.posts')} renderItem={(item) => <PlainItem item={item} locale={locale} />} />}</QueryResult>
-      </Card>
+      <div className="ui-split">
+        <Card title={t('student.communities.posts')}>
+          <form className="stack" onSubmit={(event) => { event.preventDefault(); if (content.trim()) post.mutate() }}>
+            <TextareaField label={t('student.communities.newPost')} value={content} onChange={(e) => setContent(e.target.value)} maxLength={2000} />
+            <Button type="submit" loading={post.isPending} disabled={!content.trim()}>{t('actions.submit')}</Button>
+          </form>
+          {post.isError && <ErrorState error={post.error} />}
+          <QueryBoundary query={posts} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.posts')} emptyIcon={MessageSquare}>
+            {(items) => (
+              <ul className="ui-list">
+                {items.map((item) => (
+                  <li className="ui-list__item" key={itemId(item)}>
+                    <div className="ui-list__body">
+                      <div className="ui-list__title">{displayValue(item, ['authorName', 'AuthorName']) || t('student.communities.posts')}</div>
+                      <div className="ui-list__meta">{displayValue(item, ['body', 'Body', 'content', 'Content'])}</div>
+                      <div className="ui-list__meta ui-muted">{formatDate(getField(item, 'createdAt'), locale)}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </QueryBoundary>
+        </Card>
+        {community.data && <Card title={t('student.details')}><DetailList item={community.data} locale={locale} /></Card>}
+      </div>
     </>
   )
 }
 
+// =============================================================================
+// Competitions
+// =============================================================================
 function CompetitionsPage({ userId, locale }) {
   const { t } = useTranslation()
   const { competitionId } = useParams()
   const query = useStudentQuery(queryKeys.student.competitions(userId), (signal) => studentApi.competitions(signal), { staleTime: STALE.medium })
-  if (!competitionId) return <ListPage title={t('student.competitions.title')} description={t('student.competitions.description')} query={query} empty={t('student.empty.competitions')} itemLink={(item) => `/app/student/competitions/${itemId(item)}`} />
-  return <CompetitionDetails userId={userId} competitionId={competitionId} locale={locale} />
+  if (competitionId) return <CompetitionDetails userId={userId} competitionId={competitionId} locale={locale} />
+  return (
+    <>
+      <PageHeader title={t('student.competitions.title')} description={t('student.competitions.description')} />
+      <QueryBoundary query={query} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.competitions')} emptyIcon={Trophy}>
+        {(items) => (
+          <div className="ui-grid ui-grid--auto">
+            {items.map((item) => (
+              <QuizCard key={itemId(item)} to={`/app/student/competitions/${itemId(item)}`} icon={Trophy} title={displayValue(item)} meta={displayValue(item, ['description', 'Description'])} />
+            ))}
+          </div>
+        )}
+      </QueryBoundary>
+    </>
+  )
 }
 
 function CompetitionDetails({ userId, competitionId, locale }) {
@@ -445,15 +778,34 @@ function CompetitionDetails({ userId, competitionId, locale }) {
     <>
       <PageHeader title={displayValue(competition.data) || t('student.competitions.details')} description={t('student.competitions.authoritative')} actions={<Button onClick={() => enter.mutate()} loading={enter.isPending}>{t('student.competitions.enter')}</Button>} />
       {(competition.isError || enter.isError) && <ErrorState error={competition.error || enter.error} onRetry={competition.refetch} />}
-      <Card title={t('student.details')}><DetailGrid item={competition.data || { competitionId }} locale={locale} /></Card>
-      <CompetitionSubmissionCard userId={userId} competitionId={competitionId} locale={locale} />
-      <QueryCard title={t('student.leaderboard.title')} query={leaderboard} empty={t('student.empty.leaderboard')}>{(items) => <ItemsList items={items} empty={t('student.empty.leaderboard')} renderItem={(item) => <PlainItem item={item} locale={locale} />} />}</QueryCard>
+      <div className="ui-split">
+        <div>
+          {competition.data && <Card title={t('student.details')}><DetailList item={competition.data} locale={locale} /></Card>}
+          <CompetitionSubmissionCard userId={userId} competitionId={competitionId} locale={locale} />
+        </div>
+        <Card title={t('student.leaderboard.title')}>
+          <QueryBoundary query={leaderboard} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.leaderboard')} emptyIcon={Trophy}>
+            {(items) => (
+              <ul className="domain-lb-list">
+                {items.map((item, i) => (
+                  <LeaderboardRow
+                    key={itemId(item) || i}
+                    rank={getField(item, 'rank') ?? i + 1}
+                    name={displayValue(item, ['studentName', 'StudentName', 'name', 'Name']) || itemId(item)}
+                    points={getField(item, 'totalPoints') ?? getField(item, 'points')}
+                    pointsLabel={t('student.points.unit', 'pts')}
+                  />
+                ))}
+              </ul>
+            )}
+          </QueryBoundary>
+        </Card>
+      </div>
     </>
   )
 }
 
-// Phase 14 (closure) — durable competition submission. The student submits/updates their work for an
-// entered competition; the backend enforces entry, the open window and tenant/role rules.
+// Phase 14 (closure) — durable competition submission.
 function CompetitionSubmissionCard({ userId, competitionId, locale }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -470,12 +822,12 @@ function CompetitionSubmissionCard({ userId, competitionId, locale }) {
       <p className="ui-muted">{t('student.competitions.submission.description')}</p>
       {submission.isError && <ErrorState error={submission.error} onRetry={submission.refetch} />}
       {hasExisting ? (
-        <dl className="student-grid">
-          <Field label={t('student.competitions.submission.current')} value={existing.content ?? existing.Content} />
-          <Field label={t('student.details')} value={formatDate(existing.submittedAt ?? existing.SubmittedAt, locale)} />
+        <dl className="ui-detail-list">
+          <div className="ui-detail-list__row"><dt>{t('student.competitions.submission.current')}</dt><dd>{existing.content ?? existing.Content}</dd></div>
+          <div className="ui-detail-list__row"><dt>{t('student.details')}</dt><dd>{formatDate(existing.submittedAt ?? existing.SubmittedAt, locale)}</dd></div>
         </dl>
       ) : !submission.isLoading && <EmptyState title={t('student.competitions.submission.empty')} />}
-      <form onSubmit={(e) => { e.preventDefault(); if (content.trim()) submit.mutate() }}>
+      <form className="stack" onSubmit={(e) => { e.preventDefault(); if (content.trim()) submit.mutate() }}>
         <TextareaField label={t('student.competitions.submission.label')} value={content} onChange={(e) => setContent(e.target.value)} maxLength={8192} placeholder={t('student.competitions.submission.placeholder')} />
         <Button type="submit" loading={submit.isPending} disabled={!content.trim()}>{hasExisting ? t('student.competitions.submission.update') : t('student.competitions.submission.submit')}</Button>
       </form>
@@ -485,6 +837,9 @@ function CompetitionSubmissionCard({ userId, competitionId, locale }) {
   )
 }
 
+// =============================================================================
+// Office hours
+// =============================================================================
 function OfficeHoursPage({ userId, locale }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -495,15 +850,47 @@ function OfficeHoursPage({ userId, locale }) {
   return (
     <>
       <PageHeader title={t('student.officeHours.title')} description={t('student.officeHours.description')} />
-      {query.isLoading && <p role="status">Loading...</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {book.isError && <ErrorState error={book.error} />}
-      <Card title={t('student.officeHours.available')}><ItemsList items={available} empty={t('student.empty.officeHours')} renderItem={(item) => <PlainItem item={item} locale={locale} action={<Button onClick={() => book.mutate(itemId(item))} loading={book.isPending}>{t('student.officeHours.book')}</Button>} />} /></Card>
-      <Card title={t('student.officeHours.bookings')}><ItemsList items={mine} empty={t('student.officeHours.noBookings')} renderItem={(item) => <PlainItem item={item} locale={locale} />} /></Card>
+      <Card title={t('student.officeHours.available')}>
+        {available.length === 0 ? <EmptyState title={t('student.empty.officeHours')} /> : (
+          <div className="student-list">
+            {available.map((item) => (
+              <div className="domain-row" key={itemId(item)}>
+                <span className="domain-row__icon" aria-hidden="true"><CalendarClock size={18} /></span>
+                <span className="domain-row__main">
+                  <span className="domain-row__title">{displayValue(item, ['teacherName', 'TeacherName']) || displayValue(item)}</span>
+                  <span className="domain-row__meta">{formatDate(getField(item, 'startsAt') || getField(item, 'startTime'), locale)}</span>
+                </span>
+                <Button onClick={() => book.mutate(itemId(item))} loading={book.isPending}>{t('student.officeHours.book')}</Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+      <Card title={t('student.officeHours.bookings')}>
+        {mine.length === 0 ? <EmptyState title={t('student.officeHours.noBookings')} /> : (
+          <div className="student-list">
+            {mine.map((item) => (
+              <div className="domain-row" key={itemId(item)}>
+                <span className="domain-row__icon" aria-hidden="true"><CalendarClock size={18} /></span>
+                <span className="domain-row__main">
+                  <span className="domain-row__title">{displayValue(item, ['teacherName', 'TeacherName']) || displayValue(item)}</span>
+                  <span className="domain-row__meta">{formatDate(getField(item, 'startsAt') || getField(item, 'startTime'), locale)}</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </>
   )
 }
 
+// =============================================================================
+// Notifications / announcements / suggestions
+// =============================================================================
 function NotificationsPage({ userId, locale }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -515,18 +902,53 @@ function NotificationsPage({ userId, locale }) {
   return (
     <>
       <PageHeader title={t('student.notifications.title')} description={t('student.notifications.description')} actions={<Button variant="secondary" onClick={() => markAll.mutate()} loading={markAll.isPending}>{t('student.notifications.markAll')}</Button>} />
-      {unread !== null && <Alert title={t('student.notifications.unread')}>{unread}</Alert>}
+      {unread !== null && <Alert variant="info" title={t('student.notifications.unread')}>{unread}</Alert>}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {mark.isError && <ErrorState error={mark.error} />}
-      <ItemsList items={items} empty={t('student.empty.notifications')} renderItem={(item) => <PlainItem item={item} locale={locale} action={<Button variant="secondary" onClick={() => mark.mutate(itemId(item))} loading={mark.isPending}>{t('student.notifications.markRead')}</Button>} />} />
+      {items.length === 0 ? <EmptyState icon={Bell} title={t('student.empty.notifications')} /> : (
+        <ul className="ui-list">
+          {items.map((item) => {
+            const read = getField(item, 'isRead')
+            return (
+              <li className={`ui-list__item${read ? '' : ' ui-list__item--unread'}`} key={itemId(item)}>
+                <div className="ui-list__body">
+                  <div className="ui-list__title">{displayValue(item)}</div>
+                  <div className="ui-list__meta">{displayValue(item, ['body', 'Body', 'message', 'Message'])}</div>
+                  <div className="ui-list__meta ui-muted">{formatDate(getField(item, 'createdAt'), locale)}</div>
+                </div>
+                {!read && <Button variant="ghost" onClick={() => mark.mutate(itemId(item))} loading={mark.isPending}>{t('student.notifications.markRead')}</Button>}
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </>
   )
 }
 
-function AnnouncementsPage({ userId }) {
+function AnnouncementsPage({ userId, locale }) {
   const { t } = useTranslation()
   const query = useStudentQuery(queryKeys.student.announcements(userId), (signal) => studentApi.announcements(signal), { staleTime: STALE.medium })
-  return <ListPage title={t('student.announcements.title')} description={t('student.announcements.description')} query={query} empty={t('student.empty.announcements')} />
+  return (
+    <>
+      <PageHeader title={t('student.announcements.title')} description={t('student.announcements.description')} />
+      <QueryBoundary query={query} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.announcements')} emptyIcon={Megaphone}>
+        {(items) => (
+          <div className="student-list">
+            {items.map((item) => (
+              <div className="ui-list__item" key={itemId(item)} style={{ borderInlineStart: '3px solid var(--accent)' }}>
+                <div className="ui-list__body">
+                  <div className="ui-list__title">{displayValue(item)}</div>
+                  <div className="ui-list__meta">{displayValue(item, ['body', 'Body', 'message', 'Message', 'content', 'Content'])}</div>
+                  <div className="ui-list__meta ui-muted">{formatDate(getField(item, 'createdAt') || getField(item, 'publishedAt'), locale)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </QueryBoundary>
+    </>
+  )
 }
 
 function SuggestionsPage() {
@@ -539,7 +961,7 @@ function SuggestionsPage() {
       <PageHeader title={t('student.suggestions.title')} description={t('student.suggestions.description')} />
       <Alert title={t('student.suggestions.privacyTitle')}>{t('student.suggestions.privacyBody')}</Alert>
       <Card>
-        <form onSubmit={(event) => { event.preventDefault(); if (title.trim() && body.trim()) mutation.mutate() }}>
+        <form className="stack" onSubmit={(event) => { event.preventDefault(); if (title.trim() && body.trim()) mutation.mutate() }}>
           <TextField label={t('student.suggestions.subject')} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} required />
           <TextareaField label={t('student.suggestions.body')} value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} required />
           <Button type="submit" loading={mutation.isPending} disabled={!title.trim() || !body.trim()}>{t('actions.submit')}</Button>
@@ -551,6 +973,9 @@ function SuggestionsPage() {
   )
 }
 
+// =============================================================================
+// Badges / points / streaks
+// =============================================================================
 function BadgesPage({ userId, locale }) {
   const { t } = useTranslation()
   const query = useStudentQuery(queryKeys.student.badges(userId), (signal) => studentApi.badges(userId, signal), { staleTime: STALE.medium })
@@ -560,82 +985,117 @@ function BadgesPage({ userId, locale }) {
   const earned = query.data ? toItems(settledData(query.data.earned)) : []
   const catalog = query.data ? toItems(settledData(query.data.catalog)) : []
   const streak = query.data ? toObject(settledData(query.data.streak)) : null
+  const streakDays = streak ? toItems(streak.days ?? streak.Days) : []
   return (
     <>
       <PageHeader title={t('student.badges.title')} description={t('student.badges.description')} />
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
-      <Card title={t('student.points.title')}>
-        {points.isLoading ? <p role="status">{t('common.loading')}</p>
-          : points.isError ? <ErrorState error={points.error} onRetry={points.refetch} />
-          : <Alert variant="info">{t('student.points.total', { count: points.data?.totalPoints ?? 0 })}</Alert>}
+
+      <div className="student-dashboard">
+        <Metric icon={Medal} accent="var(--warning)" label={t('student.points.title')} value={points.isLoading ? '…' : points.isError ? '—' : (points.data?.totalPoints ?? 0)} />
+        <Metric icon={Trophy} accent="var(--orange)" label={t('student.badges.earned')} value={earned.length} />
+        <Metric icon={Flame} accent="var(--orange)" label={t('student.streaks.title')} value={streak ? (streak.current ?? streak.Current ?? '—') : '—'} />
+      </div>
+
+      <Card title={t('student.streaks.title')}>
+        {streakDays.length > 0
+          ? <StreakStrip days={streakDays.map((d, i) => ({ key: i, active: Boolean(getField(d, 'active') ?? getField(d, 'isActive')), label: displayValue(d, ['label', 'Label']) }))} />
+          : <NotEnoughData compact title={t('student.streaks.empty')} />}
       </Card>
+
       <Card title={t('student.points.ledger')}>
-        {ledger.isLoading ? <p role="status">{t('common.loading')}</p>
+        {ledger.isLoading ? <Loading />
           : ledger.isError ? <ErrorState error={ledger.error} onRetry={ledger.refetch} />
-          : <ItemsList items={ledger.data || []} empty={t('student.points.empty')} renderItem={(item) => <PlainItem item={item} locale={locale} />} />}
+          : (ledger.data?.length ?? 0) === 0 ? <EmptyState title={t('student.points.empty')} />
+          : (
+            <ul className="ui-list">
+              {ledger.data.map((item, i) => (
+                <li className="ui-list__item" key={itemId(item) || i}>
+                  <div className="ui-list__body">
+                    <div className="ui-list__title">{displayValue(item, ['reason', 'Reason']) || displayValue(item)}</div>
+                    <div className="ui-list__meta ui-muted">{formatDate(getField(item, 'createdAt'), locale)}</div>
+                  </div>
+                  <Chip tone="brand">{getField(item, 'points') ?? getField(item, 'Points')}</Chip>
+                </li>
+              ))}
+            </ul>
+          )}
       </Card>
+
       <Card title={t('student.points.leaderboard')}>
-        {leaderboard.isLoading ? <p role="status">{t('common.loading')}</p>
+        {leaderboard.isLoading ? <Loading />
           : leaderboard.isError ? <ErrorState error={leaderboard.error} onRetry={leaderboard.refetch} />
-          : <ItemsList items={leaderboard.data || []} empty={t('student.points.leaderboardEmpty')} renderItem={(item) => <PlainItem item={item} locale={locale} />} />}
+          : (leaderboard.data?.length ?? 0) === 0 ? <EmptyState title={t('student.points.leaderboardEmpty')} />
+          : (
+            <ul className="domain-lb-list">
+              {leaderboard.data.map((item, i) => (
+                <LeaderboardRow
+                  key={itemId(item) || i}
+                  rank={getField(item, 'rank') ?? i + 1}
+                  name={displayValue(item, ['studentName', 'StudentName', 'name', 'Name']) || itemId(item)}
+                  points={getField(item, 'totalPoints') ?? getField(item, 'points')}
+                  isMe={itemId(item) === userId}
+                  pointsLabel={t('student.points.unit', 'pts')}
+                />
+              ))}
+            </ul>
+          )}
       </Card>
-      <Card title={t('student.badges.earned')}><ItemsList items={earned} empty={t('student.empty.badges')} renderItem={(item) => <PlainItem item={item} locale={locale} />} /></Card>
-      <Card title={t('student.streaks.title')}>{streak ? <DetailGrid item={streak} locale={locale} /> : <EmptyState title={t('student.streaks.empty')} />}</Card>
-      <Card title={t('student.badges.catalog')}><ItemsList items={catalog} empty={t('student.empty.badges')} renderItem={(item) => <PlainItem item={item} locale={locale} />} /></Card>
+
+      <Card title={t('student.badges.earned')}>
+        {earned.length === 0 ? <EmptyState icon={Medal} title={t('student.empty.badges')} /> : (
+          <div className="ui-grid ui-grid--auto">
+            {earned.map((item) => (
+              <div className="domain-card" key={itemId(item)}>
+                <div className="domain-card__head">
+                  <span className="domain-card__icon" aria-hidden="true"><Medal size={20} /></span>
+                </div>
+                <h3 className="domain-card__title">{displayValue(item)}</h3>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {catalog.length > 0 && (
+        <Card title={t('student.badges.catalog')}>
+          <div className="ui-grid ui-grid--auto">
+            {catalog.map((item) => (
+              <div className="domain-card" key={itemId(item)}>
+                <div className="domain-card__head">
+                  <span className="domain-card__icon" aria-hidden="true"><Medal size={20} /></span>
+                </div>
+                <h3 className="domain-card__title">{displayValue(item)}</h3>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
     </>
   )
 }
 
+// =============================================================================
+// Settings
+// =============================================================================
 function AccountSettingsPage() {
   const { t } = useTranslation()
   return (
     <>
       <PageHeader title={t('student.settings.title')} description={t('student.settings.description')} />
-      <Card title={t('student.settings.language')}><p>{t('student.settings.languageLocal')}</p></Card>
-      <Card title={t('nav.security')}><Link className="ui-btn ui-btn--primary" to="/app/security">{t('student.settings.changePassword')}</Link></Card>
+      <div className="ui-split ui-split--even">
+        <Card title={t('student.settings.language')}><p className="ui-muted">{t('student.settings.languageLocal')}</p></Card>
+        <Card title={t('nav.security')}>
+          <Link className="ui-btn ui-btn--primary" to="/app/security"><ShieldCheck size={16} aria-hidden="true" /> {t('student.settings.changePassword')}</Link>
+        </Card>
+      </div>
     </>
   )
 }
 
-function ListPage({ title, description, query, empty, itemLink }) {
-  return (
-    <>
-      <PageHeader title={title} description={description} />
-      <QueryResult query={query} empty={empty}>{(items) => <ItemsList items={items} empty={empty} renderItem={(item) => itemLink ? <LinkedItem item={item} to={itemLink(item)} /> : <PlainItem item={item} />} />}</QueryResult>
-    </>
-  )
-}
-
-function SingleDataPage({ title, description, query, locale }) {
-  return (
-    <>
-      <PageHeader title={title} description={description} />
-      <QueryResult query={query} empty="No data">{(data) => <DetailGrid item={data} locale={locale} />}</QueryResult>
-    </>
-  )
-}
-
-function QueryResult({ query, empty, children }) {
-  if (query.isLoading) return <p role="status">Loading...</p>
-  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
-  const data = Array.isArray(query.data) ? query.data : query.data ? query.data : []
-  if (Array.isArray(data) && !data.length) return <EmptyState title={empty} />
-  return children(data)
-}
-
-function LinkedItem({ item, to }) {
-  return <Link className="student-row-link" to={to}><FileText size={18} aria-hidden="true" /><span>{displayValue(item) || to}</span></Link>
-}
-
-function PlainItem({ item, locale, action }) {
-  return (
-    <div className="student-item">
-      <div><strong>{displayValue(item) || itemId(item) || 'Record'}</strong><DetailGrid item={item} locale={locale} /></div>
-      {action && <div>{action}</div>}
-    </div>
-  )
-}
-
+// =============================================================================
+// View dispatcher
+// =============================================================================
 export default function StudentPortalPage({ view }) {
   const { i18n } = useTranslation()
   const { user } = useAuth()

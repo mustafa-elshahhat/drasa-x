@@ -4,6 +4,7 @@ import App from './app/App'
 import { AppProviders } from './app/providers'
 import { registerPwa } from './app/pwa'
 import './i18n'
+import './styles/fonts.css'
 import './styles/app.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(

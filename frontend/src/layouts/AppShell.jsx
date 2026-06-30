@@ -25,7 +25,7 @@ export function AppShell() {
   }, [logout, navigate])
 
   return (
-    <div className={`app-shell${navOpen ? ' app-shell--nav-open' : ''}`}>
+    <div className={`app-shell${navOpen ? ' app-shell--nav-open' : ''}`} data-role={role || undefined}>
       <a className="app-skip-link" href="#main-content">
         {t('nav.skipToContent', 'Skip to main content')}
       </a>

@@ -2,15 +2,20 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Building2 } from 'lucide-react'
+import { GraduationCap, Users, UserCog, Layers, BookOpen, Link2, ClipboardCheck, Megaphone, FileText, MessageSquare, Bot, CalendarDays, ShieldCheck } from 'lucide-react'
 import { PageHeader, Card } from '../../components/ui/PageHeader'
+import { Metric } from '../../components/ui/Metric'
 import { EmptyState, ErrorState } from '../../components/ui/states'
 import { Button } from '../../components/ui/Button'
 import { Alert } from '../../components/ui/Alert'
+import { Chip } from '../../components/ui/Chip'
+import { Spinner } from '../../components/ui/Spinner'
+import { DetailList } from '../../components/data/DetailList'
+import { ResourceTable } from '../../components/data/ResourceTable'
 import { TextField, TextareaField, SelectField, DateField, CheckboxField } from '../../components/form/fields'
 import { useAuth } from '../../features/auth/AuthContext'
 import { schoolApi } from '../../features/school/schoolApi'
-import { displayValue, itemId, statusLabel, formatDate, settledData } from '../../features/student/studentUtils'
+import { displayValue, itemId, statusLabel, settledData } from '../../features/student/studentUtils'
 import { queryKeys, STALE } from '../../lib/query/keys'
 import { toItems, toObject } from '../../features/student/studentSchemas'
 
@@ -29,48 +34,30 @@ function useSchoolQuery(key, fn, options = {}) {
   return useQuery({ queryKey: key, queryFn: ({ signal }) => fn(signal), staleTime: options.staleTime ?? STALE.short, enabled: options.enabled ?? true })
 }
 
-function Field({ label, value }) {
-  return (
-    <div className="student-kv">
-      <dt>{label}</dt>
-      <dd>{value ?? '—'}</dd>
-    </div>
-  )
-}
-
-function DetailGrid({ item, locale }) {
-  if (!item || typeof item !== 'object') return null
-  const fields = Object.entries(item).filter(([, v]) => v !== null && v !== undefined && typeof v !== 'object')
-  return (
-    <dl className="student-grid">
-      {fields.slice(0, 16).map(([key, value]) => (
-        <Field key={key} label={key} value={String(key).toLowerCase().includes('date') || String(key).toLowerCase().endsWith('at') ? formatDate(value, locale) : statusLabel(value)} />
-      ))}
-    </dl>
-  )
-}
-
-function ItemsList({ items, empty, renderItem }) {
-  if (!items?.length) return <EmptyState title={empty} />
-  return <div className="student-list">{items.map((item, i) => <div className="student-list__item" key={itemId(item) || i}>{renderItem(item)}</div>)}</div>
-}
-
-function QueryResult({ query, empty, children }) {
+function Loading() {
   const { t } = useTranslation()
-  if (query.isLoading) return <p role="status">{t('states.loading')}</p>
-  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
-  const data = Array.isArray(query.data) ? query.data : query.data ? query.data : []
-  if (Array.isArray(data) && !data.length) return <EmptyState title={empty} />
-  return children(data)
-}
-
-function MetricLink({ to, value, label }) {
-  return <Link className="student-metric" to={to}><strong>{value}</strong><span>{label}</span></Link>
+  return <Spinner label={t('states.loading')} />
 }
 
 function Head({ view }) {
   const { t } = useTranslation()
   return <PageHeader title={t(`school.pages.${view}.title`)} description={t(`school.pages.${view}.description`)} />
+}
+
+// Typed responsive list bound to a query — replaces the old DetailGrid card dumps.
+function List({ query, columns, empty, rowActions, locale }) {
+  return (
+    <ResourceTable
+      rows={Array.isArray(query.data) ? query.data : []}
+      columns={columns}
+      rowActions={rowActions}
+      loading={query.isLoading}
+      error={query.error}
+      onRetry={() => query.refetch()}
+      emptyTitle={empty}
+      locale={locale}
+    />
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -83,27 +70,27 @@ function DashboardPage({ userId }) {
   return (
     <>
       <Head view="dashboard" />
-      {dashboard.isLoading && <p role="status">{t('states.loading')}</p>}
+      {dashboard.isLoading && <Loading />}
       {dashboard.isError && <ErrorState error={dashboard.error} onRetry={dashboard.refetch} />}
       {dashboard.data && (
         <>
-          <Alert title={d.tenantName || t('school.dashboard.tenant')}>
+          <Alert variant="info" title={d.tenantName || t('school.dashboard.tenant')}>
             {t('school.dashboard.status')}: <strong>{statusLabel(d.tenantStatus)}</strong>
             {d.tenantType ? ` · ${statusLabel(d.tenantType)}` : ''}
           </Alert>
           <div className="student-dashboard">
-            <Card title={t('school.dashboard.students')}><MetricLink to="/app/school/students" value={d.students ?? 0} label={t('school.pages.students.title')} /></Card>
-            <Card title={t('school.dashboard.teachers')}><MetricLink to="/app/school/teachers" value={d.teachers ?? 0} label={t('school.pages.teachers.title')} /></Card>
-            <Card title={t('school.dashboard.parents')}><MetricLink to="/app/school/parents" value={d.parents ?? 0} label={t('school.pages.parents.title')} /></Card>
-            <Card title={t('school.dashboard.classes')}><MetricLink to="/app/school/classes" value={d.classes ?? 0} label={t('school.pages.classes.title')} /></Card>
-            <Card title={t('school.dashboard.subjects')}><MetricLink to="/app/school/subjects" value={d.subjects ?? 0} label={t('school.pages.subjects.title')} /></Card>
-            <Card title={t('school.dashboard.links')}><MetricLink to="/app/school/relationships" value={d.parentStudentLinks ?? 0} label={t('school.pages.relationships.title')} /></Card>
-            <Card title={t('school.dashboard.assignments')}><MetricLink to="/app/school/teacher-assignments" value={d.teacherClassAssignments ?? 0} label={t('school.pages.teacherAssignments.title')} /></Card>
-            <Card title={t('school.dashboard.announcements')}><MetricLink to="/app/school/announcements" value={d.activeAnnouncements ?? 0} label={t('school.pages.announcements.title')} /></Card>
-            <Card title={t('school.dashboard.openRequests')}><MetricLink to="/app/school/document-requests" value={d.openParentRequests ?? 0} label={t('school.pages.documentRequests.title')} /></Card>
-            <Card title={t('school.dashboard.openSupport')}><MetricLink to="/app/school/support" value={d.openSupportRequests ?? 0} label={t('school.pages.support.title')} /></Card>
-            <Card title={t('school.dashboard.aiRecords')}><MetricLink to="/app/school/ai-usage" value={d.aiUsageRecords ?? 0} label={t('school.dashboard.aiTokens', { tokens: d.aiTotalTokens ?? 0 })} /></Card>
-            <Card title={t('school.dashboard.academicYears')}><MetricLink to="/app/school/academic-years" value={d.academicYears ?? 0} label={t('school.pages.academicYears.title')} /></Card>
+            <Metric to="/app/school/students" icon={GraduationCap} accent="var(--brand)" value={d.students ?? 0} label={t('school.pages.students.title')} />
+            <Metric to="/app/school/teachers" icon={Users} accent="var(--purple)" value={d.teachers ?? 0} label={t('school.pages.teachers.title')} />
+            <Metric to="/app/school/parents" icon={UserCog} accent="var(--orange)" value={d.parents ?? 0} label={t('school.pages.parents.title')} />
+            <Metric to="/app/school/classes" icon={Layers} accent="var(--info)" value={d.classes ?? 0} label={t('school.pages.classes.title')} />
+            <Metric to="/app/school/subjects" icon={BookOpen} accent="var(--success)" value={d.subjects ?? 0} label={t('school.pages.subjects.title')} />
+            <Metric to="/app/school/relationships" icon={Link2} accent="var(--info)" value={d.parentStudentLinks ?? 0} label={t('school.pages.relationships.title')} />
+            <Metric to="/app/school/teacher-assignments" icon={ClipboardCheck} accent="var(--purple)" value={d.teacherClassAssignments ?? 0} label={t('school.pages.teacherAssignments.title')} />
+            <Metric to="/app/school/announcements" icon={Megaphone} accent="var(--orange)" value={d.activeAnnouncements ?? 0} label={t('school.pages.announcements.title')} />
+            <Metric to="/app/school/document-requests" icon={FileText} accent="var(--brand)" value={d.openParentRequests ?? 0} label={t('school.pages.documentRequests.title')} />
+            <Metric to="/app/school/support" icon={MessageSquare} accent="var(--warning)" value={d.openSupportRequests ?? 0} label={t('school.pages.support.title')} />
+            <Metric to="/app/school/ai-usage" icon={Bot} accent="var(--purple)" value={d.aiUsageRecords ?? 0} label={t('school.dashboard.aiRecords')} sub={t('school.dashboard.aiTokens', { tokens: d.aiTotalTokens ?? 0 })} />
+            <Metric to="/app/school/academic-years" icon={CalendarDays} accent="var(--info)" value={d.academicYears ?? 0} label={t('school.pages.academicYears.title')} />
           </div>
         </>
       )}
@@ -112,7 +99,7 @@ function DashboardPage({ userId }) {
 }
 
 // ---------------------------------------------------------------------------
-// Profile / Subscription / Usage / Storage
+// Single-object read views
 // ---------------------------------------------------------------------------
 function ProfilePage({ userId, locale }) {
   const query = useSchoolQuery(queryKeys.school.profile(userId), (s) => schoolApi.profile(s))
@@ -120,9 +107,9 @@ function ProfilePage({ userId, locale }) {
   return (
     <>
       <Head view="profile" />
-      {query.isLoading && <p role="status">{t('states.loading')}</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
-      {query.data && <Card title={query.data.name || t('school.pages.profile.title')}><DetailGrid item={query.data} locale={locale} /></Card>}
+      {query.data && <Card title={query.data.name || t('school.pages.profile.title')}><DetailList item={query.data} locale={locale} /></Card>}
     </>
   )
 }
@@ -133,9 +120,9 @@ function SubscriptionPage({ userId, locale }) {
   return (
     <>
       <Head view="subscription" />
-      {sub.isLoading && <p role="status">{t('states.loading')}</p>}
+      {sub.isLoading && <Loading />}
       {sub.isError && <ErrorState error={sub.error} onRetry={sub.refetch} />}
-      {sub.data && <Card title={t('school.pages.subscription.title')}><DetailGrid item={sub.data} locale={locale} /></Card>}
+      {sub.data && <Card title={t('school.pages.subscription.title')}><DetailList item={sub.data} locale={locale} /></Card>}
     </>
   )
 }
@@ -147,26 +134,16 @@ function StoragePage({ userId, locale }) {
     <>
       <Head view="storage" />
       <Alert title={t('school.notes.storageTitle')}>{t('school.notes.storage')}</Alert>
-      {usage.isLoading && <p role="status">{t('states.loading')}</p>}
+      {usage.isLoading && <Loading />}
       {usage.isError && <ErrorState error={usage.error} onRetry={usage.refetch} />}
-      {usage.data && <Card title={t('school.pages.storage.title')}><DetailGrid item={usage.data} locale={locale} /></Card>}
+      {usage.data && <Card title={t('school.pages.storage.title')}><DetailList item={usage.data} locale={locale} /></Card>}
     </>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Generic list + create scaffolding
+// Academic structure (inline create + typed list)
 // ---------------------------------------------------------------------------
-function ListSection({ title, query, empty, locale }) {
-  return (
-    <Card title={title}>
-      <QueryResult query={query} empty={empty}>
-        {(items) => <ItemsList items={items} empty={empty} renderItem={(item) => <DetailGrid item={item} locale={locale} />} />}
-      </QueryResult>
-    </Card>
-  )
-}
-
 function AcademicYearsPage({ userId, locale }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -183,14 +160,16 @@ function AcademicYearsPage({ userId, locale }) {
       <Card title={t('school.common.create')}>
         {create.isSuccess && <Alert variant="success" title={t('school.common.created')}>{t('school.common.createdBody')}</Alert>}
         {create.isError && <ErrorState error={create.error} onRetry={() => create.reset()} />}
-        <TextField label={t('school.common.name')} value={form.name} onChange={set('name')} />
-        <TextField label={t('school.common.code')} value={form.code} onChange={set('code')} />
-        <DateField label={t('school.common.startDate')} value={form.startDate} onChange={set('startDate')} />
-        <DateField label={t('school.common.endDate')} value={form.endDate} onChange={set('endDate')} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <TextField label={t('school.common.name')} value={form.name} onChange={set('name')} />
+          <TextField label={t('school.common.code')} value={form.code} onChange={set('code')} />
+          <DateField label={t('school.common.startDate')} value={form.startDate} onChange={set('startDate')} />
+          <DateField label={t('school.common.endDate')} value={form.endDate} onChange={set('endDate')} />
+        </div>
         <CheckboxField label={t('school.common.current')} checked={form.isCurrent} onChange={(e) => setForm((f) => ({ ...f, isCurrent: e.target.checked }))} />
         <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.name.trim() || !form.code.trim()}>{t('school.common.create')}</Button>
       </Card>
-      <ListSection title={t('school.pages.academicYears.title')} query={query} empty={t('school.empty.generic')} locale={locale} />
+      <List query={query} empty={t('school.empty.generic')} locale={locale} />
     </>
   )
 }
@@ -213,16 +192,18 @@ function TermsPage({ userId, locale }) {
       <Card title={t('school.common.create')}>
         {create.isSuccess && <Alert variant="success" title={t('school.common.created')}>{t('school.common.createdBody')}</Alert>}
         {create.isError && <ErrorState error={create.error} onRetry={() => create.reset()} />}
-        <TextField label={t('school.common.name')} value={form.name} onChange={set('name')} />
-        <TextField label={t('school.common.code')} value={form.code} onChange={set('code')} />
-        <TextField label={t('school.common.order')} type="number" value={form.order} onChange={set('order')} />
-        <SelectField label={t('school.common.academicYear')} value={form.academicYearId} onChange={set('academicYearId')}
-          options={[{ value: '', label: t('school.common.choose') }, ...yearItems.map((y) => ({ value: itemId(y), label: displayValue(y, ['name', 'Name']) || itemId(y) }))]} />
-        <DateField label={t('school.common.startDate')} value={form.startDate} onChange={set('startDate')} />
-        <DateField label={t('school.common.endDate')} value={form.endDate} onChange={set('endDate')} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <TextField label={t('school.common.name')} value={form.name} onChange={set('name')} />
+          <TextField label={t('school.common.code')} value={form.code} onChange={set('code')} />
+          <TextField label={t('school.common.order')} type="number" value={form.order} onChange={set('order')} />
+          <SelectField label={t('school.common.academicYear')} value={form.academicYearId} onChange={set('academicYearId')}
+            options={[{ value: '', label: t('school.common.choose') }, ...yearItems.map((y) => ({ value: itemId(y), label: displayValue(y, ['name', 'Name']) || itemId(y) }))]} />
+          <DateField label={t('school.common.startDate')} value={form.startDate} onChange={set('startDate')} />
+          <DateField label={t('school.common.endDate')} value={form.endDate} onChange={set('endDate')} />
+        </div>
         <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.name.trim() || !form.code.trim() || !form.academicYearId}>{t('school.common.create')}</Button>
       </Card>
-      <ListSection title={t('school.pages.terms.title')} query={query} empty={t('school.empty.generic')} locale={locale} />
+      <List query={query} empty={t('school.empty.generic')} locale={locale} />
     </>
   )
 }
@@ -245,7 +226,7 @@ function GradesPage({ userId, locale }) {
         <TextField label={t('school.common.name')} value={name} onChange={(e) => setName(e.target.value)} />
         <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!name.trim()}>{t('school.common.create')}</Button>
       </Card>
-      <ListSection title={t('school.pages.grades.title')} query={query} empty={t('school.empty.generic')} locale={locale} />
+      <List query={query} empty={t('school.empty.generic')} locale={locale} />
     </>
   )
 }
@@ -270,16 +251,18 @@ function ClassesPage({ userId, locale }) {
       <Card title={t('school.common.create')}>
         {create.isSuccess && <Alert variant="success" title={t('school.common.created')}>{t('school.common.createdBody')}</Alert>}
         {create.isError && <ErrorState error={create.error} onRetry={() => create.reset()} />}
-        <TextField label={t('school.common.name')} value={form.name} onChange={set('name')} />
-        <TextField label={t('school.common.code')} value={form.code} onChange={set('code')} />
-        <TextField label={t('school.common.capacity')} type="number" value={form.capacity} onChange={set('capacity')} />
-        <SelectField label={t('school.common.grade')} value={form.gradeId} onChange={set('gradeId')}
-          options={[{ value: '', label: t('school.common.choose') }, ...gradeItems.map((g) => ({ value: itemId(g), label: displayValue(g, ['name', 'Name']) || itemId(g) }))]} />
-        <SelectField label={t('school.common.academicYear')} value={form.academicYearId} onChange={set('academicYearId')}
-          options={[{ value: '', label: t('school.common.choose') }, ...yearItems.map((y) => ({ value: itemId(y), label: displayValue(y, ['name', 'Name']) || itemId(y) }))]} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <TextField label={t('school.common.name')} value={form.name} onChange={set('name')} />
+          <TextField label={t('school.common.code')} value={form.code} onChange={set('code')} />
+          <TextField label={t('school.common.capacity')} type="number" value={form.capacity} onChange={set('capacity')} />
+          <SelectField label={t('school.common.grade')} value={form.gradeId} onChange={set('gradeId')}
+            options={[{ value: '', label: t('school.common.choose') }, ...gradeItems.map((g) => ({ value: itemId(g), label: displayValue(g, ['name', 'Name']) || itemId(g) }))]} />
+          <SelectField label={t('school.common.academicYear')} value={form.academicYearId} onChange={set('academicYearId')}
+            options={[{ value: '', label: t('school.common.choose') }, ...yearItems.map((y) => ({ value: itemId(y), label: displayValue(y, ['name', 'Name']) || itemId(y) }))]} />
+        </div>
         <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.name.trim() || !form.code.trim() || !form.gradeId || !form.academicYearId}>{t('school.common.create')}</Button>
       </Card>
-      <ListSection title={t('school.pages.classes.title')} query={query} empty={t('school.empty.generic')} locale={locale} />
+      <List query={query} empty={t('school.empty.generic')} locale={locale} />
     </>
   )
 }
@@ -291,7 +274,7 @@ function SubjectsPage({ userId, locale }) {
     <>
       <Head view="subjects" />
       <Alert title={t('school.notes.subjectsTitle')}>{t('school.notes.subjects')}</Alert>
-      <ListSection title={t('school.pages.subjects.title')} query={query} empty={t('school.empty.generic')} locale={locale} />
+      <List query={query} empty={t('school.empty.generic')} locale={locale} />
     </>
   )
 }
@@ -313,6 +296,11 @@ function UsersPage({ userId, locale, role, canCreate }) {
   })
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
   const gradeItems = Array.isArray(grades.data) ? grades.data : []
+  const columns = [
+    { key: 'fullName', header: t('school.common.name') },
+    { key: 'loginCode', header: t('school.common.loginCode') },
+    { key: 'role', header: t('school.common.role'), kind: 'role' },
+  ]
   return (
     <>
       <Head view={view} />
@@ -324,17 +312,19 @@ function UsersPage({ userId, locale, role, canCreate }) {
             </Alert>
           )}
           {create.isError && <ErrorState error={create.error} onRetry={() => create.reset()} />}
-          <TextField label={t('school.common.name')} value={form.fullName} onChange={set('fullName')} />
-          <TextField label={t('school.common.loginCode')} value={form.loginCode} onChange={set('loginCode')} />
-          <SelectField label={t('school.common.role')} value={form.role} onChange={set('role')} options={USER_ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))} />
-          {form.role === 'Student' && (
-            <SelectField label={t('school.common.grade')} value={form.gradeId} onChange={set('gradeId')}
-              options={[{ value: '', label: t('school.common.choose') }, ...gradeItems.map((g) => ({ value: itemId(g), label: displayValue(g, ['name', 'Name']) || itemId(g) }))]} />
-          )}
+          <div className="ui-formgrid ui-formgrid--2">
+            <TextField label={t('school.common.name')} value={form.fullName} onChange={set('fullName')} />
+            <TextField label={t('school.common.loginCode')} value={form.loginCode} onChange={set('loginCode')} />
+            <SelectField label={t('school.common.role')} value={form.role} onChange={set('role')} options={USER_ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))} />
+            {form.role === 'Student' && (
+              <SelectField label={t('school.common.grade')} value={form.gradeId} onChange={set('gradeId')}
+                options={[{ value: '', label: t('school.common.choose') }, ...gradeItems.map((g) => ({ value: itemId(g), label: displayValue(g, ['name', 'Name']) || itemId(g) }))]} />
+            )}
+          </div>
           <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.fullName.trim() || !form.loginCode.trim()}>{t('school.users.create')}</Button>
         </Card>
       )}
-      <ListSection title={t(`school.pages.${view}.title`)} query={query} empty={t('school.empty.users')} locale={locale} />
+      <List query={query} columns={columns} empty={t('school.empty.users')} locale={locale} />
     </>
   )
 }
@@ -363,25 +353,25 @@ function RelationshipsPage({ userId, locale }) {
       <Card title={t('school.relationships.link')}>
         {create.isSuccess && <Alert variant="success" title={t('school.common.created')}>{t('school.relationships.linked')}</Alert>}
         {create.isError && <ErrorState error={create.error} onRetry={() => create.reset()} />}
-        <SelectField label={t('school.common.parent')} value={form.parentId} onChange={set('parentId')}
-          options={[{ value: '', label: t('school.common.choose') }, ...parentItems.map((p) => ({ value: itemId(p), label: displayValue(p, ['fullName', 'FullName']) || itemId(p) }))]} />
-        <SelectField label={t('school.common.student')} value={form.studentId} onChange={set('studentId')}
-          options={[{ value: '', label: t('school.common.choose') }, ...studentItems.map((sx) => ({ value: itemId(sx), label: displayValue(sx, ['fullName', 'FullName']) || itemId(sx) }))]} />
-        <SelectField label={t('school.common.relationship')} value={form.relationship} onChange={set('relationship')} options={GUARDIAN.map((g, i) => ({ value: i, label: t(`school.guardian.${g}`) }))} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <SelectField label={t('school.common.parent')} value={form.parentId} onChange={set('parentId')}
+            options={[{ value: '', label: t('school.common.choose') }, ...parentItems.map((p) => ({ value: itemId(p), label: displayValue(p, ['fullName', 'FullName']) || itemId(p) }))]} />
+          <SelectField label={t('school.common.student')} value={form.studentId} onChange={set('studentId')}
+            options={[{ value: '', label: t('school.common.choose') }, ...studentItems.map((sx) => ({ value: itemId(sx), label: displayValue(sx, ['fullName', 'FullName']) || itemId(sx) }))]} />
+          <SelectField label={t('school.common.relationship')} value={form.relationship} onChange={set('relationship')} options={GUARDIAN.map((g, i) => ({ value: i, label: t(`school.guardian.${g}`) }))} />
+        </div>
         <CheckboxField label={t('school.common.isPrimary')} checked={form.isPrimary} onChange={(e) => setForm((f) => ({ ...f, isPrimary: e.target.checked }))} />
         <CheckboxField label={t('school.common.canViewProgress')} checked={form.canViewProgress} onChange={(e) => setForm((f) => ({ ...f, canViewProgress: e.target.checked }))} />
         <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.parentId || !form.studentId}>{t('school.relationships.link')}</Button>
       </Card>
-      <Card title={t('school.pages.relationships.title')}>
-        <QueryResult query={query} empty={t('school.empty.relationships')}>
-          {(items) => <ItemsList items={items} empty={t('school.empty.relationships')} renderItem={(item) => (
-            <div className="student-item">
-              <div><DetailGrid item={item} locale={locale} /></div>
-              {item.isActive && <div><Button variant="secondary" onClick={() => deactivate.mutate(itemId(item))} loading={deactivate.isPending}>{t('school.common.deactivate')}</Button></div>}
-            </div>
-          )} />}
-        </QueryResult>
-      </Card>
+      <List
+        query={query}
+        empty={t('school.empty.relationships')}
+        locale={locale}
+        rowActions={(item) => item.isActive && (
+          <Button variant="secondary" onClick={() => deactivate.mutate(itemId(item))} loading={deactivate.isPending}>{t('school.common.deactivate')}</Button>
+        )}
+      />
     </>
   )
 }
@@ -420,29 +410,31 @@ function TeacherAssignmentsPage({ userId, locale }) {
       <Card title={t('school.assignments.classCreate')}>
         {createClass.isSuccess && <Alert variant="success" title={t('school.common.created')}>{t('school.common.createdBody')}</Alert>}
         {createClass.isError && <ErrorState error={createClass.error} onRetry={() => createClass.reset()} />}
-        <SelectField label={t('school.common.teacher')} value={classForm.teacherId} onChange={(e) => setClassForm((f) => ({ ...f, teacherId: e.target.value }))} options={teacherOpts} />
-        <SelectField label={t('school.common.class')} value={classForm.schoolClassId} onChange={(e) => setClassForm((f) => ({ ...f, schoolClassId: e.target.value }))} options={classOpts} />
-        <SelectField label={t('school.common.subject')} value={classForm.subjectId} onChange={(e) => setClassForm((f) => ({ ...f, subjectId: e.target.value }))} options={subjectOpts(true)} />
-        <SelectField label={t('school.common.role')} value={classForm.role} onChange={(e) => setClassForm((f) => ({ ...f, role: e.target.value }))} options={CLASS_ROLE.map((r, i) => ({ value: i, label: t(`school.classRole.${r}`) }))} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <SelectField label={t('school.common.teacher')} value={classForm.teacherId} onChange={(e) => setClassForm((f) => ({ ...f, teacherId: e.target.value }))} options={teacherOpts} />
+          <SelectField label={t('school.common.class')} value={classForm.schoolClassId} onChange={(e) => setClassForm((f) => ({ ...f, schoolClassId: e.target.value }))} options={classOpts} />
+          <SelectField label={t('school.common.subject')} value={classForm.subjectId} onChange={(e) => setClassForm((f) => ({ ...f, subjectId: e.target.value }))} options={subjectOpts(true)} />
+          <SelectField label={t('school.common.role')} value={classForm.role} onChange={(e) => setClassForm((f) => ({ ...f, role: e.target.value }))} options={CLASS_ROLE.map((r, i) => ({ value: i, label: t(`school.classRole.${r}`) }))} />
+        </div>
         <Button onClick={() => createClass.mutate()} loading={createClass.isPending} disabled={!classForm.teacherId || !classForm.schoolClassId}>{t('school.assignments.classCreate')}</Button>
       </Card>
-      <Card title={t('school.pages.teacherAssignments.classList')}>
-        <QueryResult query={classAsg} empty={t('school.empty.assignments')}>
-          {(items) => <ItemsList items={items} empty={t('school.empty.assignments')} renderItem={(item) => <DetailGrid item={item} locale={locale} />} />}
-        </QueryResult>
-      </Card>
+      <section className="ui-section">
+        <div className="ui-section__head"><h2 className="ui-section__title">{t('school.pages.teacherAssignments.classList')}</h2></div>
+        <List query={classAsg} empty={t('school.empty.assignments')} locale={locale} />
+      </section>
       <Card title={t('school.assignments.subjectCreate')}>
         {createSubj.isSuccess && <Alert variant="success" title={t('school.common.created')}>{t('school.common.createdBody')}</Alert>}
         {createSubj.isError && <ErrorState error={createSubj.error} onRetry={() => createSubj.reset()} />}
-        <SelectField label={t('school.common.teacher')} value={subjForm.teacherId} onChange={(e) => setSubjForm((f) => ({ ...f, teacherId: e.target.value }))} options={teacherOpts} />
-        <SelectField label={t('school.common.subject')} value={subjForm.subjectId} onChange={(e) => setSubjForm((f) => ({ ...f, subjectId: e.target.value }))} options={subjectOpts(false)} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <SelectField label={t('school.common.teacher')} value={subjForm.teacherId} onChange={(e) => setSubjForm((f) => ({ ...f, teacherId: e.target.value }))} options={teacherOpts} />
+          <SelectField label={t('school.common.subject')} value={subjForm.subjectId} onChange={(e) => setSubjForm((f) => ({ ...f, subjectId: e.target.value }))} options={subjectOpts(false)} />
+        </div>
         <Button onClick={() => createSubj.mutate()} loading={createSubj.isPending} disabled={!subjForm.teacherId || !subjForm.subjectId}>{t('school.assignments.subjectCreate')}</Button>
       </Card>
-      <Card title={t('school.pages.teacherAssignments.subjectList')}>
-        <QueryResult query={subjectAsg} empty={t('school.empty.assignments')}>
-          {(items) => <ItemsList items={items} empty={t('school.empty.assignments')} renderItem={(item) => <DetailGrid item={item} locale={locale} />} />}
-        </QueryResult>
-      </Card>
+      <section className="ui-section">
+        <div className="ui-section__head"><h2 className="ui-section__title">{t('school.pages.teacherAssignments.subjectList')}</h2></div>
+        <List query={subjectAsg} empty={t('school.empty.assignments')} locale={locale} />
+      </section>
     </>
   )
 }
@@ -455,8 +447,14 @@ function CurriculumPage({ userId, locale }) {
     <>
       <Head view="curriculum" />
       <Alert title={t('school.notes.curriculumTitle')}>{t('school.notes.curriculum')}</Alert>
-      <ListSection title={t('school.pages.grades.title')} query={grades} empty={t('school.empty.generic')} locale={locale} />
-      <ListSection title={t('school.pages.subjects.title')} query={subjects} empty={t('school.empty.generic')} locale={locale} />
+      <section className="ui-section">
+        <div className="ui-section__head"><h2 className="ui-section__title">{t('school.pages.grades.title')}</h2></div>
+        <List query={grades} empty={t('school.empty.generic')} locale={locale} />
+      </section>
+      <section className="ui-section">
+        <div className="ui-section__head"><h2 className="ui-section__title">{t('school.pages.subjects.title')}</h2></div>
+        <List query={subjects} empty={t('school.empty.generic')} locale={locale} />
+      </section>
     </>
   )
 }
@@ -486,19 +484,15 @@ function AnnouncementsPage({ userId, locale }) {
           options={Object.entries(AUDIENCE).map(([k, v]) => ({ value: v, label: t(`school.audiences.${k}`) }))} />
         <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.title.trim() || !form.body.trim()}>{t('school.announcements.create')}</Button>
       </Card>
-      <Card title={t('school.pages.announcements.title')}>
-        <QueryResult query={query} empty={t('school.empty.announcements')}>
-          {(items) => <ItemsList items={items} empty={t('school.empty.announcements')} renderItem={(item) => {
-            const active = item.isActive ?? item.IsActive
-            return (
-              <div className="student-item">
-                <div><DetailGrid item={item} locale={locale} /></div>
-                <div><Button variant="secondary" onClick={() => publish.mutate({ id: itemId(item), on: !active })} loading={publish.isPending}>{active ? t('school.common.unpublish') : t('school.common.publish')}</Button></div>
-              </div>
-            )
-          }} />}
-        </QueryResult>
-      </Card>
+      <List
+        query={query}
+        empty={t('school.empty.announcements')}
+        locale={locale}
+        rowActions={(item) => {
+          const active = item.isActive ?? item.IsActive
+          return <Button variant="secondary" onClick={() => publish.mutate({ id: itemId(item), on: !active })} loading={publish.isPending}>{active ? t('school.common.unpublish') : t('school.common.publish')}</Button>
+        }}
+      />
     </>
   )
 }
@@ -519,27 +513,30 @@ function DocumentRequestsPage({ userId, locale }) {
     mutationFn: ({ id, status }) => schoolApi.transitionDocumentRequest(id, { status }),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.school.documentRequests(userId) }),
   })
+  const items = Array.isArray(query.data) ? query.data : []
   return (
     <>
       <Head view="documentRequests" />
       {respond.isSuccess && <Alert variant="success" title={t('school.requests.responded')}>{t('school.requests.respondedBody')}</Alert>}
-      <Card title={t('school.pages.documentRequests.title')}>
-        <QueryResult query={query} empty={t('school.empty.requests')}>
-          {(items) => <ItemsList items={items} empty={t('school.empty.requests')} renderItem={(item) => {
+      {query.isLoading && <Loading />}
+      {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
+      {query.data && (items.length === 0 ? <EmptyState icon={FileText} title={t('school.empty.requests')} /> : (
+        <div className="student-list">
+          {items.map((item) => {
             const id = itemId(item)
             return (
-              <div>
-                <DetailGrid item={item} locale={locale} />
+              <Card key={id}>
+                <DetailList item={item} locale={locale} />
                 <TextareaField label={t('school.requests.reply')} value={replyById[id] || ''} onChange={(e) => setReplyById((m) => ({ ...m, [id]: e.target.value }))} />
-                <div className="student-item">
+                <div className="cluster">
                   <Button onClick={() => respond.mutate({ id, body: replyById[id] || '' })} loading={respond.isPending} disabled={!(replyById[id] || '').trim()}>{t('school.common.respond')}</Button>
                   <Button variant="secondary" onClick={() => transition.mutate({ id, status: REQ_STATUS.Resolved })} loading={transition.isPending}>{t('school.requests.markResolved')}</Button>
                 </div>
-              </div>
+              </Card>
             )
-          }} />}
-        </QueryResult>
-      </Card>
+          })}
+        </div>
+      ))}
     </>
   )
 }
@@ -550,13 +547,13 @@ function DocumentRequestsPage({ userId, locale }) {
 function CommunitiesPage({ userId, locale }) {
   const { t } = useTranslation()
   const query = useSchoolQuery(queryKeys.school.communities(userId), (s) => schoolApi.communities(s))
-  return (<><Head view="communities" /><Alert title={t('school.notes.readOnlyTitle')}>{t('school.notes.communities')}</Alert><ListSection title={t('school.pages.communities.title')} query={query} empty={t('school.empty.communities')} locale={locale} /></>)
+  return (<><Head view="communities" /><Alert title={t('school.notes.readOnlyTitle')}>{t('school.notes.communities')}</Alert><List query={query} empty={t('school.empty.communities')} locale={locale} /></>)
 }
 
 function CompetitionsPage({ userId, locale }) {
   const { t } = useTranslation()
   const query = useSchoolQuery(queryKeys.school.competitions(userId), (s) => schoolApi.competitions(s))
-  return (<><Head view="competitions" /><Alert title={t('school.notes.readOnlyTitle')}>{t('school.notes.competitions')}</Alert><ListSection title={t('school.pages.competitions.title')} query={query} empty={t('school.empty.competitions')} locale={locale} /></>)
+  return (<><Head view="competitions" /><Alert title={t('school.notes.readOnlyTitle')}>{t('school.notes.competitions')}</Alert><List query={query} empty={t('school.empty.competitions')} locale={locale} /></>)
 }
 
 function ReportsPage({ userId, locale }) {
@@ -567,13 +564,13 @@ function ReportsPage({ userId, locale }) {
   return (
     <>
       <Head view="reports" />
-      {query.isLoading && <p role="status">{t('states.loading')}</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {query.data && (
-        <>
-          <Card title={t('school.reports.users')}>{users ? <DetailGrid item={users} locale={locale} /> : <EmptyState title={t('school.empty.reports')} />}</Card>
-          <Card title={t('school.reports.ai')}>{ai ? <DetailGrid item={ai} locale={locale} /> : <EmptyState title={t('school.empty.reports')} />}</Card>
-        </>
+        <div className="ui-split ui-split--even">
+          <Card title={t('school.reports.users')}>{users ? <DetailList item={users} locale={locale} /> : <EmptyState title={t('school.empty.reports')} />}</Card>
+          <Card title={t('school.reports.ai')}>{ai ? <DetailList item={ai} locale={locale} /> : <EmptyState title={t('school.empty.reports')} />}</Card>
+        </div>
       )}
     </>
   )
@@ -587,12 +584,15 @@ function AiUsagePage({ userId, locale }) {
   return (
     <>
       <Head view="aiUsage" />
-      {query.isLoading && <p role="status">{t('states.loading')}</p>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
       {query.data && (
         <>
-          <Card title={t('school.aiUsage.summary')}>{summary ? <DetailGrid item={summary} locale={locale} /> : <EmptyState title={t('school.empty.generic')} />}</Card>
-          <Card title={t('school.aiUsage.records')}><ItemsList items={list} empty={t('school.empty.generic')} renderItem={(item) => <DetailGrid item={item} locale={locale} />} /></Card>
+          <Card title={t('school.aiUsage.summary')}>{summary ? <DetailList item={summary} locale={locale} /> : <EmptyState title={t('school.empty.generic')} />}</Card>
+          <section className="ui-section">
+            <div className="ui-section__head"><h2 className="ui-section__title">{t('school.aiUsage.records')}</h2></div>
+            <ResourceTable rows={list} emptyTitle={t('school.empty.generic')} locale={locale} />
+          </section>
         </>
       )}
     </>
@@ -608,23 +608,26 @@ function SupportPage({ userId, locale }) {
     mutationFn: ({ id, responseMessage }) => schoolApi.respondSupport(id, { responseMessage, status: SUPPORT_STATUS.Completed }),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.school.support(userId) }),
   })
+  const items = Array.isArray(query.data) ? query.data : []
   return (
     <>
       <Head view="support" />
-      <Card title={t('school.pages.support.title')}>
-        <QueryResult query={query} empty={t('school.empty.support')}>
-          {(items) => <ItemsList items={items} empty={t('school.empty.support')} renderItem={(item) => {
+      {query.isLoading && <Loading />}
+      {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
+      {query.data && (items.length === 0 ? <EmptyState icon={MessageSquare} title={t('school.empty.support')} /> : (
+        <div className="student-list">
+          {items.map((item) => {
             const id = itemId(item)
             return (
-              <div>
-                <DetailGrid item={item} locale={locale} />
+              <Card key={id}>
+                <DetailList item={item} locale={locale} />
                 <TextareaField label={t('school.requests.reply')} value={replyById[id] || ''} onChange={(e) => setReplyById((m) => ({ ...m, [id]: e.target.value }))} />
                 <Button onClick={() => respond.mutate({ id, responseMessage: replyById[id] || '' })} loading={respond.isPending} disabled={!(replyById[id] || '').trim()}>{t('school.common.respond')}</Button>
-              </div>
+              </Card>
             )
-          }} />}
-        </QueryResult>
-      </Card>
+          })}
+        </div>
+      ))}
     </>
   )
 }
@@ -632,7 +635,7 @@ function SupportPage({ userId, locale }) {
 function AuditPage({ userId, locale }) {
   const { t } = useTranslation()
   const query = useSchoolQuery(queryKeys.school.audit(userId), (s) => schoolApi.audit(s))
-  return (<><Head view="audit" /><ListSection title={t('school.pages.audit.title')} query={query} empty={t('school.empty.audit')} locale={locale} /></>)
+  return (<><Head view="audit" /><List query={query} empty={t('school.empty.audit')} locale={locale} /></>)
 }
 
 function SettingsPage({ userId, locale }) {
@@ -650,15 +653,17 @@ function SettingsPage({ userId, locale }) {
       <Card title={t('school.settings.upsert')}>
         {upsert.isSuccess && <Alert variant="success" title={t('school.common.saved')}>{t('school.settings.saved')}</Alert>}
         {upsert.isError && <ErrorState error={upsert.error} onRetry={() => upsert.reset()} />}
-        <TextField label={t('school.common.key')} value={form.key} onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))} />
-        <TextField label={t('school.common.value')} value={form.value} onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))} />
-        <SelectField label={t('school.common.valueType')} value={form.valueType} onChange={(e) => setForm((f) => ({ ...f, valueType: e.target.value }))}
-          options={Object.entries(SETTING_TYPE).map(([k, v]) => ({ value: v, label: k }))} />
+        <div className="ui-formgrid ui-formgrid--2">
+          <TextField label={t('school.common.key')} value={form.key} onChange={(e) => setForm((f) => ({ ...f, key: e.target.value }))} />
+          <TextField label={t('school.common.value')} value={form.value} onChange={(e) => setForm((f) => ({ ...f, value: e.target.value }))} />
+          <SelectField label={t('school.common.valueType')} value={form.valueType} onChange={(e) => setForm((f) => ({ ...f, valueType: e.target.value }))}
+            options={Object.entries(SETTING_TYPE).map(([k, v]) => ({ value: v, label: k }))} />
+        </div>
         <CheckboxField label={t('school.common.secret')} checked={form.isSecret} onChange={(e) => setForm((f) => ({ ...f, isSecret: e.target.checked }))} />
         <Button onClick={() => upsert.mutate()} loading={upsert.isPending} disabled={!form.key.trim()}>{t('school.common.save')}</Button>
       </Card>
-      <ListSection title={t('school.pages.settings.title')} query={query} empty={t('school.empty.settings')} locale={locale} />
-      <Card title={t('nav.security')}><Link className="ui-btn ui-btn--primary" to="/app/security">{t('security.changePassword')}</Link></Card>
+      <List query={query} empty={t('school.empty.settings')} locale={locale} />
+      <Card title={t('nav.security')}><Link className="ui-btn ui-btn--primary" to="/app/security"><ShieldCheck size={16} aria-hidden="true" /> {t('security.changePassword')}</Link></Card>
     </>
   )
 }

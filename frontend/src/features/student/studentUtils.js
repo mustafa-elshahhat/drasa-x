@@ -23,6 +23,133 @@ export function formatDate(value, locale) {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
+export function formatDateOnly(value, locale) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return String(value)
+  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date)
+}
+
+// Backend DTOs are not typed and mix PascalCase / camelCase keys, so every field
+// read goes through a dual-case lookup. Returns undefined when absent.
+export function getField(item, key) {
+  if (!item || typeof item !== 'object' || !key) return undefined
+  if (item[key] !== undefined) return item[key]
+  const pascal = key.charAt(0).toUpperCase() + key.slice(1)
+  if (item[pascal] !== undefined) return item[pascal]
+  const camel = key.charAt(0).toLowerCase() + key.slice(1)
+  if (item[camel] !== undefined) return item[camel]
+  return undefined
+}
+
+// Formats a raw value for display. Translation of enums/booleans is handled by
+// the rendering component (which has `t`); this covers date/number/text only.
+export function formatField(value, format, { locale } = {}) {
+  if (value === undefined || value === null || value === '') return '—'
+  switch (format) {
+    case 'date':
+      return formatDate(value, locale)
+    case 'dateOnly':
+      return formatDateOnly(value, locale)
+    case 'number': {
+      const n = Number(value)
+      return Number.isFinite(n) ? new Intl.NumberFormat(locale).format(n) : String(value)
+    }
+    default:
+      return String(value)
+  }
+}
+
+// Resolves an enum value (numeric or string) against a label map to a chip
+// descriptor { tone, labelKey }. The map is keyed by both the numeric value and
+// the canonical name where applicable. Returns null when unmapped.
+export function resolveStatus(value, map) {
+  if (!map || value === undefined || value === null) return null
+  if (map[value]) return map[value]
+  const asString = String(value)
+  return map[asString] || null
+}
+
+// Turns an untyped DTO key (camelCase / PascalCase / snake_case) into a readable
+// label, e.g. "startDate" → "Start date", "AttendancePercentage" → "Attendance
+// percentage". Used as the honest fallback for detail records whose exact field
+// set is backend-defined and not individually translated. Never shows the raw key.
+export function humanizeKey(key) {
+  if (!key) return ''
+  const spaced = String(key)
+    .replace(/[_-]+/g, ' ')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+  return spaced.charAt(0).toUpperCase() + spaced.slice(1)
+}
+
+// Generic status tone from a value string/boolean, used when a typed enum map is
+// not available so status cells still read with meaningful color (honest — the
+// label is the backend value itself).
+const TONE_BY_VALUE = {
+  active: 'success', approved: 'success', published: 'success', resolved: 'success', completed: 'success', healthy: 'success', up: 'success', enabled: 'success', current: 'success', online: 'success',
+  pending: 'warning', inprogress: 'warning', 'in progress': 'warning', open: 'warning', degraded: 'warning', draft: 'muted', scheduled: 'info',
+  rejected: 'danger', suspended: 'danger', archived: 'muted', closed: 'muted', down: 'danger', failed: 'danger', disabled: 'danger', error: 'danger', offline: 'danger',
+}
+export function genericStatusTone(value) {
+  if (typeof value === 'boolean') return value ? 'success' : 'muted'
+  const v = String(value ?? '').trim().toLowerCase()
+  return TONE_BY_VALUE[v] || 'muted'
+}
+
+// Derives a curated, ordered set of table columns from untyped list rows. Display
+// fields (name/title) come first, then codes, then status/role (rendered as
+// chips), then a date — humanized headers, never raw keys. Capped to avoid
+// horizontal overflow.
+export function autoColumns(rows, { limit = 6, hide = [] } = {}) {
+  const first = (rows || []).find((r) => r && typeof r === 'object')
+  if (!first) return []
+  const hidden = new Set(['id', 'Id', 'tenantId', 'TenantId', ...hide])
+  const score = (k) => {
+    const lk = k.toLowerCase()
+    if (/(fullname|^name$|title|displayname)/.test(lk)) return 0
+    if (/(code|email|^key$)/.test(lk)) return 1
+    if (/(role)/.test(lk)) return 2
+    if (/(status|state)/.test(lk)) return 3
+    if (lk.startsWith('is') || /(active|enabled|published)/.test(lk)) return 4
+    if (lk.endsWith('date') || lk.endsWith('at')) return 7
+    return 6
+  }
+  return Object.entries(first)
+    .filter(([k, v]) => !hidden.has(k) && v !== null && v !== undefined && typeof v !== 'object')
+    .map(([k, v]) => ({ k, v }))
+    .sort((a, b) => score(a.k) - score(b.k))
+    .slice(0, limit)
+    .map(({ k, v }) => {
+      const lk = k.toLowerCase()
+      let kind
+      if (typeof v === 'boolean' || lk.startsWith('is')) kind = 'bool'
+      else if (/(role)/.test(lk)) kind = 'role'
+      else if (/(status|state)/.test(lk)) kind = 'status'
+      const format = lk.endsWith('date') || lk.endsWith('at') ? 'date' : undefined
+      return { key: k, header: humanizeKey(k), kind, format }
+    })
+}
+
+// Derives display fields from an untyped record: primitive (non-object) values
+// with humanized labels and date formatting for *date/*at keys. Hides ids and
+// noisy keys by default so detail views read cleanly.
+export function autoFields(item, { limit = 16, hide = [] } = {}) {
+  if (!item || typeof item !== 'object') return []
+  const hidden = new Set(['id', 'Id', 'tenantId', 'TenantId', ...hide])
+  return Object.entries(item)
+    .filter(([key, value]) => !hidden.has(key) && value !== null && value !== undefined && typeof value !== 'object')
+    .slice(0, limit)
+    .map(([key]) => {
+      const lower = key.toLowerCase()
+      const format = lower.endsWith('date') || lower.endsWith('at') ? 'date' : undefined
+      return { key, label: humanizeKey(key), format }
+    })
+}
+
 export function settledData(result, mapper = (v) => v) {
   return result?.status === 'fulfilled' ? mapper(result.value) : null
 }

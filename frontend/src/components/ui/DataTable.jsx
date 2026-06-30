@@ -75,7 +75,11 @@ export function DataTable({
           {rows.map((row, i) => (
             <tr key={rowKey(row, i)}>
               {columns.map((c) => (
-                <td key={c.key} style={c.align ? { textAlign: c.align } : undefined}>
+                <td
+                  key={c.key}
+                  data-label={typeof c.header === 'string' ? c.header : undefined}
+                  style={c.align ? { textAlign: c.align } : undefined}
+                >
                   {c.render ? c.render(row) : row[c.key]}
                 </td>
               ))}

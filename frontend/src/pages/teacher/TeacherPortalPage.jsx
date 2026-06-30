@@ -2,81 +2,41 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { FileText } from 'lucide-react'
+import { FileText, Users, BookOpen, GraduationCap, ClipboardCheck, ClipboardList, Layers, PlayCircle, ShieldCheck, Sparkles, Bell } from 'lucide-react'
 import { PageHeader, Card } from '../../components/ui/PageHeader'
+import { Metric } from '../../components/ui/Metric'
 import { EmptyState, ErrorState } from '../../components/ui/states'
 import { Button } from '../../components/ui/Button'
 import { Alert } from '../../components/ui/Alert'
+import { Chip } from '../../components/ui/Chip'
+import { Spinner } from '../../components/ui/Spinner'
+import { DetailList } from '../../components/data/DetailList'
+import { QuizCard } from '../../components/domain/QuizCard'
+import { UnitCard } from '../../components/domain/UnitCard'
 import { TextField, TextareaField, SelectField } from '../../components/form/fields'
 import { useAuth } from '../../features/auth/AuthContext'
 import { teacherApi } from '../../features/teacher/teacherApi'
-import { displayValue, formatDate, itemId, settledData, settledError, statusLabel, quizStatusName, isQuizPublished, submissionStatusName } from '../../features/teacher/teacherUtils'
+import { displayValue, itemId, settledData, settledError, quizStatusName, isQuizPublished, submissionStatusName } from '../../features/teacher/teacherUtils'
 import { queryKeys, STALE } from '../../lib/query/keys'
 import { toItems, toObject } from '../../features/student/studentSchemas'
 
 function useTeacherQuery(key, fn, options = {}) {
-  // React Query forbids a query fn resolving to `undefined`. Real data funnels through
-  // toItems()/toObject() (already an array/object), but normalize any degenerate
-  // `undefined` to `null` so no teacher query (e.g. quizzes) can violate that invariant.
-  // (Phase 22 / FE-02; QueryResult already renders `null` as the empty state.)
+  // React Query forbids a query fn resolving to `undefined`; normalize to `null`.
   return useQuery({ queryKey: key, queryFn: async ({ signal }) => (await fn(signal)) ?? null, staleTime: options.staleTime ?? STALE.short, enabled: options.enabled ?? true })
 }
 
-function Field({ label, value }) {
-  return (
-    <div className="student-kv">
-      <dt>{label}</dt>
-      <dd>{value ?? '—'}</dd>
-    </div>
-  )
+function Loading() {
+  const { t } = useTranslation()
+  return <Spinner label={t('states.loading')} />
 }
 
-function ItemsList({ items, empty, renderItem }) {
-  if (!items?.length) return <EmptyState title={empty} />
-  return <div className="student-list">{items.map((item, index) => <div className="student-list__item" key={itemId(item) || index}>{renderItem(item)}</div>)}</div>
-}
-
-function QueryResult({ query, empty, children }) {
-  if (query.isLoading) return <p role="status">Loading...</p>
-  if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
-  const data = Array.isArray(query.data) ? query.data : query.data ? query.data : []
-  if (Array.isArray(data) && !data.length) return <EmptyState title={empty} />
-  return children(data)
-}
-
-function QueryCard({ title, query, empty, children }) {
-  if (query.isLoading) return <Card title={title}><p role="status">Loading...</p></Card>
-  if (query.isError) return <Card title={title}><ErrorState error={query.error} onRetry={query.refetch} /></Card>
-  return <Card title={title}>{children(query.data) || <EmptyState title={empty} />}</Card>
-}
-
-function DetailGrid({ item, locale }) {
-  if (!item) return null
-  const fields = Object.entries(item).filter(([, value]) => value !== null && value !== undefined && typeof value !== 'object')
-  return (
-    <dl className="student-grid">
-      {fields.slice(0, 14).map(([key, value]) => (
-        <Field key={key} label={key} value={String(key).toLowerCase().includes('date') || String(key).toLowerCase().includes('at') ? formatDate(value, locale) : statusLabel(value)} />
-      ))}
-    </dl>
-  )
-}
-
-function LinkedItem({ item, to, label }) {
-  return <Link className="student-row-link" to={to}><FileText size={18} aria-hidden="true" /><span>{label || displayValue(item) || to}</span></Link>
-}
-
-function PlainItem({ item, locale, action }) {
-  return (
-    <div className="student-item">
-      <div><strong>{displayValue(item) || itemId(item) || 'Record'}</strong><DetailGrid item={item} locale={locale} /></div>
-      {action && <div>{action}</div>}
-    </div>
-  )
-}
-
-function MetricLink({ to, value, label }) {
-  return <Link className="student-metric" to={to}><strong>{value}</strong><span>{label}</span></Link>
+// Loading/error/empty boundary returning the resolved array to its children.
+function Listing({ query, empty, emptyIcon, children }) {
+  if (query.isLoading) return <Loading />
+  if (query.isError) return <ErrorState error={query.error} onRetry={() => query.refetch()} />
+  const items = Array.isArray(query.data) ? query.data : []
+  if (!items.length) return <EmptyState icon={emptyIcon} title={empty} />
+  return children(items)
 }
 
 // ---------------------------------------------------------------------------
@@ -89,16 +49,16 @@ function DashboardPage({ userId }) {
   return (
     <>
       <PageHeader title={t('teacher.dashboard.title')} description={t('teacher.dashboard.description')} />
-      {dashboard.isLoading && <p role="status">{t('states.loading')}</p>}
+      {dashboard.isLoading && <Loading />}
       {dashboard.isError && <ErrorState error={dashboard.error} onRetry={dashboard.refetch} />}
       {dashboard.data && (
         <div className="student-dashboard">
-          <Card title={t('teacher.classes.title')}><MetricLink to="/app/teacher/classes" value={d.assignedClassCount ?? 0} label={t('teacher.dashboard.assignedClasses')} /></Card>
-          <Card title={t('teacher.subjects.title')}><MetricLink to="/app/teacher/subjects" value={d.assignedSubjectCount ?? 0} label={t('teacher.dashboard.assignedSubjects')} /></Card>
-          <Card title={t('teacher.students.title')}><MetricLink to="/app/teacher/students" value={d.studentCount ?? 0} label={t('teacher.dashboard.students')} /></Card>
-          <Card title={t('teacher.quizzes.drafts')}><MetricLink to="/app/teacher/quizzes" value={d.draftQuizCount ?? 0} label={t('teacher.dashboard.draftQuizzes')} /></Card>
-          <Card title={t('teacher.quizzes.published')}><MetricLink to="/app/teacher/quizzes" value={d.publishedQuizCount ?? 0} label={t('teacher.dashboard.publishedQuizzes')} /></Card>
-          <Card title={t('teacher.grading.pending')}><MetricLink to="/app/teacher/quizzes" value={d.pendingGradingCount ?? 0} label={t('teacher.dashboard.pendingGrading')} /></Card>
+          <Metric to="/app/teacher/classes" icon={Users} accent="var(--purple)" value={d.assignedClassCount ?? 0} label={t('teacher.dashboard.assignedClasses')} />
+          <Metric to="/app/teacher/subjects" icon={BookOpen} accent="var(--brand)" value={d.assignedSubjectCount ?? 0} label={t('teacher.dashboard.assignedSubjects')} />
+          <Metric to="/app/teacher/students" icon={GraduationCap} accent="var(--orange)" value={d.studentCount ?? 0} label={t('teacher.dashboard.students')} />
+          <Metric to="/app/teacher/quizzes" icon={FileText} accent="var(--info)" value={d.draftQuizCount ?? 0} label={t('teacher.dashboard.draftQuizzes')} />
+          <Metric to="/app/teacher/quizzes" icon={ClipboardCheck} accent="var(--success)" value={d.publishedQuizCount ?? 0} label={t('teacher.dashboard.publishedQuizzes')} />
+          <Metric to="/app/teacher/quizzes" icon={ClipboardList} accent="var(--warning)" value={d.pendingGradingCount ?? 0} label={t('teacher.dashboard.pendingGrading')} />
         </div>
       )}
     </>
@@ -108,17 +68,29 @@ function DashboardPage({ userId }) {
 // ---------------------------------------------------------------------------
 // Classes + students
 // ---------------------------------------------------------------------------
-function ClassesPage({ userId }) {
+function ClassesPage({ userId, locale }) {
   const { t } = useTranslation()
   const { classId } = useParams()
   const query = useTeacherQuery(queryKeys.teacher.classes(userId), (signal) => teacherApi.classes(signal), { staleTime: STALE.medium })
-  if (classId) return <ClassDetailPage userId={userId} classId={classId} list={query} />
+  if (classId) return <ClassDetailPage userId={userId} classId={classId} list={query} locale={locale} />
   return (
     <>
       <PageHeader title={t('teacher.classes.title')} description={t('teacher.classes.description')} />
-      <QueryResult query={query} empty={t('teacher.empty.classes')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.classes')} renderItem={(item) => <LinkedItem item={item} to={`/app/teacher/classes/${itemId(item, ['classId', 'ClassId', 'id', 'Id'])}`} label={`${displayValue(item, ['name', 'Name'])} (${item.studentCount ?? item.StudentCount ?? 0})`} />} />}
-      </QueryResult>
+      <Listing query={query} empty={t('teacher.empty.classes')} emptyIcon={Users}>
+        {(items) => (
+          <div className="ui-grid ui-grid--auto">
+            {items.map((item) => (
+              <QuizCard
+                key={itemId(item, ['classId', 'ClassId', 'id', 'Id'])}
+                to={`/app/teacher/classes/${itemId(item, ['classId', 'ClassId', 'id', 'Id'])}`}
+                icon={Users}
+                title={displayValue(item, ['name', 'Name'])}
+                meta={t('teacher.classes.studentCount', { count: item.studentCount ?? item.StudentCount ?? 0 })}
+              />
+            ))}
+          </div>
+        )}
+      </Listing>
     </>
   )
 }
@@ -130,10 +102,19 @@ function ClassDetailPage({ userId, classId, list, locale }) {
   return (
     <>
       <PageHeader title={displayValue(item, ['name', 'Name']) || t('teacher.classes.details')} description={t('teacher.classes.studentsDescription')} />
-      <Card title={t('teacher.classes.details')}><DetailGrid item={item || { classId }} locale={locale} /></Card>
-      <QueryCard title={t('teacher.students.title')} query={students} empty={t('teacher.empty.students')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.students')} renderItem={(s) => <LinkedItem item={s} to={`/app/teacher/students/${itemId(s, ['studentId', 'StudentId', 'id', 'Id'])}`} label={displayValue(s, ['fullName', 'FullName'])} />} />}
-      </QueryCard>
+      {item && <Card title={t('teacher.classes.details')}><DetailList item={item} locale={locale} /></Card>}
+      <section className="ui-section">
+        <div className="ui-section__head"><h2 className="ui-section__title">{t('teacher.students.title')}</h2></div>
+        <Listing query={students} empty={t('teacher.empty.students')} emptyIcon={GraduationCap}>
+          {(items) => (
+            <div className="student-list">
+              {items.map((s) => (
+                <UnitCard key={itemId(s, ['studentId', 'StudentId', 'id', 'Id'])} to={`/app/teacher/students/${itemId(s, ['studentId', 'StudentId', 'id', 'Id'])}`} icon={GraduationCap} title={displayValue(s, ['fullName', 'FullName'])} />
+              ))}
+            </div>
+          )}
+        </Listing>
+      </section>
     </>
   )
 }
@@ -145,13 +126,19 @@ function SubjectsPage({ userId }) {
   const { t } = useTranslation()
   const { subjectId } = useParams()
   const query = useTeacherQuery(queryKeys.teacher.subjects(userId), (signal) => teacherApi.subjects(signal), { staleTime: STALE.medium })
-  if (subjectId) return <CurriculumUnitsPage userId={userId} subjectId={subjectId} list={query} />
+  if (subjectId) return <CurriculumUnitsPage userId={userId} subjectId={subjectId} />
   return (
     <>
       <PageHeader title={t('teacher.subjects.title')} description={t('teacher.subjects.description')} />
-      <QueryResult query={query} empty={t('teacher.empty.subjects')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.subjects')} renderItem={(item) => <LinkedItem item={item} to={`/app/teacher/subjects/${itemId(item, ['subjectId', 'SubjectId', 'id', 'Id'])}`} label={displayValue(item, ['name', 'Name'])} />} />}
-      </QueryResult>
+      <Listing query={query} empty={t('teacher.empty.subjects')} emptyIcon={BookOpen}>
+        {(items) => (
+          <div className="ui-grid ui-grid--auto">
+            {items.map((item) => (
+              <QuizCard key={itemId(item, ['subjectId', 'SubjectId', 'id', 'Id'])} to={`/app/teacher/subjects/${itemId(item, ['subjectId', 'SubjectId', 'id', 'Id'])}`} icon={BookOpen} title={displayValue(item, ['name', 'Name'])} />
+            ))}
+          </div>
+        )}
+      </Listing>
     </>
   )
 }
@@ -162,9 +149,13 @@ function CurriculumUnitsPage({ userId, subjectId }) {
   return (
     <>
       <PageHeader title={t('teacher.curriculum.units')} description={t('teacher.curriculum.description')} />
-      <QueryResult query={units} empty={t('teacher.empty.units')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.units')} renderItem={(item) => <LinkedItem item={item} to={`/app/teacher/units/${itemId(item)}`} />} />}
-      </QueryResult>
+      <Listing query={units} empty={t('teacher.empty.units')} emptyIcon={Layers}>
+        {(items) => (
+          <div className="student-list">
+            {items.map((item) => <UnitCard key={itemId(item)} to={`/app/teacher/units/${itemId(item)}`} icon={Layers} title={displayValue(item)} />)}
+          </div>
+        )}
+      </Listing>
     </>
   )
 }
@@ -176,9 +167,13 @@ function UnitLessonsPage({ userId }) {
   return (
     <>
       <PageHeader title={t('teacher.curriculum.lessons')} description={t('teacher.curriculum.description')} />
-      <QueryResult query={lessons} empty={t('teacher.empty.lessons')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.lessons')} renderItem={(item) => <LinkedItem item={item} to={`/app/teacher/lessons/${itemId(item)}`} />} />}
-      </QueryResult>
+      <Listing query={lessons} empty={t('teacher.empty.lessons')} emptyIcon={PlayCircle}>
+        {(items) => (
+          <div className="student-list">
+            {items.map((item) => <UnitCard key={itemId(item)} to={`/app/teacher/lessons/${itemId(item)}`} icon={PlayCircle} title={displayValue(item)} />)}
+          </div>
+        )}
+      </Listing>
     </>
   )
 }
@@ -190,10 +185,20 @@ function LessonDetailPage({ userId, locale }) {
   return (
     <>
       <PageHeader title={t('teacher.curriculum.lessonDetails')} description={t('teacher.curriculum.lessonDescription')} />
-      <Card title={t('teacher.details')}><DetailGrid item={{ lessonId }} locale={locale} /></Card>
-      <QueryCard title={t('teacher.curriculum.materials')} query={materials} empty={t('teacher.empty.materials')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.materials')} renderItem={(item) => <PlainItem item={item} locale={locale} />} />}
-      </QueryCard>
+      <Card title={t('teacher.curriculum.materials')}>
+        <Listing query={materials} empty={t('teacher.empty.materials')} emptyIcon={FileText}>
+          {(items) => (
+            <div className="student-list">
+              {items.map((item) => (
+                <div className="student-list__item" key={itemId(item)}>
+                  <strong className="domain-row__title">{displayValue(item)}</strong>
+                  <DetailList item={item} locale={locale} />
+                </div>
+              ))}
+            </div>
+          )}
+        </Listing>
+      </Card>
     </>
   )
 }
@@ -209,9 +214,24 @@ function StudentsPage({ userId }) {
   return (
     <>
       <PageHeader title={t('teacher.students.title')} description={t('teacher.students.gradebookDescription')} />
-      <QueryResult query={query} empty={t('teacher.empty.students')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.students')} renderItem={(item) => <LinkedItem item={item} to={`/app/teacher/students/${itemId(item, ['studentId', 'StudentId', 'id', 'Id'])}`} label={`${displayValue(item, ['fullName', 'FullName'])} — ${item.averageQuizPercentage ?? item.AverageQuizPercentage ?? 0}%`} />} />}
-      </QueryResult>
+      <Listing query={query} empty={t('teacher.empty.students')} emptyIcon={GraduationCap}>
+        {(items) => (
+          <div className="ui-grid ui-grid--auto">
+            {items.map((item) => {
+              const avg = item.averageQuizPercentage ?? item.AverageQuizPercentage
+              return (
+                <QuizCard
+                  key={itemId(item, ['studentId', 'StudentId', 'id', 'Id'])}
+                  to={`/app/teacher/students/${itemId(item, ['studentId', 'StudentId', 'id', 'Id'])}`}
+                  icon={GraduationCap}
+                  title={displayValue(item, ['fullName', 'FullName'])}
+                  meta={avg != null ? `${avg}%` : undefined}
+                />
+              )
+            })}
+          </div>
+        )}
+      </Listing>
     </>
   )
 }
@@ -224,7 +244,7 @@ function StudentDetailPage({ userId, studentId, list, locale }) {
   return (
     <>
       <PageHeader title={displayValue(item, ['fullName', 'FullName']) || t('teacher.students.details')} description={t('teacher.students.detailDescription')} />
-      <Card title={t('teacher.details')}><DetailGrid item={item || { studentId }} locale={locale} /></Card>
+      {item && <Card title={t('teacher.details')}><DetailList item={item} locale={locale} /></Card>}
       {progress.isError && <ErrorState error={progress.error} onRetry={progress.refetch} />}
       {sections.map(([key, title]) => {
         const result = progress.data?.[key]
@@ -232,16 +252,29 @@ function StudentDetailPage({ userId, studentId, list, locale }) {
         const data = settledData(result)
         const items = toItems(data)
         const object = toObject(data)
-        return <Card key={key} title={title}>{error ? <ErrorState error={error} /> : items.length ? <ItemsList items={items} empty={t('states.emptyTitle')} renderItem={(i) => <PlainItem item={i} locale={locale} />} /> : object ? <DetailGrid item={object} locale={locale} /> : <EmptyState title={t('teacher.empty.noData')} />}</Card>
+        return (
+          <Card key={key} title={title}>
+            {error ? <ErrorState error={error} />
+              : items.length ? (
+                <div className="student-list">
+                  {items.map((i, idx) => (
+                    <div className="student-list__item" key={itemId(i) || idx}>
+                      <strong className="domain-row__title">{displayValue(i) || itemId(i)}</strong>
+                      <DetailList item={i} locale={locale} />
+                    </div>
+                  ))}
+                </div>
+              ) : object ? <DetailList item={object} locale={locale} /> : <EmptyState title={t('teacher.empty.noData')} />}
+          </Card>
+        )
       })}
       <StudentPointsCard userId={userId} studentId={studentId} locale={locale} />
     </>
   )
 }
 
-// Phase 14 (closure) — teacher/admin manual point-award control, backed by the existing tested
-// gamification API (teacherApi.awardPoints). Points are ledger-based, bounded and audited server-side.
-function StudentPointsCard({ userId, studentId, locale }) {
+// Phase 14 (closure) — teacher/admin manual point-award control (teacherApi.awardPoints).
+function StudentPointsCard({ userId, studentId }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const summary = useTeacherQuery(queryKeys.teacher.studentPoints(userId, studentId), (signal) => teacherApi.studentPoints(studentId, signal), { enabled: Boolean(studentId), staleTime: STALE.short })
@@ -265,20 +298,34 @@ function StudentPointsCard({ userId, studentId, locale }) {
   return (
     <Card title={t('teacher.points.title')}>
       <p className="ui-muted">{t('teacher.points.description')}</p>
-      {summary.isError ? <ErrorState error={summary.error} onRetry={summary.refetch} /> : (
-        <dl className="student-grid"><Field label={t('teacher.points.total')} value={total} /></dl>
-      )}
-      <form onSubmit={(e) => { e.preventDefault(); if (valid) award.mutate() }}>
-        <TextField label={t('teacher.points.amount')} type="number" value={points} onChange={(e) => setPoints(e.target.value)} hint={t('teacher.points.amountHint')} />
-        <TextareaField label={t('teacher.points.reason')} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={256} placeholder={t('teacher.points.reasonPlaceholder')} />
+      <div className="student-dashboard">
+        <Metric icon={ClipboardCheck} accent="var(--purple)" label={t('teacher.points.total')} value={summary.isError ? '—' : total} />
+      </div>
+      {summary.isError && <ErrorState error={summary.error} onRetry={summary.refetch} />}
+      <form className="stack" onSubmit={(e) => { e.preventDefault(); if (valid) award.mutate() }}>
+        <div className="ui-formgrid ui-formgrid--2">
+          <TextField label={t('teacher.points.amount')} type="number" value={points} onChange={(e) => setPoints(e.target.value)} hint={t('teacher.points.amountHint')} />
+          <TextareaField label={t('teacher.points.reason')} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={256} placeholder={t('teacher.points.reasonPlaceholder')} />
+        </div>
         <Button type="submit" loading={award.isPending} disabled={!valid}>{t('teacher.points.submit')}</Button>
       </form>
       {award.isError && <ErrorState error={award.error} />}
       {award.isSuccess && <Alert variant="success" title={t('teacher.points.success')} />}
-      <h3>{t('teacher.points.history')}</h3>
-      <QueryResult query={ledger} empty={t('teacher.points.empty')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.points.empty')} renderItem={(i) => <PlainItem item={i} locale={locale} />} />}
-      </QueryResult>
+      <section className="ui-section" style={{ marginTop: 16 }}>
+        <div className="ui-section__head"><h2 className="ui-section__title">{t('teacher.points.history')}</h2></div>
+        <Listing query={ledger} empty={t('teacher.points.empty')}>
+          {(items) => (
+            <ul className="ui-list">
+              {items.map((i, idx) => (
+                <li className="ui-list__item" key={itemId(i) || idx}>
+                  <div className="ui-list__body"><div className="ui-list__title">{displayValue(i, ['reason', 'Reason']) || displayValue(i)}</div></div>
+                  <Chip tone="brand">{i.points ?? i.Points}</Chip>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Listing>
+      </section>
     </Card>
   )
 }
@@ -293,10 +340,26 @@ function QuizzesPage({ userId, locale }) {
   if (quizId) return <QuizDetailPage userId={userId} quizId={quizId} locale={locale} />
   return (
     <>
-      <PageHeader title={t('teacher.quizzes.title')} description={t('teacher.quizzes.description')} actions={<Link className="ui-btn ui-btn--primary" to="/app/teacher/quiz-generate">{t('teacher.quizzes.generate')}</Link>} />
-      <QueryResult query={query} empty={t('teacher.empty.quizzes')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.quizzes')} renderItem={(item) => <LinkedItem item={item} to={`/app/teacher/quizzes/${itemId(item, ['quizId', 'QuizId', 'id', 'Id'])}`} label={`${displayValue(item, ['title', 'Title'])} — ${quizStatusName(item.status ?? item.Status)}`} />} />}
-      </QueryResult>
+      <PageHeader title={t('teacher.quizzes.title')} description={t('teacher.quizzes.description')} actions={<Link className="ui-btn ui-btn--primary" to="/app/teacher/quiz-generate"><Sparkles size={16} aria-hidden="true" /> {t('teacher.quizzes.generate')}</Link>} />
+      <Listing query={query} empty={t('teacher.empty.quizzes')} emptyIcon={ClipboardList}>
+        {(items) => (
+          <div className="ui-grid ui-grid--auto">
+            {items.map((item) => {
+              const published = isQuizPublished(item.status ?? item.Status)
+              return (
+                <QuizCard
+                  key={itemId(item, ['quizId', 'QuizId', 'id', 'Id'])}
+                  to={`/app/teacher/quizzes/${itemId(item, ['quizId', 'QuizId', 'id', 'Id'])}`}
+                  icon={ClipboardList}
+                  title={displayValue(item, ['title', 'Title'])}
+                  status={quizStatusName(item.status ?? item.Status)}
+                  statusTone={published ? 'success' : 'muted'}
+                />
+              )
+            })}
+          </div>
+        )}
+      </Listing>
     </>
   )
 }
@@ -317,7 +380,7 @@ function QuizDetailPage({ userId, quizId, locale }) {
   const questions = toItems(data.questions ?? data.Questions ?? [])
   const isPublished = isQuizPublished(data.status ?? data.Status)
 
-  if (quiz.isLoading) return <PageHeader title={t('teacher.quizzes.details')} description={t('states.loading')} />
+  if (quiz.isLoading) return (<><PageHeader title={t('teacher.quizzes.details')} /><Loading /></>)
   if (quiz.isError) return <ErrorState error={quiz.error} onRetry={quiz.refetch} />
 
   return (
@@ -331,7 +394,7 @@ function QuizDetailPage({ userId, quizId, locale }) {
         <Alert variant={isPublished ? 'success' : 'info'} title={`${t('teacher.quizzes.status')}: ${quizStatusName(data.status ?? data.Status)}`}>
           {isPublished ? t('teacher.quizzes.publishedBody') : t('teacher.quizzes.draftBody')}
         </Alert>
-        <DetailGrid item={data} locale={locale} />
+        <DetailList item={data} locale={locale} />
       </Card>
       {publish.isError && <ErrorState error={publish.error} />}
       {publish.isSuccess && <Alert variant="success" title={t('teacher.quizzes.publishedTitle')}>{t('teacher.quizzes.publishedBody')}</Alert>}
@@ -342,9 +405,23 @@ function QuizDetailPage({ userId, quizId, locale }) {
 
       {isPublished && <AssignQuizCard userId={userId} quizId={quizId} />}
 
-      <QueryCard title={t('teacher.grading.submissions')} query={submissions} empty={t('teacher.empty.submissions')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.submissions')} renderItem={(s) => <LinkedItem item={s} to={`/app/teacher/submissions/${itemId(s, ['id', 'Id', 'attemptId', 'AttemptId'])}`} label={`${displayValue(s, ['studentName', 'StudentName', 'studentId', 'StudentId'])} — ${submissionStatusName(s.submissionStatus ?? s.SubmissionStatus ?? s.status ?? s.Status)}`} />} />}
-      </QueryCard>
+      <Card title={t('teacher.grading.submissions')}>
+        <Listing query={submissions} empty={t('teacher.empty.submissions')}>
+          {(items) => (
+            <div className="student-list">
+              {items.map((s) => (
+                <UnitCard
+                  key={itemId(s, ['id', 'Id', 'attemptId', 'AttemptId'])}
+                  to={`/app/teacher/submissions/${itemId(s, ['id', 'Id', 'attemptId', 'AttemptId'])}`}
+                  icon={FileText}
+                  title={displayValue(s, ['studentName', 'StudentName', 'studentId', 'StudentId'])}
+                  status={submissionStatusName(s.submissionStatus ?? s.SubmissionStatus ?? s.status ?? s.Status)}
+                />
+              ))}
+            </div>
+          )}
+        </Listing>
+      </Card>
     </>
   )
 }
@@ -368,9 +445,9 @@ function QuestionEditor({ userId, quizId, question, editable, onSaved }) {
     onSuccess: () => { setEditing(false); qc.invalidateQueries({ queryKey: queryKeys.teacher.quiz(userId, quizId) }); onSaved?.() },
   })
   return (
-    <div className="student-item">
+    <div className="student-list__item">
       {editing ? (
-        <form onSubmit={(e) => { e.preventDefault(); if (text.trim()) save.mutate() }}>
+        <form className="stack" onSubmit={(e) => { e.preventDefault(); if (text.trim()) save.mutate() }}>
           <TextareaField label={t('teacher.quizzes.questionText')} value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
           <div className="student-actions">
             <Button type="submit" loading={save.isPending} disabled={!text.trim()}>{t('actions.save')}</Button>
@@ -379,9 +456,9 @@ function QuestionEditor({ userId, quizId, question, editable, onSaved }) {
           {save.isError && <ErrorState error={save.error} />}
         </form>
       ) : (
-        <div>
-          <strong>{displayValue(question, ['text', 'Text'])}</strong>
-          {editable && <div><Button variant="secondary" onClick={() => setEditing(true)}>{t('teacher.quizzes.editQuestion')}</Button></div>}
+        <div className="student-item">
+          <strong className="domain-row__title">{displayValue(question, ['text', 'Text'])}</strong>
+          {editable && <Button variant="secondary" onClick={() => setEditing(true)}>{t('teacher.quizzes.editQuestion')}</Button>}
         </div>
       )}
     </div>
@@ -401,7 +478,7 @@ function AssignQuizCard({ userId, quizId }) {
   const classItems = classes.data || []
   return (
     <Card title={t('teacher.quizzes.assign')}>
-      <form onSubmit={(e) => { e.preventDefault(); if (classId) assign.mutate() }}>
+      <form className="stack" onSubmit={(e) => { e.preventDefault(); if (classId) assign.mutate() }}>
         <SelectField
           label={t('teacher.quizzes.targetClass')}
           value={classId}
@@ -412,9 +489,15 @@ function AssignQuizCard({ userId, quizId }) {
       </form>
       {assign.isError && <ErrorState error={assign.error} />}
       {assign.isSuccess && <Alert variant="success" title={t('teacher.quizzes.assignedTitle')}>{t('teacher.quizzes.assignedBody')}</Alert>}
-      <QueryResult query={assignments} empty={t('teacher.empty.assignments')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.assignments')} renderItem={(a) => <PlainItem item={a} />} />}
-      </QueryResult>
+      <Listing query={assignments} empty={t('teacher.empty.assignments')}>
+        {(items) => (
+          <div className="student-list">
+            {items.map((a, idx) => (
+              <div className="student-list__item" key={itemId(a) || idx}><DetailList item={a} /></div>
+            ))}
+          </div>
+        )}
+      </Listing>
     </Card>
   )
 }
@@ -450,21 +533,23 @@ function QuizGeneratePage({ userId }) {
       <PageHeader title={t('teacher.generate.title')} description={t('teacher.generate.description')} />
       <Alert title={t('teacher.generate.draftOnlyTitle')}>{t('teacher.generate.draftOnlyBody')}</Alert>
       <Card title={t('teacher.generate.form')}>
-        <form onSubmit={(e) => { e.preventDefault(); if (subjectId) generate.mutate() }}>
-          <SelectField
-            label={t('teacher.generate.subject')}
-            value={subjectId}
-            onChange={(e) => setSubjectId(e.target.value)}
-            options={[{ value: '', label: t('teacher.generate.chooseSubject') }, ...subjectItems.map((s) => ({ value: itemId(s, ['subjectId', 'SubjectId', 'id', 'Id']), label: displayValue(s, ['name', 'Name']) }))]}
-          />
-          <TextField label={t('teacher.generate.topic')} value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={200} />
-          <TextField label={t('teacher.generate.numQuestions')} type="number" value={numQuestions} onChange={(e) => setNumQuestions(e.target.value)} />
-          <SelectField
-            label={t('teacher.generate.difficulty')}
-            value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-            options={[{ value: 'remedial', label: 'remedial' }, { value: 'core', label: 'core' }, { value: 'advanced', label: 'advanced' }]}
-          />
+        <form className="stack" onSubmit={(e) => { e.preventDefault(); if (subjectId) generate.mutate() }}>
+          <div className="ui-formgrid ui-formgrid--2">
+            <SelectField
+              label={t('teacher.generate.subject')}
+              value={subjectId}
+              onChange={(e) => setSubjectId(e.target.value)}
+              options={[{ value: '', label: t('teacher.generate.chooseSubject') }, ...subjectItems.map((s) => ({ value: itemId(s, ['subjectId', 'SubjectId', 'id', 'Id']), label: displayValue(s, ['name', 'Name']) }))]}
+            />
+            <TextField label={t('teacher.generate.topic')} value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={200} />
+            <TextField label={t('teacher.generate.numQuestions')} type="number" value={numQuestions} onChange={(e) => setNumQuestions(e.target.value)} />
+            <SelectField
+              label={t('teacher.generate.difficulty')}
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value)}
+              options={[{ value: 'remedial', label: 'remedial' }, { value: 'core', label: 'core' }, { value: 'advanced', label: 'advanced' }]}
+            />
+          </div>
           <Button type="submit" loading={generate.isPending} disabled={!subjectId}>{t('teacher.generate.submit')}</Button>
         </form>
         {generate.isError && <ErrorState error={generate.error} />}
@@ -501,7 +586,7 @@ function SubmissionDetailPage({ userId, locale }) {
   })
   const sendFeedback = useMutation({ mutationFn: () => teacherApi.feedbackSubmission(attemptId, feedback), onSuccess: () => { setFeedback(''); invalidate() } })
 
-  if (query.isLoading) return <PageHeader title={t('teacher.grading.title')} description={t('states.loading')} />
+  if (query.isLoading) return (<><PageHeader title={t('teacher.grading.title')} /><Loading /></>)
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
   const data = query.data || {}
   const answers = toItems(data.answers ?? data.Answers ?? [])
@@ -509,21 +594,21 @@ function SubmissionDetailPage({ userId, locale }) {
   return (
     <>
       <PageHeader title={t('teacher.grading.title')} description={t('teacher.grading.description')} />
-      <Card title={t('teacher.details')}><DetailGrid item={data} locale={locale} /></Card>
+      <Card title={t('teacher.details')}><DetailList item={data} locale={locale} /></Card>
 
       <Card title={t('teacher.grading.answers')}>
         {answers.length ? (
-          <form onSubmit={(e) => { e.preventDefault(); grade.mutate(answers) }}>
+          <form className="stack" onSubmit={(e) => { e.preventDefault(); grade.mutate(answers) }}>
             {answers.map((a) => {
               const answerId = itemId(a, ['answerId', 'AnswerId', 'id', 'Id'])
               const g = grades[answerId] || { points: a.pointsEarned ?? a.PointsEarned ?? 0, correct: Boolean(a.isCorrect ?? a.IsCorrect) }
               return (
-                <div className="student-item" key={answerId}>
-                  <div>
-                    <strong>{displayValue(a, ['questionText', 'QuestionText', 'answerText', 'AnswerText']) || answerId}</strong>
-                    <DetailGrid item={a} locale={locale} />
+                <div className="student-list__item" key={answerId}>
+                  <strong className="domain-row__title">{displayValue(a, ['questionText', 'QuestionText', 'answerText', 'AnswerText']) || answerId}</strong>
+                  <DetailList item={a} locale={locale} />
+                  <div className="ui-formgrid ui-formgrid--2">
                     <TextField label={t('teacher.grading.points')} type="number" value={String(g.points)} onChange={(e) => setGrades({ ...grades, [answerId]: { ...g, points: e.target.value } })} />
-                    <label className="student-answer"><input type="checkbox" checked={Boolean(g.correct)} onChange={(e) => setGrades({ ...grades, [answerId]: { ...g, correct: e.target.checked } })} /> <span>{t('teacher.grading.correct')}</span></label>
+                    <label className="ui-checkbox"><input type="checkbox" checked={Boolean(g.correct)} onChange={(e) => setGrades({ ...grades, [answerId]: { ...g, correct: e.target.checked } })} /> <span>{t('teacher.grading.correct')}</span></label>
                   </div>
                 </div>
               )
@@ -536,7 +621,7 @@ function SubmissionDetailPage({ userId, locale }) {
       </Card>
 
       <Card title={t('teacher.grading.feedback')}>
-        <form onSubmit={(e) => { e.preventDefault(); if (feedback.trim()) sendFeedback.mutate() }}>
+        <form className="stack" onSubmit={(e) => { e.preventDefault(); if (feedback.trim()) sendFeedback.mutate() }}>
           <TextareaField label={t('teacher.grading.feedbackLabel')} value={feedback} onChange={(e) => setFeedback(e.target.value)} maxLength={2000} />
           <Button type="submit" loading={sendFeedback.isPending} disabled={!feedback.trim()}>{t('teacher.grading.sendFeedback')}</Button>
         </form>
@@ -550,7 +635,7 @@ function SubmissionDetailPage({ userId, locale }) {
 // ---------------------------------------------------------------------------
 // Notifications / office hours / settings
 // ---------------------------------------------------------------------------
-function NotificationsPage({ userId, locale }) {
+function NotificationsPage({ userId }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const query = useTeacherQuery(queryKeys.teacher.notifications(userId), (signal) => teacherApi.notifications(signal))
@@ -560,9 +645,24 @@ function NotificationsPage({ userId, locale }) {
   return (
     <>
       <PageHeader title={t('teacher.notifications.title')} description={t('teacher.notifications.description')} />
-      {unread !== null && unread !== undefined && <Alert title={t('teacher.notifications.unread')}>{unread}</Alert>}
+      {unread !== null && unread !== undefined && <Alert variant="info" title={t('teacher.notifications.unread')}>{unread}</Alert>}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
-      <ItemsList items={items} empty={t('teacher.empty.notifications')} renderItem={(item) => <PlainItem item={item} locale={locale} action={<Button variant="secondary" onClick={() => mark.mutate(itemId(item))} loading={mark.isPending}>{t('teacher.notifications.markRead')}</Button>} />} />
+      {items.length === 0 ? <EmptyState icon={Bell} title={t('teacher.empty.notifications')} /> : (
+        <ul className="ui-list">
+          {items.map((item) => {
+            const read = item.isRead ?? item.IsRead
+            return (
+              <li className={`ui-list__item${read ? '' : ' ui-list__item--unread'}`} key={itemId(item)}>
+                <div className="ui-list__body">
+                  <div className="ui-list__title">{displayValue(item)}</div>
+                  <div className="ui-list__meta">{displayValue(item, ['body', 'Body', 'message', 'Message'])}</div>
+                </div>
+                {!read && <Button variant="ghost" onClick={() => mark.mutate(itemId(item))} loading={mark.isPending}>{t('teacher.notifications.markRead')}</Button>}
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </>
   )
 }
@@ -573,9 +673,18 @@ function OfficeHoursPage({ userId, locale }) {
   return (
     <>
       <PageHeader title={t('teacher.officeHours.title')} description={t('teacher.officeHours.description')} />
-      <QueryResult query={query} empty={t('teacher.empty.officeHours')}>
-        {(items) => <ItemsList items={items} empty={t('teacher.empty.officeHours')} renderItem={(item) => <PlainItem item={item} locale={locale} />} />}
-      </QueryResult>
+      <Listing query={query} empty={t('teacher.empty.officeHours')}>
+        {(items) => (
+          <div className="student-list">
+            {items.map((item, idx) => (
+              <div className="student-list__item" key={itemId(item) || idx}>
+                <strong className="domain-row__title">{displayValue(item)}</strong>
+                <DetailList item={item} locale={locale} />
+              </div>
+            ))}
+          </div>
+        )}
+      </Listing>
     </>
   )
 }
@@ -585,7 +694,9 @@ function SettingsPage() {
   return (
     <>
       <PageHeader title={t('teacher.settings.title')} description={t('teacher.settings.description')} />
-      <Card title={t('nav.security')}><Link className="ui-btn ui-btn--primary" to="/app/security">{t('teacher.settings.changePassword')}</Link></Card>
+      <Card title={t('nav.security')}>
+        <Link className="ui-btn ui-btn--primary" to="/app/security"><ShieldCheck size={16} aria-hidden="true" /> {t('teacher.settings.changePassword')}</Link>
+      </Card>
     </>
   )
 }
