@@ -1,4 +1,4 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Shield, LifeBuoy } from 'lucide-react'
 import { navItemsForRole } from '../navigation/navConfig'
@@ -18,6 +18,7 @@ function helpDestination(role) {
 // wordmark lives in the header. Active state via NavLink's aria-current.
 export function Sidebar({ role, onNavigate }) {
   const { t } = useTranslation()
+  const location = useLocation()
   const items = navItemsForRole(role)
 
   return (
@@ -35,12 +36,17 @@ export function Sidebar({ role, onNavigate }) {
         <ul className="app-sidebar__list">
           {items.map((item) => {
             const Icon = item.icon
+            const isSubjectsActive = item.key === 'student-subjects' && (
+              location.pathname.startsWith('/app/student/subjects') ||
+              location.pathname.startsWith('/app/student/units') ||
+              location.pathname.startsWith('/app/student/lessons')
+            )
             return (
               <li key={item.key}>
                 <NavLink
                   to={item.to}
                   end={item.to === '/app'}
-                  className={({ isActive }) => `app-sidebar__link${isActive ? ' is-active' : ''}`}
+                  className={({ isActive }) => `app-sidebar__link${(isActive || isSubjectsActive) ? ' is-active' : ''}`}
                   onClick={onNavigate}
                 >
                   <Icon size={18} aria-hidden="true" />

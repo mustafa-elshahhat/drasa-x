@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Menu, LogOut, GraduationCap, ChevronDown, UserCircle, Settings, KeyRound } from 'lucide-react'
+import { Menu, LogOut, GraduationCap, ChevronDown, UserCircle, Settings, KeyRound, Search } from 'lucide-react'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { NotificationBell } from '../features/notifications/NotificationBell'
 import { Avatar } from '../components/ui/Avatar'
@@ -57,6 +57,17 @@ export function Header({ user, role, onToggleNav, onSignOut }) {
           Derasa<span className="app-header__brand-x">X</span>
         </span>
       </Link>
+
+      {role === 'Student' && (
+        <div className="app-header__search">
+          <Search size={18} aria-hidden="true" className="app-header__search-icon" />
+          <input
+            type="search"
+            placeholder={t('nav.searchAnything', 'Search anything…')}
+            className="app-header__search-input"
+          />
+        </div>
+      )}
 
       <div className="app-header__spacer" />
 

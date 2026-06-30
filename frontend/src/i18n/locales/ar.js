@@ -207,7 +207,7 @@ export default {
         availableCommunities: 'المجتمعات المتاحة',
         activeCompetitions: 'المسابقات',
       },
-      subjects: { title: 'موادي', description: 'مواد يعيدها الخادم للمستخدم الموثق.', details: 'تفاصيل المادة', secureDescription: 'يتحكم الخادم في صلاحيات المستأجر والالتحاق.' },
+      subjects: { title: 'موادي', description: 'مواد يعيدها الخادم للمستخدم الموثق.', details: 'تفاصيل المادة', secureDescription: 'يتحكم الخادم في صلاحيات المستأجر والالتحاق.', subtitle: 'جميع مواد الصف الحادي عشر', inProgress: 'قيد التقدم', completed: 'مكتملة', unitsLabel: 'وحدات', courseUnits: 'وحدات المقرر' },
       units: { title: 'الوحدات', details: 'تفاصيل الوحدة' },
       lessons: { title: 'الدروس', description: 'الدروس المنشورة المتاحة عبر واجهة المنهج.', details: 'تفاصيل الدرس', chooseUnit: 'اختر مادة ووحدة لعرض الدروس.', progressRule: 'لا يسجل التقدم إلا عبر أمر صريح في الخادم.', markComplete: 'تعليم الدرس كمكتمل', completed: 'اكتمل الدرس', completedBody: 'يعرض سجل التقدم المخزن في الخادم أن هذا الدرس مكتمل.', saved: 'تم حفظ التقدم', savedBody: 'قبل الخادم أمر الإكمال.', progress: 'التقدم' },
       materials: { title: 'مواد الدرس', details: 'مادة الدرس', description: 'تعرض بيانات المادة دون الثقة بروابط خارجية غير آمنة.' },

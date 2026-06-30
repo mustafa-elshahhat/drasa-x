@@ -207,7 +207,7 @@ export default {
         availableCommunities: 'Available communities',
         activeCompetitions: 'Competitions',
       },
-      subjects: { title: 'My subjects', description: 'Subjects returned by the authenticated backend.', details: 'Subject details', secureDescription: 'Backend authorization controls tenant and enrollment access.' },
+      subjects: { title: 'My subjects', description: 'Subjects returned by the authenticated backend.', details: 'Subject details', secureDescription: 'Backend authorization controls tenant and enrollment access.', subtitle: 'All subjects for Grade 11', inProgress: 'In progress', completed: 'Completed', unitsLabel: 'units', courseUnits: 'Course units' },
       units: { title: 'Units', details: 'Unit details' },
       lessons: { title: 'Lessons', description: 'Published lessons available through the curriculum API.', details: 'Lesson details', chooseUnit: 'Choose a subject and unit to view lessons.', progressRule: 'Progress is recorded only through an explicit backend command.', markComplete: 'Mark lesson complete', completed: 'Lesson completed', completedBody: 'The persisted backend progress record shows this lesson as complete.', saved: 'Progress saved', savedBody: 'The backend accepted the completion command.', progress: 'Progress' },
       materials: { title: 'Lesson materials', details: 'Lesson material', description: 'Material metadata is displayed without trusting unsafe external URLs.' },

@@ -12,7 +12,7 @@ describe('Sidebar (role-aware navigation)', () => {
 
   it('shows a student their learning + account links, not teacher/admin links', () => {
     renderWithProviders(<Sidebar role={ROLES.STUDENT} />)
-    expect(screen.getByText('My learning')).toBeInTheDocument()
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
     expect(screen.getByText('Profile')).toBeInTheDocument()
     expect(screen.queryByText('Class analytics')).toBeNull()
     expect(screen.queryByText('Platform administration')).toBeNull()
@@ -21,6 +21,6 @@ describe('Sidebar (role-aware navigation)', () => {
   it('shows a system admin the platform area', () => {
     renderWithProviders(<Sidebar role={ROLES.SYSTEM_ADMIN} />)
     expect(screen.getByText('Platform administration')).toBeInTheDocument()
-    expect(screen.queryByText('My learning')).toBeNull()
+    expect(screen.queryByText('Dashboard')).toBeNull()
   })
 })
