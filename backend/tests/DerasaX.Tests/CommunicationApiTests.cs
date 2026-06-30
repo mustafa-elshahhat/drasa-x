@@ -28,6 +28,8 @@ public class CommunicationApiTests : IClassFixture<IntegrationFactory>
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
     private sealed record Env<T>(bool success, int statusCode, T? data, int totalCount);
     private sealed record IdRow(string id);
+    private sealed record MsgRow(string id, string senderId, bool isRead);
+    private sealed record ConvRow(string id, int unreadCount);
     private sealed record SuggestionRow(string id, string title, SuggestionStatus status);
     private sealed record ReqRow(string id, int status);
 
@@ -137,6 +139,17 @@ public class CommunicationApiTests : IClassFixture<IntegrationFactory>
             await using (var db = Phase4Db.Platform(_factory))
                 Assert.True(await db.messageReadReceipts.IgnoreQueryFilters().AnyAsync(r => r.MessageId == msgId && r.UserId == w.teacherId));
 
+            // Read-state is surfaced to clients: the parent has the teacher's "Hi back" as an unread
+            // incoming message, then marking it read clears the conversation's unread count.
+            var convsBefore = await Read<List<ConvRow>>(await parent.GetAsync("/api/v1/conversations"));
+            Assert.True(convsBefore!.data!.First(c => c.id == convId).unreadCount >= 1);
+            var parentMsgs = (await Read<List<MsgRow>>(await parent.GetAsync($"/api/v1/conversations/{convId}/messages?pageSize=10")))!.data!;
+            var incoming = parentMsgs.First(m => m.senderId == w.teacherId);
+            Assert.False(incoming.isRead);
+            Assert.Equal(HttpStatusCode.OK, (await parent.PostAsync($"/api/v1/conversations/{convId}/messages/{incoming.id}/read", null)).StatusCode);
+            var convsAfter = await Read<List<ConvRow>>(await parent.GetAsync("/api/v1/conversations"));
+            Assert.Equal(0, convsAfter!.data!.First(c => c.id == convId).unreadCount);
+
             // A non-participant (a different student) is denied — and existence is not leaked (404).
             var outsider = await TestClient.AuthedClientAsync(_factory, "STU-T1");
             Assert.Equal(HttpStatusCode.NotFound, (await outsider.GetAsync($"/api/v1/conversations/{convId}/messages")).StatusCode);
@@ -229,8 +242,14 @@ public class CommunicationApiTests : IClassFixture<IntegrationFactory>
             var annId = cb!.data!.id;
             annIds.Add(annId);
 
-            // A student sees the students-targeted announcement; a teacher does not.
+            // Draft → Publish lifecycle: a freshly created announcement is an inactive DRAFT, so a
+            // targeted student does NOT see it until it is published.
             var student = await TestClient.AuthedClientAsync(_factory, "STU-T1");
+            var draftList = await Read<List<IdRow>>(await student.GetAsync("/api/v1/announcements?pageSize=100"));
+            Assert.DoesNotContain(draftList!.data!, a => a.id == annId);
+
+            // Publish it; now the targeted student sees it and a non-targeted teacher does not.
+            Assert.Equal(HttpStatusCode.OK, (await admin.PostAsync($"/api/v1/announcements/{annId}/publish?publish=true", null)).StatusCode);
             var stuList = await Read<List<IdRow>>(await student.GetAsync("/api/v1/announcements?pageSize=100"));
             Assert.Contains(stuList!.data!, a => a.id == annId);
 

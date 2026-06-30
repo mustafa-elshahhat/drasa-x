@@ -32,19 +32,25 @@ function MessagesList() {
         <EmptyState icon={MessageSquare} title={t('messages.emptyTitle')} message={t('messages.emptyBody')} />
       ) : (
         <ul className="ui-list" data-testid="conversations-list">
-          {convos.data.map((c) => (
-            <li key={c.id} className="ui-list__item">
-              <div className="ui-list__body">
-                <Link to={`/app/messages/${c.id}`} className="ui-list__title ui-link">
-                  {c.subject || t('messages.untitled')}
-                </Link>
-                <div className="ui-list__meta ui-muted">
-                  {t('messages.participants', { count: c.participants?.length ?? 0 })}
-                  {c.isClosed ? ` · ${t('messages.closed')}` : ''}
+          {convos.data.map((c) => {
+            const unread = c.unreadCount ?? c.UnreadCount ?? 0
+            const preview = c.lastMessagePreview ?? c.LastMessagePreview
+            return (
+              <li key={c.id} className="ui-list__item">
+                <div className="ui-list__body">
+                  <Link to={`/app/messages/${c.id}`} className="ui-list__title ui-link">
+                    {c.subject || t('messages.untitled')}
+                    {unread > 0 && <span className="ui-badge ui-badge--brand" style={{ marginInlineStart: 8 }} data-testid="unread-badge">{unread}</span>}
+                  </Link>
+                  {preview && <div className="ui-list__preview ui-muted">{preview}</div>}
+                  <div className="ui-list__meta ui-muted">
+                    {t('messages.participants', { count: c.participants?.length ?? 0 })}
+                    {c.isClosed ? ` · ${t('messages.closed')}` : ''}
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

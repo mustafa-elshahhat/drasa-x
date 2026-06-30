@@ -19,6 +19,7 @@ namespace DerasaX.Application.Services.Abstractions.Progress
         Task<ApiResponse<IEnumerable<RecommendationDto>>> RecommendationsAsync(string studentId, CancellationToken ct = default);
         Task<ApiResponse<IEnumerable<PredictionDto>>> PredictionsAsync(string studentId, CancellationToken ct = default);
         Task<ApiResponse<LessonCompletionDto>> CompleteLessonAsync(string lessonId, CancellationToken ct = default);
+        Task<ApiResponse<StudentLessonDetailDto>> GetLessonDetailAsync(string lessonId, CancellationToken ct = default);
     }
 
     public interface IStudentAttendanceService

@@ -246,14 +246,18 @@ namespace DerasaX.Application.Services.Assessment
                 : (await UnitOfWork.Repository<AssignmentSubmission, string>().GetAllWithSpecAsync(
                     new CriteriaSpecification<AssignmentSubmission, string>(s => s.StudentId == studentId && eligibleIds.Contains(s.AssignmentId)))).ToList();
 
+            var now = DateTime.UtcNow;
             var result = eligible.OrderByDescending(a => a.DueDate ?? DateTime.MaxValue).Select(a =>
             {
                 var sub = submissions.FirstOrDefault(s => s.AssignmentId == a.Id);
+                var windowOpen = a.AvailableFrom is null || a.AvailableFrom <= now;
                 return new AssignedHomeworkDto
                 {
                     AssignmentId = a.Id, Title = a.Title, Description = a.Description, Type = a.Type,
                     AvailableFrom = a.AvailableFrom, DueDate = a.DueDate, MaxScore = a.MaxScore,
-                    HasSubmitted = sub is not null, SubmissionStatus = sub?.Status, Score = sub?.Score
+                    HasSubmitted = sub is not null, SubmissionId = sub?.Id, SubmissionStatus = sub?.Status,
+                    Score = sub?.Score, GradedAt = sub?.GradedAt, AttachmentFileId = sub?.AttachmentFileId,
+                    CanSubmit = sub is null && windowOpen
                 };
             }).ToList();
             return Ok<IEnumerable<AssignedHomeworkDto>>(result, 200, "Assigned homework retrieved.");

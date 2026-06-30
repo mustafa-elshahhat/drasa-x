@@ -114,6 +114,23 @@ namespace DerasaX.Application.Dto.EngagementDto
         public CompetitionStatus Status { get; set; }
         public DateTime StartsAt { get; set; }
         public DateTime EndsAt { get; set; }
+
+        // ---- Student-facing state (populated only when the caller is a student) ----
+        /// <summary>The student has registered an entry for this competition.</summary>
+        public bool HasEntered { get; set; }
+        /// <summary>The student has submitted durable work for this competition.</summary>
+        public bool HasSubmitted { get; set; }
+        public string? EntryId { get; set; }
+        public string? SubmissionId { get; set; }
+        /// <summary>The student may register an entry now (published, open window, not yet entered).</summary>
+        public bool CanEnter { get; set; }
+        /// <summary>The student may submit/update work now (entered, open window, not closed).</summary>
+        public bool CanSubmit { get; set; }
+        /// <summary>Results are released to the student (competition closed).</summary>
+        public bool CanViewLeaderboard { get; set; }
+        /// <summary>The student's awarded score, once recorded.</summary>
+        public decimal? Score { get; set; }
+        public int? Rank { get; set; }
     }
 
     public class CompetitionEntryDto
@@ -144,6 +161,7 @@ namespace DerasaX.Application.Dto.EngagementDto
         public string? StudentName { get; set; }
         public decimal Score { get; set; }
         public int Rank { get; set; }
+        public DateTime? SubmittedAt { get; set; }
     }
 
     public class CompetitionParameters : PaginationParameters

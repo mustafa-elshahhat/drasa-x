@@ -21,45 +21,23 @@ function LessonsPage({ userId, locale }) {
   const qc = useQueryClient()
   const isAr = locale === 'ar'
 
-  // Fetch the context of this lesson (parent subject and unit detail, plus lesson itself)
-  const lessonContextQuery = useQuery({
-    queryKey: ['student', userId, 'lesson-context', lessonId],
-    queryFn: async ({ signal }) => {
-      const subjects = await studentApi.subjects(signal)
-      for (const subj of subjects) {
-        const subjId = itemId(subj)
-        try {
-          const units = await studentApi.units(subjId, signal)
-          for (const u of units) {
-            const uId = itemId(u)
-            const lessons = await studentApi.lessons(uId, signal)
-            const foundLesson = lessons.find((l) => itemId(l) === lessonId)
-            if (foundLesson) {
-              return { subject: subj, unit: u, lesson: foundLesson }
-            }
-          }
-        } catch {
-          // ignore
-        }
-      }
-      return null
-    },
-    enabled: Boolean(lessonId && userId),
-    staleTime: STALE.medium,
-  })
+  // Real single-lesson detail from the backend (authorization-gated). No brute-force tree walk.
+  const lessonDetailQuery = useStudentQuery(
+    queryKeys.student.lessonDetail(userId, lessonId),
+    (signal) => studentApi.lessonDetail(lessonId, signal),
+    { enabled: Boolean(lessonId && userId), staleTime: STALE.medium },
+  )
+  const lesson = lessonDetailQuery.data
 
-  const subject = lessonContextQuery.data?.subject
-  const unit = lessonContextQuery.data?.unit
-  const lesson = lessonContextQuery.data?.lesson
+  const subjectId = lesson ? (getField(lesson, 'subjectId') || '') : ''
+  const unitId = lesson ? (getField(lesson, 'unitId') || '') : ''
 
-  const subjectId = subject ? itemId(subject) : 'math'
-  const unitId = unit ? itemId(unit) : 'u3'
+  const subjectName = lesson ? (getField(lesson, 'subjectName') || '') : ''
+  const unitName = lesson ? (getField(lesson, 'unitTitle') || '') : ''
+  const lessonName = lesson ? (getField(lesson, 'title') || displayValue(lesson)) : ''
+  const lessonContent = lesson ? (getField(lesson, 'content') || '') : ''
 
-  const subjectName = subject ? (isAr ? (getField(subject, 'nameAr') || displayValue(subject)) : displayValue(subject)) : 'Mathematics'
-  const unitName = unit ? (isAr ? (getField(unit, 'nameAr') || displayValue(unit)) : displayValue(unit)) : 'Integration'
-  const lessonName = lesson ? (isAr ? (getField(lesson, 'nameAr') || displayValue(lesson)) : displayValue(lesson)) : 'Intro to Integration'
-
-  // Fetch sibling lessons in this unit to find "Up Next"
+  // Fetch sibling lessons in this unit to find "Up Next" (only once we know the real unit).
   const { data: lessonsInUnit } = useQuery({
     queryKey: ['student', userId, 'lessons-in-unit', unitId],
     queryFn: ({ signal }) => studentApi.lessons(unitId, signal),
@@ -86,15 +64,29 @@ function LessonsPage({ userId, locale }) {
 
   const complete = useMutation({
     mutationFn: () => studentApi.completeLesson(lessonId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.student.root(userId) }),
+    onSuccess: () => {
+      // Targeted invalidation: lesson detail (completion), progress, and the subject/unit lists.
+      qc.invalidateQueries({ queryKey: queryKeys.student.lessonDetail(userId, lessonId) })
+      qc.invalidateQueries({ queryKey: queryKeys.student.progress(userId) })
+      qc.invalidateQueries({ queryKey: queryKeys.student.subjects(userId) })
+      if (subjectId) qc.invalidateQueries({ queryKey: queryKeys.student.units(userId, subjectId) })
+    },
   })
 
   const lessonProgress = toItems(settledData(progress.data?.lessons)).find(
     (item) => item.lessonId === lessonId || item.LessonId === lessonId
   )
-  const isCompleted = Boolean(lessonProgress?.isCompleted ?? lessonProgress?.IsCompleted ?? complete.data?.isCompleted)
+  const detailCompleted = lesson ? getField(lesson, 'isCompleted') : undefined
+  const detailPct = lesson ? getField(lesson, 'completionPercentage') : undefined
+  const isCompleted = Boolean(detailCompleted ?? lessonProgress?.isCompleted ?? lessonProgress?.IsCompleted ?? complete.data?.isCompleted)
+  const completionPct = isCompleted ? 100 : (detailPct ?? percentOf(lessonProgress) ?? 0)
 
   if (!lessonId) return <PageHeader title={t('student.lessons.title')} description={t('student.lessons.chooseUnit')} />
+
+  // Real states for a missing/unauthorized lesson — never fall back to fake lesson metadata.
+  if (lessonDetailQuery.isLoading) return (<><PageHeader title={t('student.lessons.title', 'Lesson')} /><Loading /></>)
+  if (lessonDetailQuery.isError) return <ErrorState error={lessonDetailQuery.error} onRetry={lessonDetailQuery.refetch} />
+  if (!lesson) return <PageHeader title={t('student.lessons.notFound', 'Lesson not found')} description={t('student.lessons.notFoundBody', 'This lesson is unavailable.')} />
 
   const materialItems = toItems(materials.data)
   const firstMaterial = materialItems.length > 0 ? materialItems[0] : null
@@ -141,11 +133,11 @@ function LessonsPage({ userId, locale }) {
             {lessonName}
           </h1>
 
-          <p className="text-muted leading-[1.7] text-[15px] mb-6">
-            {isAr
-              ? 'في هذا الدرس ستتعلم كيفية حساب التكاملات المحددة وفهم النظرية الأساسية في التفاضل والتكامل وتطبيق التكامل لإيجاد المساحات. شاهد المحاضرة، وراجع الأمثلة المحلولة، ثم أكمل الدرس.'
-              : 'In this lesson you will learn how to evaluate definite integrals, understand the fundamental theorem of calculus, and apply integration to find areas under curves. Watch the lecture, review the worked examples, then complete the lesson.'}
-          </p>
+          {lessonContent && (
+            <p className="text-muted leading-[1.7] text-[15px] mb-6 whitespace-pre-line">
+              {lessonContent}
+            </p>
+          )}
 
           <h2 className="[margin:24px_0_12px] text-lg font-bold text-ink">
             {t('student.materials.title', 'Lesson materials')}
@@ -156,8 +148,7 @@ function LessonsPage({ userId, locale }) {
               {(items) => (
                 <div className="flex flex-col gap-2.5">
                   {items.map((item) => {
-                    const type = getField(item, 'type') || getField(item, 'materialType') || 'video'
-                    const dur = getField(item, 'dur') || getField(item, 'duration') || (type === 'pdf' ? '8 pages' : type === 'slides' ? '22 slides' : '18:24')
+                    const dur = getField(item, 'dur') || getField(item, 'duration')
                     return (
                       <Link
                         key={itemId(item)}
@@ -170,7 +161,7 @@ function LessonsPage({ userId, locale }) {
                         </div>
                         <div className="student-material-row__content">
                           <div className="student-material-row__title">{displayValue(item)}</div>
-                          <div className="student-material-row__subtitle">{dur}</div>
+                          {dur && <div className="student-material-row__subtitle">{dur}</div>}
                         </div>
                         <div className="student-material-row__action">
                           <Download size={18} />
@@ -194,9 +185,9 @@ function LessonsPage({ userId, locale }) {
 
             <div className="student-progress-ring-container">
               <Ring
-                value={isCompleted ? 100 : (percentOf(lessonProgress) ?? 0)}
+                value={completionPct}
                 size={110}
-                centerLabel={isCompleted ? '100%' : `${percentOf(lessonProgress) ?? 0}%`}
+                centerLabel={`${completionPct}%`}
                 stroke={12}
                 color={isCompleted ? 'var(--success)' : 'var(--brand)'}
               />
@@ -277,9 +268,6 @@ function LessonsPage({ userId, locale }) {
                   </div>
                   <div>
                     <div className="student-up-next-row__title">{nextLessonName}</div>
-                    <div className="student-up-next-row__meta">
-                      {getField(nextLesson, 'dur') || getField(nextLesson, 'duration') || '45 Min'} &middot; {getField(nextLesson, 'res') || getField(nextLesson, 'resources') || 3} {t('student.lessons.resources', 'resources')}
-                    </div>
                   </div>
                 </button>
               ) : (

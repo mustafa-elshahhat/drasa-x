@@ -29,18 +29,29 @@ namespace DerasaX.Application.Services.Engagement
         public async Task<PaginationResponse<IEnumerable<CompetitionDto>>> ListAsync(CompetitionParameters p, CancellationToken ct = default)
         {
             RequireTenant();
-            Expression<Func<Competition, bool>> criteria = c => !p.Status.HasValue || c.Status == p.Status.Value;
+            // Students never see draft or archived competitions (server-side visibility, not UI-only).
+            var hideForStudent = IsStudent;
+            Expression<Func<Competition, bool>> criteria = c =>
+                (!p.Status.HasValue || c.Status == p.Status.Value) &&
+                (!hideForStudent || (c.Status != CompetitionStatus.Draft && c.Status != CompetitionStatus.Archived));
             var repo = UnitOfWork.Repository<Competition, string>();
             var total = await repo.CountAsync(new CriteriaSpecification<Competition, string>(criteria));
-            var items = await repo.GetAllWithSpecAsync(
-                new PagedSpecification<Competition, string>(criteria, c => c.StartsAt, p.PageNumber, p.PageSize, descending: true));
-            var dto = items.Select(Map).ToList();
+            var items = (await repo.GetAllWithSpecAsync(
+                new PagedSpecification<Competition, string>(criteria, c => c.StartsAt, p.PageNumber, p.PageSize, descending: true))).ToList();
+            var dto = new List<CompetitionDto>();
+            foreach (var c in items) dto.Add(IsStudent ? await EnrichForStudentAsync(c) : Map(c));
             return new PaginationResponse<IEnumerable<CompetitionDto>>(dto, total, p.PageNumber, p.PageSize)
             { Success = true, StatusCode = 200, Message = "Competitions retrieved." };
         }
 
-        public async Task<ApiResponse<CompetitionDto>> GetAsync(string id, CancellationToken ct = default) =>
-            Ok(Map(await LoadAsync(id)), 200, "Competition retrieved.");
+        public async Task<ApiResponse<CompetitionDto>> GetAsync(string id, CancellationToken ct = default)
+        {
+            var competition = await LoadAsync(id);
+            // A student cannot open a draft/archived competition directly either.
+            if (IsStudent && competition.Status is CompetitionStatus.Draft or CompetitionStatus.Archived)
+                throw new NotFoundException("Competition not found.");
+            return Ok(IsStudent ? await EnrichForStudentAsync(competition) : Map(competition), 200, "Competition retrieved.");
+        }
 
         public async Task<ApiResponse<CompetitionDto>> CreateAsync(CreateCompetitionDto dto, CancellationToken ct = default)
         {
@@ -174,6 +185,10 @@ namespace DerasaX.Application.Services.Engagement
                 : (await UnitOfWork.Repository<CompetitionScore, string>().GetAllWithSpecAsync(
                     new CriteriaSpecification<CompetitionScore, string>(s => entryIds.Contains(s.CompetitionEntryId)))).ToList();
 
+            var submissionTimes = (await UnitOfWork.Repository<CompetitionSubmission, string>().GetAllWithSpecAsync(
+                new CriteriaSpecification<CompetitionSubmission, string>(s => s.CompetitionId == id)))
+                .GroupBy(s => s.StudentId).ToDictionary(g => g.Key, g => g.Max(s => s.SubmittedAt));
+
             var scoredEntryIds = scores.Select(s => s.CompetitionEntryId).ToHashSet();
             var rows = entries
                 .Where(e => scoredEntryIds.Contains(e.Id))
@@ -183,7 +198,11 @@ namespace DerasaX.Application.Services.Engagement
                     Score = scores.Where(s => s.CompetitionEntryId == e.Id).Max(s => s.Score)
                 })
                 .OrderByDescending(x => x.Score)
-                .Select((x, i) => new LeaderboardRowDto { StudentId = x.StudentId, Score = x.Score, Rank = i + 1 })
+                .Select((x, i) => new LeaderboardRowDto
+                {
+                    StudentId = x.StudentId, Score = x.Score, Rank = i + 1,
+                    SubmittedAt = submissionTimes.TryGetValue(x.StudentId, out var at) ? at : null
+                })
                 .ToList();
 
             // Resolve display names so the leaderboard shows real names, not raw ids.
@@ -336,6 +355,38 @@ namespace DerasaX.Application.Services.Engagement
         {
             Id = c.Id, Title = c.Title, Description = c.Description, Status = c.Status, StartsAt = c.StartsAt, EndsAt = c.EndsAt
         };
+
+        /// <summary>Maps a competition with the current student's lifecycle flags so the UI never has to
+        /// infer entry/submission/leaderboard permission from raw status alone.</summary>
+        private async Task<CompetitionDto> EnrichForStudentAsync(Competition c)
+        {
+            var dto = Map(c);
+            var studentId = Tenant.UserId;
+            if (string.IsNullOrEmpty(studentId)) return dto;
+
+            var entry = (await UnitOfWork.Repository<CompetitionEntry, string>().GetAllWithSpecAsync(
+                new CriteriaSpecification<CompetitionEntry, string>(e => e.CompetitionId == c.Id && e.StudentId == studentId))).FirstOrDefault();
+            var submission = (await UnitOfWork.Repository<CompetitionSubmission, string>().GetAllWithSpecAsync(
+                new CriteriaSpecification<CompetitionSubmission, string>(s => s.CompetitionId == c.Id && s.StudentId == studentId))).FirstOrDefault();
+
+            var now = DateTime.UtcNow;
+            var open = c.Status is CompetitionStatus.Published or CompetitionStatus.Active && now < c.EndsAt;
+            dto.HasEntered = entry is not null;
+            dto.EntryId = entry?.Id;
+            dto.HasSubmitted = submission is not null;
+            dto.SubmissionId = submission?.Id;
+            dto.CanEnter = open && entry is null;
+            dto.CanSubmit = open && entry is not null;
+            dto.CanViewLeaderboard = c.Status is CompetitionStatus.Active or CompetitionStatus.Closed;
+
+            if (entry is not null)
+            {
+                var score = (await UnitOfWork.Repository<CompetitionScore, string>().GetAllWithSpecAsync(
+                    new CriteriaSpecification<CompetitionScore, string>(s => s.CompetitionEntryId == entry.Id))).FirstOrDefault();
+                if (score is not null) dto.Score = score.Score;
+            }
+            return dto;
+        }
 
         private static CompetitionSubmissionDto MapSubmission(CompetitionSubmission s) => new()
         {

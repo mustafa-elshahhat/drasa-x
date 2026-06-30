@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -35,9 +35,35 @@ function ThreadView() {
     mutationFn: (body) => notificationsApi.postMessage(conversationId, body),
     onSuccess: () => {
       setDraft('')
+      // Refresh the thread AND the list (last-message preview/order + unread counts).
       qc.invalidateQueries({ queryKey: queryKeys.notifications.messages(userId, conversationId) })
+      qc.invalidateQueries({ queryKey: queryKeys.notifications.conversations(userId) })
+      qc.invalidateQueries({ queryKey: queryKeys.notifications.unread(userId) })
     },
   })
+
+  // Mark incoming unread messages as read when the thread is open. After marking,
+  // refresh the conversation list + unread counts so the badge clears. A ref guards
+  // against re-marking the same ids while the read receipts round-trip.
+  const markedRef = useRef(new Set())
+  useEffect(() => {
+    const list = messages.data
+    if (!userId || !conversationId || !Array.isArray(list)) return
+    const unread = list.filter((m) => {
+      const id = m.id ?? m.Id
+      const sender = m.senderId ?? m.SenderId
+      const isRead = m.isRead ?? m.IsRead
+      return id && sender !== userId && !isRead && !markedRef.current.has(id)
+    })
+    if (unread.length === 0) return
+    unread.forEach((m) => markedRef.current.add(m.id ?? m.Id))
+    Promise.allSettled(unread.map((m) => notificationsApi.markMessageRead(conversationId, m.id ?? m.Id)))
+      .then(() => {
+        qc.invalidateQueries({ queryKey: queryKeys.notifications.messages(userId, conversationId) })
+        qc.invalidateQueries({ queryKey: queryKeys.notifications.conversations(userId) })
+        qc.invalidateQueries({ queryKey: queryKeys.notifications.unread(userId) })
+      })
+  }, [messages.data, userId, conversationId, qc])
 
   if (conversation.isError) {
     // Non-participant / cross-tenant → backend returns 404; show forbidden honestly.

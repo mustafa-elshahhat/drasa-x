@@ -25,6 +25,10 @@ namespace DerasaX.Application.Dto.CommunicationDto
         public bool IsClosed { get; set; }
         public DateTime StartedAt { get; set; }
         public List<ParticipantDto> Participants { get; set; } = new();
+        /// <summary>Messages addressed to the caller that the caller has not yet read.</summary>
+        public int UnreadCount { get; set; }
+        public DateTime? LastMessageAt { get; set; }
+        public string? LastMessagePreview { get; set; }
     }
 
     public class ParticipantDto
@@ -47,6 +51,9 @@ namespace DerasaX.Application.Dto.CommunicationDto
         public string Body { get; set; } = string.Empty;
         public MessageType Type { get; set; }
         public DateTime SentAt { get; set; }
+        /// <summary>For an incoming message: the caller has read it. For the caller's own message:
+        /// at least one other participant has read it (drives the Sent/Read indicator).</summary>
+        public bool IsRead { get; set; }
     }
 
     public class MessageParameters : PaginationParameters { }

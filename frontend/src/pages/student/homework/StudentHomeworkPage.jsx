@@ -11,6 +11,7 @@ import { QueryBoundary, EmptyState, ErrorState } from '../../../shared/feedback'
 import { useStudentQuery } from '../../../features/student/helpers'
 import { Loading } from '../../../features/student/Loading'
 import { studentApi } from '../../../features/student/studentApi'
+import { filesApi } from '../../../features/files/filesApi'
 import { displayValue, formatDate, getField, itemId } from '../../../features/student/studentUtils'
 import { getSubjectTheme } from '../../../features/student/theme'
 import { queryKeys } from '../../../lib/query/keys'
@@ -25,9 +26,11 @@ function homeworkStatus(item) {
   return 'pending'
 }
 
-// Points come from the assignment's MaxScore.
+// Max points come from the assignment's MaxScore. Returns null when the backend did
+// not set one — the UI must not invent a number.
 function homeworkPoints(item) {
-  return getField(item, 'maxScore') || getField(item, 'points') || getField(item, 'totalPoints') || 20
+  const v = getField(item, 'maxScore')
+  return v == null ? null : v
 }
 
 function HomeworkPage({ userId, locale }) {
@@ -108,7 +111,9 @@ function HomeworkPage({ userId, locale }) {
                 let statusPillText = t('student.homework.status.pending', 'Pending')
                 let statusPillTone = 'warning'
                 if (status === 'graded') {
-                  statusPillText = `${t('student.homework.status.graded', 'Graded')} ${score}/${points}`
+                  statusPillText = score != null && points != null
+                    ? `${t('student.homework.status.graded', 'Graded')} ${score}/${points}`
+                    : t('student.homework.status.graded', 'Graded')
                   statusPillTone = 'success'
                 } else if (status === 'submitted') {
                   statusPillText = t('student.homework.status.submitted', 'Submitted')
@@ -131,9 +136,11 @@ function HomeworkPage({ userId, locale }) {
                           <Clock size={13} style={{ color: isPending ? 'var(--orange)' : 'var(--text-dim)' }} />
                           {formatDate(getField(item, 'dueDate') || getField(item, 'dueAt'), locale)}
                         </span>
-                        <span>
-                          {points} {t('student.homework.pointsText', 'points')}
-                        </span>
+                        {points != null && (
+                          <span>
+                            {points} {t('student.homework.pointsText', 'points')}
+                          </span>
+                        )}
                       </div>
                     </div>
 
@@ -162,7 +169,7 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const [content, setContent] = useState('')
-  const [fileName, setFileName] = useState(null)
+  const [file, setFile] = useState(null)
   const fileInputRef = useRef(null)
 
   const isAr = locale === 'ar'
@@ -172,11 +179,20 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
     (signal) => studentApi.homeworkSubmission(homeworkId, signal)
   )
 
+  // Real submission flow: if a file is selected, upload it via the files API first, then
+  // submit the homework with the returned AttachmentFileId (never inject the filename into text).
   const mutation = useMutation({
-    mutationFn: (text) => studentApi.submitHomework(homeworkId, text),
+    mutationFn: async () => {
+      let attachmentFileId
+      if (file) {
+        const uploaded = await filesApi.upload({ file, purpose: 'SubmissionAttachment', relatedEntityType: 'Assignment', relatedEntityId: homeworkId })
+        attachmentFileId = getField(uploaded, 'id') ?? getField(uploaded, 'fileId')
+      }
+      return studentApi.submitHomework(homeworkId, { content: content.trim() || null, attachmentFileId })
+    },
     onSuccess: () => {
       setContent('')
-      setFileName(null)
+      setFile(null)
       qc.invalidateQueries({ queryKey: queryKeys.student.homework(userId) })
       qc.invalidateQueries({ queryKey: queryKeys.student.homeworkSubmission(userId, homeworkId) })
     }
@@ -184,7 +200,7 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
 
   const item = list.data?.find((h) => itemId(h) === homeworkId)
   const status = item ? homeworkStatus(item) : 'pending'
-  const points = item ? homeworkPoints(item) : 20
+  const points = item ? homeworkPoints(item) : null
   const desc = item ? (getField(item, 'description') || getField(item, 'desc') || '') : ''
 
   const subData = submission.data
@@ -199,24 +215,15 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFileName(e.target.files[0].name)
+      setFile(e.target.files[0])
     }
   }
 
   const handleSubmit = (event) => {
     event.preventDefault()
-    let textToSubmit = content.trim()
-    if (fileName) {
-      textToSubmit = `[Attached file: ${fileName}]\n\n${textToSubmit}`
+    if (content.trim() || file) {
+      mutation.mutate()
     }
-    if (textToSubmit) {
-      mutation.mutate(textToSubmit)
-    }
-  }
-
-  const handleSaveDraft = () => {
-    qc.invalidateQueries({ queryKey: queryKeys.student.homework(userId) })
-    alert(isAr ? 'تم حفظ المسودة بنجاح' : 'Draft saved successfully')
   }
 
   return (
@@ -239,18 +246,22 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
             <h1 className="m-0 text-2xl font-extrabold text-ink">
               {displayValue(item)}
             </h1>
-            <Chip tone="purple">{points} {t('student.homework.pointsText', 'points')}</Chip>
+            {points != null && <Chip tone="purple">{points} {t('student.homework.pointsText', 'points')}</Chip>}
           </div>
 
-          <div className="flex gap-2.5 mb-[18px]">
-            <Chip tone="warning">
-              {t('student.homework.due', 'Due')}: {formatDate(getField(item, 'dueDate') || getField(item, 'dueAt'), locale)}
-            </Chip>
-          </div>
+          {(getField(item, 'dueDate') || getField(item, 'dueAt')) && (
+            <div className="flex gap-2.5 mb-[18px]">
+              <Chip tone="warning">
+                {t('student.homework.due', 'Due')}: {formatDate(getField(item, 'dueDate') || getField(item, 'dueAt'), locale)}
+              </Chip>
+            </div>
+          )}
 
-          <p className="text-muted leading-[1.7] text-[15px]">
-            {desc || (isAr ? 'حل التمارين وأظهر الحل كاملاً.' : 'Solve problems and show full working.')}
-          </p>
+          {desc && (
+            <p className="text-muted leading-[1.7] text-[15px]">
+              {desc}
+            </p>
+          )}
 
           <div className="h-[1px] bg-line [margin:18px_0]" />
 
@@ -260,11 +271,21 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
                 <Check size={32} className="text-success" />
               </div>
               <h3 className="[margin:0_0_6px] text-ink font-extrabold">
-                {t('student.homework.submissionReceived', 'Submission received')}
+                {isGraded ? t('student.homework.graded', 'Graded') : t('student.homework.submissionReceived', 'Submission received')}
               </h3>
               <p className="text-muted text-sm m-0">
-                {isAr ? 'تم استلام تسليمك بنجاح. سيقوم معلمك بمراجعته قريباً.' : 'Submitted. Your teacher will review it soon.'}
+                {isGraded
+                  ? (isAr ? 'تم تقييم تسليمك.' : 'Your submission has been graded.')
+                  : (isAr ? 'تم استلام تسليمك بنجاح. سيقوم معلمك بمراجعته قريباً.' : 'Submitted. Your teacher will review it soon.')}
               </p>
+              {isGraded && getField(subData, 'score') != null && (
+                <div className="mt-3 text-[22px] font-extrabold text-success">
+                  {getField(subData, 'score')}{points != null ? `/${points}` : ''}
+                </div>
+              )}
+              {isGraded && getField(subData, 'feedback') && (
+                <p className="mt-2 text-sm text-ink-2">{getField(subData, 'feedback')}</p>
+              )}
               {subData && (
                 <div className="mt-4 bg-surface-2 p-3 rounded-lg text-start">
                   <DetailList item={subData} locale={locale} />
@@ -288,9 +309,9 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
               <div onClick={handleUploadClick} className="student-upload-area">
                 <Download size={30} className="student-upload-area__icon" />
                 <div className="student-upload-area__text">
-                  {fileName ? (
+                  {file ? (
                     <span className="text-success flex items-center gap-1.5">
-                      <Check size={16} /> {fileName}
+                      <Check size={16} /> {file.name}
                     </span>
                   ) : (
                     t('student.homework.clickToUpload', 'Click to upload your file')
@@ -317,17 +338,10 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
                 <Button
                   onClick={handleSubmit}
                   loading={mutation.isPending}
-                  disabled={mutation.isPending || (!content.trim() && !fileName)}
+                  disabled={mutation.isPending || (!content.trim() && !file)}
                 >
                   <Check size={16} className="me-1" />
                   {t('student.homework.submitAction', 'Submit homework')}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={handleSaveDraft}
-                  disabled={mutation.isPending}
-                >
-                  {t('student.homework.saveDraft', 'Save draft')}
                 </Button>
               </div>
               {mutation.isError && <ErrorState error={mutation.error} />}

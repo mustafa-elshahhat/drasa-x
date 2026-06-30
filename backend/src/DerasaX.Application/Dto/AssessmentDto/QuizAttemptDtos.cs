@@ -42,12 +42,22 @@ namespace DerasaX.Application.Dto.AssessmentDto
         public string QuizId { get; set; } = string.Empty;
         public string? Title { get; set; }
         public QuizType Type { get; set; }
+        public string? SubjectName { get; set; }
         public int TimeLimitMinutes { get; set; }
         public int? MaxAttempts { get; set; }
+        public int QuestionCount { get; set; }
         public DateTime? AvailableFrom { get; set; }
         public DateTime? DueDate { get; set; }
         public int AttemptsUsed { get; set; }
         public bool CanAttempt { get; set; }
+        /// <summary>Stable student-facing lifecycle status: available | in_progress | submitted | graded | closed.</summary>
+        public string Status { get; set; } = "available";
+        /// <summary>The student's most recent attempt id, used to link directly to its result.</summary>
+        public string? LatestAttemptId { get; set; }
+        public SubmissionStatus? LatestAttemptStatus { get; set; }
+        /// <summary>Achieved score of the latest graded attempt (null until graded).</summary>
+        public int? Score { get; set; }
+        public double? Percentage { get; set; }
     }
 
     // ---- Attempts ----
@@ -70,6 +80,12 @@ namespace DerasaX.Application.Dto.AssessmentDto
     /// <summary>An attempt as the student sees it while taking it (no correct answers).</summary>
     public class AttemptDetailDto : AttemptSummaryDto
     {
+        public string? QuizTitle { get; set; }
+        /// <summary>Authoritative time limit from the quiz, so the attempt timer never guesses.</summary>
+        public int TimeLimitMinutes { get; set; }
+        /// <summary>Server-computed expiry (StartedAt + TimeLimitMinutes) when the quiz is timed.</summary>
+        public DateTime? ExpiresAt { get; set; }
+        public int QuestionCount { get; set; }
         public string? TeacherFeedback { get; set; }
         /// <summary>The quiz's questions rendered for the taker — correct flags are never populated here.</summary>
         public List<QuestionDto> Questions { get; set; } = new();
@@ -82,11 +98,17 @@ namespace DerasaX.Application.Dto.AssessmentDto
         /// contract (<c>POST /api/v1/submissions/{attemptId}/grade</c> references answers by this id).</summary>
         public string Id { get; set; } = string.Empty;
         public string QuestionId { get; set; } = string.Empty;
+        /// <summary>The question prompt, so the result review never fabricates question text.</summary>
+        public string? QuestionText { get; set; }
         public string? SelectedOptionId { get; set; }
         public string? AnswerText { get; set; }
+        public int? PointsPossible { get; set; }
         /// <summary>Populated only after grading / when the result is released.</summary>
         public bool? IsCorrect { get; set; }
         public int? PointsEarned { get; set; }
+        /// <summary>The correct answer text/option, released only with the graded result.</summary>
+        public string? CorrectAnswer { get; set; }
+        public string? Explanation { get; set; }
         public string? Feedback { get; set; }
     }
 

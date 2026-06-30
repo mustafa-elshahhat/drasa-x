@@ -22,12 +22,14 @@ vi.mock('../../features/student/studentApi', () => ({
     attendance: vi.fn(),
     materials: vi.fn(),
     progress: vi.fn(),
+    lessonDetail: vi.fn(),
     completeLesson: vi.fn(),
     competition: vi.fn(),
     leaderboard: vi.fn(),
     enterCompetition: vi.fn(),
     competitionSubmission: vi.fn(),
     submitCompetition: vi.fn(),
+    attemptResult: vi.fn(),
   },
 }))
 
@@ -43,6 +45,7 @@ function renderStudent(view, path = '/app/student') {
             <Route path="/app/student/units/:unitId" element={<StudentPortalPage view={view} />} />
             <Route path="/app/student/lessons/:lessonId" element={<StudentPortalPage view={view} />} />
             <Route path="/app/student/competitions/:competitionId" element={<StudentPortalPage view={view} />} />
+            <Route path="/app/student/quiz-attempts/:attemptId/result" element={<StudentPortalPage view={view} />} />
           </Routes>
         </MemoryRouter>
       </QueryClientProvider>
@@ -68,6 +71,7 @@ describe('StudentPortalPage Phase 8 contracts', () => {
   it('calls the explicit lesson completion command and waits for server success', async () => {
     studentApi.materials.mockResolvedValue([])
     studentApi.progress.mockResolvedValue({ lessons: { status: 'fulfilled', value: { data: [] } } })
+    studentApi.lessonDetail.mockResolvedValue({ lessonId: 'lesson-1', title: 'Intro lesson', content: 'Lesson body', unitId: 'u1', unitTitle: 'Unit 1', subjectId: 's1', subjectName: 'Science', isCompleted: false, completionPercentage: 0 })
     studentApi.completeLesson.mockResolvedValue({ id: 'p1', lessonId: 'lesson-1', isCompleted: true, completionPercentage: 100 })
     const user = userEvent.setup()
 
@@ -79,7 +83,8 @@ describe('StudentPortalPage Phase 8 contracts', () => {
   })
 
   it('Phase 14 closure — submits durable competition work through the backend submissions endpoint', async () => {
-    studentApi.competition.mockResolvedValue({ id: 'comp-1', title: 'Science Fair' })
+    // Backend now returns explicit student flags; an entered student in an open competition can submit.
+    studentApi.competition.mockResolvedValue({ id: 'comp-1', title: 'Science Fair', hasEntered: true, canSubmit: true, canEnter: false, canViewLeaderboard: false })
     studentApi.leaderboard.mockResolvedValue([])
     studentApi.competitionSubmission.mockResolvedValue(null) // not submitted yet
     studentApi.submitCompetition.mockResolvedValue({ id: 's1', content: 'My project' })
@@ -93,6 +98,32 @@ describe('StudentPortalPage Phase 8 contracts', () => {
     await user.click(screen.getByRole('button', { name: /submit work/i }))
     await waitFor(() => expect(studentApi.submitCompetition).toHaveBeenCalledWith('comp-1', 'My project'))
     expect(await screen.findByText('Submission saved')).toBeInTheDocument()
+  })
+
+  it('quiz result renders the REAL backend score and correctness (no fabricated values)', async () => {
+    studentApi.attemptResult.mockResolvedValue({
+      id: 'att-9', quizId: 'q-9', quizTitle: 'Algebra Quiz', status: 'Graded',
+      achievedScore: 1, totalScore: 2, percentage: 50, questionCount: 2,
+      answers: [
+        { questionId: 'q1', questionText: '2+2?', isCorrect: true, pointsPossible: 1, pointsEarned: 1 },
+        { questionId: 'q2', questionText: '3+3?', isCorrect: false, pointsPossible: 1, pointsEarned: 0, correctAnswer: '6' },
+      ],
+    })
+    renderStudent('quiz-result', '/app/student/quiz-attempts/att-9/result')
+    expect(await screen.findByText('Algebra Quiz')).toBeInTheDocument()
+    expect(screen.getByText('50%')).toBeInTheDocument()
+    expect(screen.getByText('1/2')).toBeInTheDocument()
+    // The old fabricated fallbacks must never appear.
+    expect(screen.queryByText('88%')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Calculus Midterm Quiz/)).not.toBeInTheDocument()
+  })
+
+  it('quiz result shows a pending state (no fake score) when the attempt is not yet graded', async () => {
+    studentApi.attemptResult.mockResolvedValue({ id: 'att-7', quizId: 'q-7', quizTitle: 'Essay Quiz', status: 'Submitted', answers: [] })
+    renderStudent('quiz-result', '/app/student/quiz-attempts/att-7/result')
+    expect(await screen.findByText('Essay Quiz')).toBeInTheDocument()
+    expect(screen.queryByText('88%')).not.toBeInTheDocument()
+    expect(screen.queryByText('50%')).not.toBeInTheDocument()
   })
 
   it('renders subjects page with search and filters, and filters client-side', async () => {

@@ -17,7 +17,7 @@ import { ROLES, PERMISSIONS, ALL_ROLES } from '../../features/auth/roles'
 // authoritative count; the `r()` helper hides `path:` from a text grep). If a
 // route is intentionally added/removed, update this number in the SAME change —
 // that is the point of the guard.
-const EXPECTED_ROUTE_COUNT = 122
+const EXPECTED_ROUTE_COUNT = 131
 
 describe('route architecture (Phase 13 regression guards)', () => {
   it('has the exact verified route count (no silent add/remove)', () => {

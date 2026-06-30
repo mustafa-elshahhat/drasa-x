@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { ClipboardList, FileText, Sparkles } from 'lucide-react'
 import { DetailList } from '../../../shared/data-display'
 import { QuizCard, UnitCard } from '../../../shared/domain'
-import { SelectField, TextareaField } from '../../../shared/form'
+import { SelectField, TextField, TextareaField } from '../../../shared/form'
 import { Alert, Button, Card, PageHeader } from '../../../shared/ui'
 import { EmptyState, ErrorState } from '../../../shared/feedback'
 import { toItems } from '../../../features/student/studentSchemas'
@@ -66,6 +66,20 @@ function QuizDetailPage({ userId, quizId, locale }) {
   if (quiz.isLoading) return (<><PageHeader title={t('teacher.quizzes.details')} /><Loading /></>)
   if (quiz.isError) return <ErrorState error={quiz.error} onRetry={quiz.refetch} />
 
+  // Client-side publish readiness — mirrors the backend rules so the teacher sees WHY publish is blocked.
+  const publishBlockers = []
+  if (!questions.length) publishBlockers.push(t('teacher.quizzes.validation.noQuestions', 'Add at least one question.'))
+  for (const q of questions) {
+    const qText = displayValue(q, ['text', 'Text'])
+    if ((q.points ?? q.Points ?? 0) <= 0) publishBlockers.push(t('teacher.quizzes.validation.points', 'Question "{{q}}" needs a positive point value.', { q: qText }))
+    if (isObjectiveType(q.type ?? q.Type)) {
+      const opts = toItems(q.options ?? q.Options ?? [])
+      if (opts.length < 2) publishBlockers.push(t('teacher.quizzes.validation.options', 'Question "{{q}}" needs at least two options.', { q: qText }))
+      if (!opts.some((o) => (o.isCorrect ?? o.IsCorrect) === true)) publishBlockers.push(t('teacher.quizzes.validation.correct', 'Question "{{q}}" needs a correct option.', { q: qText }))
+    }
+  }
+  const canPublish = publishBlockers.length === 0
+
   return (
     <>
       <PageHeader
@@ -82,8 +96,19 @@ function QuizDetailPage({ userId, quizId, locale }) {
       {publish.isError && <ErrorState error={publish.error} />}
       {publish.isSuccess && <Alert variant="success" title={t('teacher.quizzes.publishedTitle')}>{t('teacher.quizzes.publishedBody')}</Alert>}
 
+      {!isPublished && <QuizMetadataCard userId={userId} quizId={quizId} data={data} onSaved={invalidateQuiz} />}
+
+      {!isPublished && !canPublish && (
+        <Alert variant="warning" title={t('teacher.quizzes.validation.title', 'Before you can publish')}>
+          <ul className="ui-list">
+            {publishBlockers.map((b, i) => <li key={i}>{b}</li>)}
+          </ul>
+        </Alert>
+      )}
+
       <Card title={t('teacher.quizzes.questions')}>
         {questions.length ? questions.map((q) => <QuestionEditor key={itemId(q)} userId={userId} quizId={quizId} question={q} editable={!isPublished} onSaved={invalidateQuiz} />) : <EmptyState title={t('teacher.empty.questions')} />}
+        {!isPublished && <AddQuestionForm userId={userId} quizId={quizId} nextOrder={questions.length + 1} onSaved={invalidateQuiz} />}
       </Card>
 
       {isPublished && <AssignQuizCard userId={userId} quizId={quizId} />}
@@ -109,42 +134,237 @@ function QuizDetailPage({ userId, quizId, locale }) {
   )
 }
 
+// QuestionType enum (backend serializes as int): MCQ=1, TrueFalse=2, MultiSelect=3, Essay=4.
+const Q_MCQ = 1, Q_TRUEFALSE = 2, Q_MULTISELECT = 3, Q_ESSAY = 4
+function isObjectiveType(type) {
+  const n = typeof type === 'number' ? type : Number(type)
+  return n === Q_MCQ || n === Q_TRUEFALSE || n === Q_MULTISELECT
+}
+function normalizeOptions(question) {
+  return toItems(question.options ?? question.Options ?? []).map((o) => ({
+    text: o.text ?? o.Text ?? '',
+    isCorrect: (o.isCorrect ?? o.IsCorrect) === true,
+  }))
+}
+
 function QuestionEditor({ userId, quizId, question, editable, onSaved }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const [text, setText] = useState(displayValue(question, ['text', 'Text']))
-  const [editing, setEditing] = useState(false)
   const questionId = itemId(question)
+  const type = question.type ?? question.Type ?? Q_MCQ
+  const objective = isObjectiveType(type)
+  const [editing, setEditing] = useState(false)
+  const [text, setText] = useState(displayValue(question, ['text', 'Text']))
+  const [points, setPoints] = useState(question.points ?? question.Points ?? 1)
+  const [correctAnswerText, setCorrectAnswerText] = useState(question.correctAnswerText ?? question.CorrectAnswerText ?? '')
+  const [explanation, setExplanation] = useState(question.explanation ?? question.Explanation ?? '')
+  // Preserve existing options so editing the text never wipes them (backend replaces options on update).
+  const [options, setOptions] = useState(normalizeOptions(question))
+  const multi = type === Q_MULTISELECT
+
   const save = useMutation({
     mutationFn: () => teacherApi.updateQuestion(quizId, questionId, {
       id: questionId,
-      text,
-      type: question.type ?? question.Type ?? 0,
+      text: text.trim(),
+      type,
       order: question.order ?? question.Order ?? 1,
-      points: question.points ?? question.Points ?? 1,
-      correctAnswerText: question.correctAnswerText ?? question.CorrectAnswerText ?? null,
-      explanation: question.explanation ?? question.Explanation ?? null,
+      points: Number(points) || 1,
+      correctAnswerText: objective ? null : (correctAnswerText.trim() || null),
+      explanation: explanation.trim() || null,
+      options: objective ? options.filter((o) => o.text.trim()).map((o) => ({ text: o.text.trim(), isCorrect: o.isCorrect })) : [],
     }),
     onSuccess: () => { setEditing(false); qc.invalidateQueries({ queryKey: queryKeys.teacher.quiz(userId, quizId) }); onSaved?.() },
   })
+
+  const reset = () => {
+    setText(displayValue(question, ['text', 'Text']))
+    setPoints(question.points ?? question.Points ?? 1)
+    setCorrectAnswerText(question.correctAnswerText ?? question.CorrectAnswerText ?? '')
+    setExplanation(question.explanation ?? question.Explanation ?? '')
+    setOptions(normalizeOptions(question))
+    setEditing(false)
+  }
+
   return (
     <div className="student-list__item">
       {editing ? (
         <form className="stack" onSubmit={(e) => { e.preventDefault(); if (text.trim()) save.mutate() }}>
           <TextareaField label={t('teacher.quizzes.questionText')} value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
+          <TextField label={t('teacher.quizzes.points', 'Points')} type="number" min="1" value={points} onChange={(e) => setPoints(e.target.value)} />
+          {objective ? (
+            <OptionsEditor options={options} setOptions={setOptions} multi={multi} />
+          ) : (
+            <TextareaField label={t('teacher.quizzes.modelAnswer', 'Model answer (optional)')} value={correctAnswerText} onChange={(e) => setCorrectAnswerText(e.target.value)} maxLength={2000} />
+          )}
+          <TextareaField label={t('teacher.quizzes.explanation', 'Explanation (optional)')} value={explanation} onChange={(e) => setExplanation(e.target.value)} maxLength={2000} />
           <div className="student-actions">
             <Button type="submit" loading={save.isPending} disabled={!text.trim()}>{t('actions.save')}</Button>
-            <Button type="button" variant="secondary" onClick={() => { setEditing(false); setText(displayValue(question, ['text', 'Text'])) }}>{t('actions.cancel')}</Button>
+            <Button type="button" variant="secondary" onClick={reset}>{t('actions.cancel')}</Button>
           </div>
           {save.isError && <ErrorState error={save.error} />}
         </form>
       ) : (
-        <div className="student-item">
-          <strong className="domain-row__title">{displayValue(question, ['text', 'Text'])}</strong>
-          {editable && <Button variant="secondary" onClick={() => setEditing(true)}>{t('teacher.quizzes.editQuestion')}</Button>}
+        <div>
+          <div className="student-item">
+            <strong className="domain-row__title">{displayValue(question, ['text', 'Text'])}</strong>
+            {editable && <Button variant="secondary" onClick={() => setEditing(true)}>{t('teacher.quizzes.editQuestion')}</Button>}
+          </div>
+          {objective && (
+            <ul className="ui-list">
+              {normalizeOptions(question).map((o, i) => (
+                <li key={i} className={o.isCorrect ? 'text-success' : 'ui-muted'}>{o.isCorrect ? '✓ ' : '• '}{o.text}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>
+  )
+}
+
+// Editable option list for objective questions. `multi` allows several correct answers.
+function OptionsEditor({ options, setOptions, multi }) {
+  const { t } = useTranslation()
+  const update = (i, patch) => setOptions(options.map((o, idx) => idx === i ? { ...o, ...patch } : o))
+  const setCorrect = (i) => setOptions(options.map((o, idx) => multi ? (idx === i ? { ...o, isCorrect: !o.isCorrect } : o) : { ...o, isCorrect: idx === i }))
+  return (
+    <div className="stack">
+      <span className="ui-field__label">{t('teacher.quizzes.options', 'Options (mark the correct one)')}</span>
+      {options.map((o, i) => (
+        <div className="cluster" key={i} style={{ alignItems: 'center', gap: 8 }}>
+          <input
+            type={multi ? 'checkbox' : 'radio'}
+            name="correct-option"
+            checked={o.isCorrect}
+            onChange={() => setCorrect(i)}
+            aria-label={t('teacher.quizzes.markCorrect', 'Mark correct')}
+          />
+          <input
+            type="text"
+            className="ui-input"
+            style={{ flex: 1 }}
+            value={o.text}
+            onChange={(e) => update(i, { text: e.target.value })}
+            placeholder={t('teacher.quizzes.optionText', 'Option text')}
+          />
+          <Button type="button" variant="ghost" onClick={() => setOptions(options.filter((_, idx) => idx !== i))}>{t('actions.remove', 'Remove')}</Button>
+        </div>
+      ))}
+      <Button type="button" variant="secondary" onClick={() => setOptions([...options, { text: '', isCorrect: false }])}>{t('teacher.quizzes.addOption', 'Add option')}</Button>
+    </div>
+  )
+}
+
+// Add a new question (objective with options, or an essay) to a draft quiz.
+function AddQuestionForm({ userId, quizId, nextOrder, onSaved }) {
+  const { t } = useTranslation()
+  const qc = useQueryClient()
+  const [open, setOpen] = useState(false)
+  const [type, setType] = useState(Q_MCQ)
+  const [text, setText] = useState('')
+  const [points, setPoints] = useState(1)
+  const [explanation, setExplanation] = useState('')
+  const [correctAnswerText, setCorrectAnswerText] = useState('')
+  const [options, setOptions] = useState([{ text: '', isCorrect: true }, { text: '', isCorrect: false }])
+  const objective = isObjectiveType(type)
+  const add = useMutation({
+    mutationFn: () => teacherApi.addQuestion(quizId, {
+      text: text.trim(),
+      type,
+      order: nextOrder,
+      points: Number(points) || 1,
+      correctAnswerText: objective ? null : (correctAnswerText.trim() || null),
+      explanation: explanation.trim() || null,
+      options: objective ? options.filter((o) => o.text.trim()).map((o) => ({ text: o.text.trim(), isCorrect: o.isCorrect })) : [],
+    }),
+    onSuccess: () => {
+      setOpen(false); setText(''); setPoints(1); setExplanation(''); setCorrectAnswerText('')
+      setOptions([{ text: '', isCorrect: true }, { text: '', isCorrect: false }]); setType(Q_MCQ)
+      qc.invalidateQueries({ queryKey: queryKeys.teacher.quiz(userId, quizId) }); onSaved?.()
+    },
+  })
+  if (!open) {
+    return <div className="student-actions" style={{ marginTop: 12 }}><Button variant="secondary" onClick={() => setOpen(true)}>{t('teacher.quizzes.addQuestion', 'Add question')}</Button></div>
+  }
+  return (
+    <form className="stack" style={{ marginTop: 12 }} onSubmit={(e) => { e.preventDefault(); if (text.trim()) add.mutate() }}>
+      <SelectField
+        label={t('teacher.quizzes.questionType', 'Question type')}
+        value={String(type)}
+        onChange={(e) => setType(Number(e.target.value))}
+        options={[
+          { value: String(Q_MCQ), label: t('teacher.quizzes.type.mcq', 'Multiple choice') },
+          { value: String(Q_TRUEFALSE), label: t('teacher.quizzes.type.truefalse', 'True / False') },
+          { value: String(Q_MULTISELECT), label: t('teacher.quizzes.type.multiselect', 'Multiple select') },
+          { value: String(Q_ESSAY), label: t('teacher.quizzes.type.essay', 'Essay') },
+        ]}
+      />
+      <TextareaField label={t('teacher.quizzes.questionText')} value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
+      <TextField label={t('teacher.quizzes.points', 'Points')} type="number" min="1" value={points} onChange={(e) => setPoints(e.target.value)} />
+      {objective ? (
+        <OptionsEditor options={options} setOptions={setOptions} multi={type === Q_MULTISELECT} />
+      ) : (
+        <TextareaField label={t('teacher.quizzes.modelAnswer', 'Model answer (optional)')} value={correctAnswerText} onChange={(e) => setCorrectAnswerText(e.target.value)} maxLength={2000} />
+      )}
+      <TextareaField label={t('teacher.quizzes.explanation', 'Explanation (optional)')} value={explanation} onChange={(e) => setExplanation(e.target.value)} maxLength={2000} />
+      <div className="student-actions">
+        <Button type="submit" loading={add.isPending} disabled={!text.trim()}>{t('teacher.quizzes.addQuestion', 'Add question')}</Button>
+        <Button type="button" variant="secondary" onClick={() => setOpen(false)}>{t('actions.cancel')}</Button>
+      </div>
+      {add.isError && <ErrorState error={add.error} />}
+    </form>
+  )
+}
+
+// Edit quiz metadata (title, type, time limit, attempts, due date) on a draft.
+function QuizMetadataCard({ userId, quizId, data, onSaved }) {
+  const { t } = useTranslation()
+  const qc = useQueryClient()
+  const toLocalInput = (v) => {
+    if (!v) return ''
+    const d = new Date(v)
+    if (Number.isNaN(d.getTime())) return ''
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+  const [form, setForm] = useState({
+    title: data.title ?? data.Title ?? '',
+    type: String(data.type ?? data.Type ?? 1),
+    difficulty: String(data.difficulty ?? data.Difficulty ?? 2),
+    timeLimitMinutes: data.timeLimitMinutes ?? data.TimeLimitMinutes ?? 30,
+    maxAttempts: (data.maxAttempts ?? data.MaxAttempts) ?? '',
+    dueDate: toLocalInput(data.dueDate ?? data.DueDate),
+  })
+  const save = useMutation({
+    mutationFn: () => teacherApi.updateQuiz(quizId, {
+      id: quizId,
+      title: form.title.trim(),
+      type: Number(form.type),
+      difficulty: Number(form.difficulty),
+      timeLimitMinutes: Number(form.timeLimitMinutes) || 0,
+      maxAttempts: form.maxAttempts === '' ? null : Number(form.maxAttempts),
+      dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : null,
+    }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.teacher.quiz(userId, quizId) }); onSaved?.() },
+  })
+  return (
+    <Card title={t('teacher.quizzes.editMetadata', 'Edit quiz details')}>
+      <form className="stack" onSubmit={(e) => { e.preventDefault(); if (form.title.trim()) save.mutate() }}>
+        <TextField label={t('teacher.quizzes.field.title', 'Title')} value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required />
+        <SelectField
+          label={t('teacher.quizzes.field.type', 'Type')}
+          value={form.type}
+          onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+          options={[{ value: '1', label: t('teacher.quizzes.quizType.lesson', 'Lesson') }, { value: '2', label: t('teacher.quizzes.quizType.practice', 'Practice') }, { value: '3', label: t('teacher.quizzes.quizType.final', 'Final') }]}
+        />
+        <TextField label={t('teacher.quizzes.field.timeLimit', 'Time limit (minutes)')} type="number" min="0" value={form.timeLimitMinutes} onChange={(e) => setForm((f) => ({ ...f, timeLimitMinutes: e.target.value }))} />
+        <TextField label={t('teacher.quizzes.field.maxAttempts', 'Max attempts (blank = unlimited)')} type="number" min="1" value={form.maxAttempts} onChange={(e) => setForm((f) => ({ ...f, maxAttempts: e.target.value }))} />
+        <TextField label={t('teacher.quizzes.field.dueDate', 'Due date')} type="datetime-local" value={form.dueDate} onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))} />
+        <Button type="submit" loading={save.isPending} disabled={!form.title.trim()}>{t('actions.save')}</Button>
+        {save.isError && <ErrorState error={save.error} />}
+        {save.isSuccess && <Alert variant="success" title={t('teacher.quizzes.metadataSaved', 'Saved')} />}
+      </form>
+    </Card>
   )
 }
 

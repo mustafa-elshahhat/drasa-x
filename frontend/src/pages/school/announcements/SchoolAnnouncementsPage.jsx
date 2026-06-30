@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { SelectField, TextField, TextareaField } from '../../../shared/form'
-import { Alert, Button, Card } from '../../../shared/ui'
+import { Alert, Button, Card, Chip } from '../../../shared/ui'
 import { ErrorState } from '../../../shared/feedback'
 import { Head, List } from '../../../features/school/components'
 import { AUDIENCE } from '../../../features/school/constants'
@@ -25,14 +25,16 @@ function AnnouncementsPage({ userId, locale }) {
   return (
     <>
       <Head view="announcements" />
-      <Card title={t('school.announcements.create')}>
-        {create.isSuccess && <Alert variant="success" title={t('school.common.created')}>{t('school.common.createdBody')}</Alert>}
+      <Card title={t('school.announcements.create', 'New announcement')}>
+        {create.isSuccess && <Alert variant="success" title={t('school.announcements.draftSaved', 'Draft saved')}>{t('school.announcements.draftSavedBody', 'The announcement was saved as a draft. Publish it to notify the audience.')}</Alert>}
         {create.isError && <ErrorState error={create.error} onRetry={() => create.reset()} />}
         <TextField label={t('school.common.title')} value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
         <TextareaField label={t('school.common.message')} value={form.body} onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))} />
         <SelectField label={t('school.announcements.audience')} value={form.targetAudience} onChange={(e) => setForm((f) => ({ ...f, targetAudience: e.target.value }))}
           options={Object.entries(AUDIENCE).map(([k, v]) => ({ value: v, label: t(`school.audiences.${k}`) }))} />
-        <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.title.trim() || !form.body.trim()}>{t('school.announcements.create')}</Button>
+        {/* Create stores an inactive DRAFT (no notifications). Publishing it from the list below is
+            what makes it visible and fans out notifications. */}
+        <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.title.trim() || !form.body.trim()}>{t('school.announcements.saveDraft', 'Save draft')}</Button>
       </Card>
       <List
         query={query}
@@ -40,7 +42,12 @@ function AnnouncementsPage({ userId, locale }) {
         locale={locale}
         rowActions={(item) => {
           const active = item.isActive ?? item.IsActive
-          return <Button variant="secondary" onClick={() => publish.mutate({ id: itemId(item), on: !active })} loading={publish.isPending}>{active ? t('school.common.unpublish') : t('school.common.publish')}</Button>
+          return (
+            <span className="cluster">
+              <Chip tone={active ? 'success' : 'muted'}>{active ? t('school.announcements.statusPublished', 'Published') : t('school.announcements.statusDraft', 'Draft')}</Chip>
+              <Button variant="secondary" onClick={() => publish.mutate({ id: itemId(item), on: !active })} loading={publish.isPending}>{active ? t('school.common.unpublish') : t('school.common.publish')}</Button>
+            </span>
+          )
         }}
       />
     </>

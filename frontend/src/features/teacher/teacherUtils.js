@@ -2,6 +2,7 @@
 // (do not duplicate) so the teacher feature stays consistent with the student one.
 export {
   displayValue,
+  getField,
   itemId,
   statusLabel,
   formatDate,
@@ -32,5 +33,23 @@ export function submissionStatusName(value) {
   if (value === undefined || value === null || value === '') return ''
   if (typeof value === 'number') return SUBMISSION_STATUS[value] || String(value)
   if (/^\d+$/.test(String(value))) return SUBMISSION_STATUS[Number(value)] || String(value)
+  return String(value)
+}
+
+// AssignmentStatus (homework lifecycle) — Draft/Published/Closed/Archived.
+const ASSIGNMENT_STATUS = { 0: 'Draft', 1: 'Published', 2: 'Closed', 3: 'Archived' }
+export function assignmentStatusName(value) {
+  if (value === undefined || value === null || value === '') return ''
+  if (typeof value === 'number') return ASSIGNMENT_STATUS[value] || String(value)
+  if (/^\d+$/.test(String(value))) return ASSIGNMENT_STATUS[Number(value)] || String(value)
+  return String(value)
+}
+
+// CompetitionStatus — Draft/Published/Active/Closed/Archived.
+const COMPETITION_STATUS = { 0: 'Draft', 1: 'Published', 2: 'Active', 3: 'Closed', 4: 'Archived' }
+export function competitionStatusName(value) {
+  if (value === undefined || value === null || value === '') return ''
+  if (typeof value === 'number') return COMPETITION_STATUS[value] || String(value)
+  if (/^\d+$/.test(String(value))) return COMPETITION_STATUS[Number(value)] || String(value)
   return String(value)
 }

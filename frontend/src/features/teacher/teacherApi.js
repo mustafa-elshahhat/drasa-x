@@ -63,6 +63,13 @@ export const teacherApi = {
     return toObject(await api.get(`/api/v1/quizzes/${encodeURIComponent(quizId)}/analytics`, { signal }))
   },
 
+  // Manual quiz authoring (create + metadata edit) — complements AI draft generation.
+  async createQuiz(body) {
+    return unwrapEnvelope(await api.post('/api/v1/quizzes', body))
+  },
+  async updateQuiz(quizId, body) {
+    return unwrapEnvelope(await api.put(`/api/v1/quizzes/${encodeURIComponent(quizId)}`, body))
+  },
   // AI draft generation — backend-mediated, draft-only.
   async generateDraft(payload) {
     return unwrapEnvelope(await api.post('/api/v1/ai/quiz/draft', payload))
@@ -84,6 +91,61 @@ export const teacherApi = {
   },
   async assignQuiz(quizId, body) {
     return unwrapEnvelope(await api.post(`/api/v1/quizzes/${encodeURIComponent(quizId)}/assignments`, body))
+  },
+
+  // ---- homework / non-quiz assignment lifecycle (backend complete; Phase 4) ----
+  async homeworkList(signal) {
+    return toItems(await api.get('/api/v1/homework', { signal }))
+  },
+  async homework(homeworkId, signal) {
+    return toObject(await api.get(`/api/v1/homework/${encodeURIComponent(homeworkId)}`, { signal }))
+  },
+  async createHomework(body) {
+    return unwrapEnvelope(await api.post('/api/v1/homework', body))
+  },
+  async updateHomework(homeworkId, body) {
+    return unwrapEnvelope(await api.put(`/api/v1/homework/${encodeURIComponent(homeworkId)}`, body))
+  },
+  async publishHomework(homeworkId, body) {
+    return unwrapEnvelope(await api.post(`/api/v1/homework/${encodeURIComponent(homeworkId)}/publish`, body))
+  },
+  async homeworkSubmissions(homeworkId, signal) {
+    return toItems(await api.get(`/api/v1/homework/${encodeURIComponent(homeworkId)}/submissions${qs({ pageSize: 100 })}`, { signal }))
+  },
+  async gradeHomeworkSubmission(submissionId, body) {
+    return unwrapEnvelope(await api.post(`/api/v1/homework/submissions/${encodeURIComponent(submissionId)}/grade`, body))
+  },
+
+  // ---- competition lifecycle (teacher/admin; backend complete; Phase 6) ----
+  async competitions(signal) {
+    return toItems(await api.get('/api/v1/competitions', { signal }))
+  },
+  async competition(competitionId, signal) {
+    return toObject(await api.get(`/api/v1/competitions/${encodeURIComponent(competitionId)}`, { signal }))
+  },
+  async createCompetition(body) {
+    return unwrapEnvelope(await api.post('/api/v1/competitions', body))
+  },
+  async updateCompetition(competitionId, body) {
+    return unwrapEnvelope(await api.put(`/api/v1/competitions/${encodeURIComponent(competitionId)}`, body))
+  },
+  async publishCompetition(competitionId) {
+    return unwrapEnvelope(await api.post(`/api/v1/competitions/${encodeURIComponent(competitionId)}/publish`))
+  },
+  async archiveCompetition(competitionId) {
+    return unwrapEnvelope(await api.post(`/api/v1/competitions/${encodeURIComponent(competitionId)}/archive`))
+  },
+  async closeCompetition(competitionId) {
+    return unwrapEnvelope(await api.post(`/api/v1/competitions/${encodeURIComponent(competitionId)}/close`))
+  },
+  async competitionSubmissions(competitionId, signal) {
+    return toItems(await api.get(`/api/v1/competitions/${encodeURIComponent(competitionId)}/submissions`, { signal }))
+  },
+  async competitionLeaderboard(competitionId, signal) {
+    return toItems(await api.get(`/api/v1/competitions/${encodeURIComponent(competitionId)}/leaderboard`, { signal }))
+  },
+  async scoreCompetitionEntry(competitionId, entryId, score) {
+    return unwrapEnvelope(await api.post(`/api/v1/competitions/${encodeURIComponent(competitionId)}/entries/${encodeURIComponent(entryId)}/score`, { score }))
   },
 
   // ---- grading + feedback ----

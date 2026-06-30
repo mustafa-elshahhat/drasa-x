@@ -62,8 +62,13 @@ namespace DerasaX.Application.Dto.AssessmentDto
         public DateTime? DueDate { get; set; }
         public decimal? MaxScore { get; set; }
         public bool HasSubmitted { get; set; }
+        public string? SubmissionId { get; set; }
         public SubmissionStatus? SubmissionStatus { get; set; }
         public decimal? Score { get; set; }
+        public DateTime? GradedAt { get; set; }
+        public string? AttachmentFileId { get; set; }
+        /// <summary>True when the student may still submit (open window, not yet submitted).</summary>
+        public bool CanSubmit { get; set; }
     }
 
     public class SubmitHomeworkDto

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, Bolt, Flame, Medal, PieChart, PlayCircle, Sparkles, Trophy } from 'lucide-react'
+import { ArrowRight, Flame, PieChart, PlayCircle, Sparkles, Trophy } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
 import { Avatar } from '../../../shared/ui'
 import { ErrorState } from '../../../shared/feedback'
@@ -77,7 +77,7 @@ function AssignedLessonCard({ subject }) {
 function DashboardPage({ userId }) {
   const { t } = useTranslation()
   const { user } = useAuth()
-  const studentName = user?.fullName || user?.userName || 'Adham Ayman'
+  const studentName = user?.fullName || user?.userName || t('student.dashboard.student', 'Student')
 
   const subjects = useStudentQuery(queryKeys.student.subjects(userId), (signal) => studentApi.subjects(signal), { staleTime: STALE.medium })
   const _homework = useStudentQuery(queryKeys.student.homework(userId), (signal) => studentApi.homework(signal))
@@ -88,33 +88,33 @@ function DashboardPage({ userId }) {
   const badges = useStudentQuery(queryKeys.student.badges(userId), (signal) => studentApi.badges(userId, signal), { staleTime: STALE.medium })
   const points = useStudentQuery(queryKeys.student.points(userId), (signal) => studentApi.points(userId, signal), { staleTime: STALE.short })
 
-  const _progressRecommendations = progress.data ? toItems(settledData(progress.data.recommendations)) : []
+  const progressRecommendations = progress.data ? toItems(settledData(progress.data.recommendations)) : []
   const _unread = notifications.data ? toObject(settledData(notifications.data.count))?.unreadCount : null
   const _officeAvailable = office.data ? toItems(settledData(office.data.available)) : []
-  const _earnedBadges = badges.data ? toItems(settledData(badges.data.earned)) : []
+  const earnedBadges = badges.data ? toItems(settledData(badges.data.earned)) : []
   const subjectItems = toItems(subjects.data)
   const quizItems = toItems(quizzes.data)
 
-  // Calculations for stats cards
+  // Real metrics only — when a source is empty/unavailable the value is null and the UI shows a
+  // neutral placeholder rather than a fabricated number.
   const avgProgress = subjectItems.length > 0
     ? Math.round(subjectItems.reduce((acc, s) => acc + (percentOf(s) ?? 0), 0) / subjectItems.length)
-    : 58
+    : null
 
   const streak = badges.data ? toObject(settledData(badges.data.streak)) : null
-  const currentStreak = streak ? (getField(streak, 'current') ?? getField(streak, 'Current') ?? 7) : 7
-  const daysThisWeek = streak ? (getField(streak, 'daysThisWeek') ?? getField(streak, 'DaysThisWeek') ?? 5) : 5
+  const currentStreak = streak ? (getField(streak, 'current') ?? getField(streak, 'Current') ?? getField(streak, 'currentCount') ?? getField(streak, 'CurrentCount') ?? 0) : 0
+  const daysThisWeek = streak ? (getField(streak, 'daysThisWeek') ?? getField(streak, 'DaysThisWeek') ?? 0) : 0
 
-  const totalPoints = points.data ? (getField(points.data, 'totalPoints') ?? getField(points.data, 'TotalPoints') ?? 2580) : 2580
+  const totalPoints = points.data ? (getField(points.data, 'totalPoints') ?? getField(points.data, 'TotalPoints') ?? 0) : 0
 
-  // Featured assessment
+  // Featured assessment — only a REAL assigned quiz; otherwise the hero is hidden.
   const featuredQuiz = quizItems.length > 0 ? quizItems[0] : null
-  const featuredId = featuredQuiz ? itemId(featuredQuiz, ['quizId', 'QuizId', 'id', 'Id']) : 'q1'
-  const featuredName = featuredQuiz ? displayValue(featuredQuiz) : t('student.quizzes.calculusMidterm', 'Calculus Midterm Quiz')
-  const featuredDesc = featuredQuiz
-    ? (getField(featuredQuiz, 'description') || getField(featuredQuiz, 'desc') || '')
-    : t('student.quizzes.calculusDesc', 'Tests your understanding of integral calculus, definite & indefinite integrals, integration techniques, and applications.')
-  const featuredQCount = featuredQuiz ? (getField(featuredQuiz, 'questionsCount') || getField(featuredQuiz, 'q') || 20) : 20
-  const featuredDuration = featuredQuiz ? (getField(featuredQuiz, 'duration') || getField(featuredQuiz, 'min') || 30) : 30
+  const featuredId = featuredQuiz ? itemId(featuredQuiz, ['quizId', 'QuizId', 'id', 'Id']) : null
+  const featuredName = featuredQuiz ? displayValue(featuredQuiz) : ''
+  const featuredDesc = featuredQuiz ? (getField(featuredQuiz, 'description') || getField(featuredQuiz, 'desc') || '') : ''
+  const featuredQCount = featuredQuiz ? getField(featuredQuiz, 'questionCount') : null
+  const featuredDuration = featuredQuiz ? getField(featuredQuiz, 'timeLimitMinutes') : null
+  const topRecommendation = progressRecommendations[0] || null
 
   return (
     <>
@@ -135,10 +135,9 @@ function DashboardPage({ userId }) {
             <span className="stats-card__header-title">{t('student.dashboard.learningProgress', 'Learning progress')}</span>
           </div>
           <div className="stats-card__content">
-            <Ring value={avgProgress} size={104} stroke={12} centerLabel={`${avgProgress}%`} />
+            <Ring value={avgProgress ?? 0} size={104} stroke={12} centerLabel={avgProgress == null ? '—' : `${avgProgress}%`} />
             <div className="stats-card__meta">
               <span className="stats-card__meta-label">{t('student.dashboard.overallCompletion', 'overall course completion')}</span>
-              <span className="stats-card__meta-trend">↑ 6% {t('student.dashboard.thisWeek', 'this week')}</span>
             </div>
           </div>
         </div>
@@ -188,55 +187,44 @@ function DashboardPage({ userId }) {
           </div>
           <div className="stats-card__content">
             <span className="stats-card__points-value">{totalPoints.toLocaleString()}</span>
-            <span className="stats-card__points-rank">{t('student.dashboard.rankText', 'Rank #3 in your class')}</span>
-            <div className="stats-card__points-badges">
-              {[
-                { icon: Bolt, color: 'var(--warning)' },
-                { icon: Trophy, color: 'var(--purple)' },
-                { icon: Flame, color: 'var(--orange)' },
-                { icon: Medal, color: 'var(--info)' },
-              ].map((b, i) => {
-                const BadgeIcon = b.icon
-                return (
-                  <div
-                    key={i}
-                    className="stats-card__points-badge-wrapper"
-                    style={{ backgroundColor: `${b.color}18` }}
-                  >
-                    <BadgeIcon size={17} style={{ color: b.color }} />
-                  </div>
-                )
-              })}
-            </div>
+            {earnedBadges.length > 0 && (
+              <span className="stats-card__points-rank">{t('student.dashboard.badgesEarned', '{{count}} badges earned', { count: earnedBadges.length })}</span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Featured assessment hero card */}
-      <div className="student-dashboard__hero-card">
-        <div className="student-dashboard__hero-pattern" />
-        <div className="student-dashboard__hero-content">
-          <div className="student-dashboard__hero-pill-container">
-            <span className="student-dashboard__hero-pill">
-              {t('student.dashboard.featuredAssessment', 'Featured assessment')}
-            </span>
-          </div>
-          <h2 className="student-dashboard__hero-title">{featuredName}</h2>
-          <div className="student-dashboard__hero-meta">
-            {featuredQCount} {t('student.quizzes.questionCount', 'Questions')} &middot; {featuredDuration} {t('student.quizzes.duration', 'Minutes')}
-          </div>
-          <p className="student-dashboard__hero-desc">{featuredDesc}</p>
-          <div className="student-dashboard__hero-actions">
-            <Link to={`/app/student/quizzes/${featuredId}`} className="ui-btn student-dashboard__hero-btn-primary">
-              <PlayCircle size={16} aria-hidden="true" />
-              <span>{t('student.dashboard.startQuiz', 'Start quiz')}</span>
-            </Link>
-            <Link to="/app/student/subjects/math" className="ui-btn student-dashboard__hero-btn-secondary">
-              {t('student.dashboard.reviewLesson', 'Review lesson')}
-            </Link>
+      {/* Featured assessment hero card — only when a real quiz is assigned. */}
+      {featuredQuiz && (
+        <div className="student-dashboard__hero-card">
+          <div className="student-dashboard__hero-pattern" />
+          <div className="student-dashboard__hero-content">
+            <div className="student-dashboard__hero-pill-container">
+              <span className="student-dashboard__hero-pill">
+                {t('student.dashboard.featuredAssessment', 'Featured assessment')}
+              </span>
+            </div>
+            <h2 className="student-dashboard__hero-title">{featuredName}</h2>
+            {(featuredQCount != null || featuredDuration != null) && (
+              <div className="student-dashboard__hero-meta">
+                {featuredQCount != null && <>{featuredQCount} {t('student.quizzes.questionCount', 'Questions')}</>}
+                {featuredQCount != null && featuredDuration != null && ' · '}
+                {featuredDuration != null && <>{featuredDuration} {t('student.quizzes.duration', 'Minutes')}</>}
+              </div>
+            )}
+            {featuredDesc && <p className="student-dashboard__hero-desc">{featuredDesc}</p>}
+            <div className="student-dashboard__hero-actions">
+              <Link to={`/app/student/quizzes/${featuredId}`} className="ui-btn student-dashboard__hero-btn-primary">
+                <PlayCircle size={16} aria-hidden="true" />
+                <span>{t('student.dashboard.startQuiz', 'Start quiz')}</span>
+              </Link>
+              <Link to="/app/student/subjects" className="ui-btn student-dashboard__hero-btn-secondary">
+                {t('student.dashboard.reviewLesson', 'Review lessons')}
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Assigned lessons section */}
       <section className="student-dashboard__lessons-section">
@@ -259,29 +247,31 @@ function DashboardPage({ userId }) {
         </div>
       </section>
 
-      {/* AI recommendation banner */}
-      <div className="student-dashboard__ai-banner">
-        <div className="student-dashboard__ai-banner-icon-container">
-          <Sparkles size={28} className="student-dashboard__ai-banner-icon" />
-        </div>
-        <div className="student-dashboard__ai-banner-text-container">
-          <div className="student-dashboard__ai-banner-header">
-            <h3 className="student-dashboard__ai-banner-title">
-              {t('student.dashboard.aiRecommended', 'AI recommended for you')}
-            </h3>
-            <span className="student-dashboard__ai-banner-pill">AI</span>
+      {/* AI recommendation banner — only when a real stored recommendation exists. */}
+      {topRecommendation && (
+        <div className="student-dashboard__ai-banner">
+          <div className="student-dashboard__ai-banner-icon-container">
+            <Sparkles size={28} className="student-dashboard__ai-banner-icon" />
           </div>
-          <p className="student-dashboard__ai-banner-desc">
-            {t('student.dashboard.aiRecommendedDesc', 'Based on your recent quiz, review "Integration by Parts" before your midterm.')}
-          </p>
+          <div className="student-dashboard__ai-banner-text-container">
+            <div className="student-dashboard__ai-banner-header">
+              <h3 className="student-dashboard__ai-banner-title">
+                {displayValue(topRecommendation, ['title', 'Title']) || t('student.dashboard.aiRecommended', 'AI recommended for you')}
+              </h3>
+              <span className="student-dashboard__ai-banner-pill">AI</span>
+            </div>
+            <p className="student-dashboard__ai-banner-desc">
+              {getField(topRecommendation, 'body') || getField(topRecommendation, 'Body') || ''}
+            </p>
+          </div>
+          <div className="student-dashboard__ai-banner-action">
+            <Link to="/app/student/recommendations" className="ui-btn ui-btn--primary student-dashboard__ai-banner-btn">
+              <span>{t('student.dashboard.startNow', 'Start now')}</span>
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
         </div>
-        <div className="student-dashboard__ai-banner-action">
-          <Link to="/app/student/recommendations" className="ui-btn ui-btn--primary student-dashboard__ai-banner-btn">
-            <span>{t('student.dashboard.startNow', 'Start now')}</span>
-            <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-        </div>
-      </div>
+      )}
     </>
   )
 }

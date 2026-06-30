@@ -16,6 +16,13 @@ namespace DerasaX.Api.Controllers
 
         public StudentLessonsController(IStudentProgressService progress) => _progress = progress;
 
+        [HttpGet("{lessonId}")]
+        public async Task<IActionResult> Get(string lessonId, CancellationToken ct)
+        {
+            var result = await _progress.GetLessonDetailAsync(lessonId, ct);
+            return StatusCode(result.StatusCode, result);
+        }
+
         [HttpPost("{lessonId}/complete")]
         public async Task<IActionResult> Complete(string lessonId, CancellationToken ct)
         {

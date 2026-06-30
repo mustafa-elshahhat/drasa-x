@@ -31,6 +31,7 @@ public class EngagementApiTests : IClassFixture<IntegrationFactory>
     private sealed record EntryRow(string id, string studentId);
     private sealed record BadgeRow(string id, string badgeId);
     private sealed record LbRow(string studentId, decimal score, int rank);
+    private sealed record CompRow(string id, int status, bool hasEntered, bool canEnter, bool canSubmit, bool canViewLeaderboard);
 
     private static string NewId(string p) => $"{p}-{Guid.NewGuid():N}";
 
@@ -125,6 +126,58 @@ public class EngagementApiTests : IClassFixture<IntegrationFactory>
 
             // Visibility timing: a student cannot see the leaderboard while the competition is only Published.
             Assert.Equal(HttpStatusCode.Forbidden, (await student.GetAsync($"/api/v1/competitions/{compId}/leaderboard")).StatusCode);
+        }
+        finally
+        {
+            await using var db = Phase4Db.Platform(_factory);
+            await db.Database.ExecuteSqlRawAsync("DELETE FROM \"competitionScores\" WHERE \"CompetitionEntryId\" IN (SELECT \"Id\" FROM \"competitionEntries\" WHERE \"CompetitionId\" = {0})", compId);
+            await db.Database.ExecuteSqlRawAsync("DELETE FROM \"competitionEntries\" WHERE \"CompetitionId\" = {0}", compId);
+            await db.Database.ExecuteSqlRawAsync("DELETE FROM \"competitions\" WHERE \"Id\" = {0}", compId);
+        }
+    }
+
+    [Fact]
+    public async Task Competition_student_visibility_and_flags()
+    {
+        var teacher = await TestClient.AuthedClientAsync(_factory, "TEACH-T1");
+        var student = await TestClient.AuthedClientAsync(_factory, "STU-T1");
+        string compId = "";
+        try
+        {
+            var create = await teacher.PostAsJsonAsync("/api/v1/competitions", new
+            {
+                title = NewId("Comp"), startsAt = new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc), endsAt = new DateTime(2035, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            });
+            compId = (await Read<IdRow>(create))!.data!.id;
+
+            // Draft is NOT visible to a student (server-side filter) and a direct GET 404s.
+            var draftList = await Read<List<CompRow>>(await student.GetAsync("/api/v1/competitions?pageSize=100"));
+            Assert.DoesNotContain(draftList!.data!, c => c.id == compId);
+            Assert.Equal(HttpStatusCode.NotFound, (await student.GetAsync($"/api/v1/competitions/{compId}")).StatusCode);
+
+            // Publish → visible with canEnter, not yet entered, leaderboard not released.
+            await teacher.PostAsync($"/api/v1/competitions/{compId}/publish", null);
+            var pubDetail = (await Read<CompRow>(await student.GetAsync($"/api/v1/competitions/{compId}")))!.data!;
+            Assert.True(pubDetail.canEnter);
+            Assert.False(pubDetail.hasEntered);
+            Assert.False(pubDetail.canSubmit);
+            Assert.False(pubDetail.canViewLeaderboard);
+
+            // After entry → hasEntered, canSubmit, no longer canEnter.
+            await student.PostAsync($"/api/v1/competitions/{compId}/entries", null);
+            var enteredDetail = (await Read<CompRow>(await student.GetAsync($"/api/v1/competitions/{compId}")))!.data!;
+            Assert.True(enteredDetail.hasEntered);
+            Assert.True(enteredDetail.canSubmit);
+            Assert.False(enteredDetail.canEnter);
+            Assert.False(enteredDetail.canViewLeaderboard);
+
+            // After close → results released to the student; no further entry/submission.
+            await teacher.PostAsync($"/api/v1/competitions/{compId}/close", null);
+            var closedDetail = (await Read<CompRow>(await student.GetAsync($"/api/v1/competitions/{compId}")))!.data!;
+            Assert.True(closedDetail.canViewLeaderboard);
+            Assert.False(closedDetail.canEnter);
+            Assert.False(closedDetail.canSubmit);
+            Assert.Equal(HttpStatusCode.OK, (await student.GetAsync($"/api/v1/competitions/{compId}/leaderboard")).StatusCode);
         }
         finally
         {

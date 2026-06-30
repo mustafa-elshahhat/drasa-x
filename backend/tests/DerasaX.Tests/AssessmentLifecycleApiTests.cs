@@ -35,7 +35,8 @@ public class AssessmentLifecycleApiTests : IClassFixture<IntegrationFactory>
     private sealed record AnsData(string questionId, string? selectedOptionId, bool? isCorrect, int? pointsEarned);
     private sealed record AttemptData(string id, int status, int achievedScore, int totalScore,
         List<QData> questions, List<AnsData> answers);
-    private sealed record AssignedData(string quizId, bool canAttempt);
+    private sealed record AssignedData(string quizId, bool canAttempt, string status, string? latestAttemptId,
+        int questionCount, int timeLimitMinutes, int? score, double? percentage);
     private sealed record SubmissionData(string id, int status, int achievedScore, int totalScore);
     private sealed record AnalyticsData(string quizId, int totalSubmissions);
 
@@ -245,6 +246,12 @@ public class AssessmentLifecycleApiTests : IClassFixture<IntegrationFactory>
             var (asg, ab) = await ReadEnv<List<AssignedData>>(assigned);
             Assert.Equal(HttpStatusCode.OK, asg);
             Assert.Contains(ab!.data!, a => a.quizId == quizId && a.canAttempt);
+            // Contract: an un-attempted assigned quiz reports a real student status + metadata.
+            var beforeRow = ab.data!.First(a => a.quizId == quizId);
+            Assert.Equal("available", beforeRow.status);
+            Assert.Null(beforeRow.latestAttemptId);
+            Assert.Equal(2, beforeRow.questionCount);
+            Assert.Equal(30, beforeRow.timeLimitMinutes);
 
             // Start → 201, returns questions (no correct flags).
             var start = await student.PostAsync($"/api/v1/quizzes/{quizId}/attempts", null);
@@ -287,6 +294,16 @@ public class AssessmentLifecycleApiTests : IClassFixture<IntegrationFactory>
             var (rS, rB) = await ReadEnv<AttemptData>(result);
             Assert.Equal(HttpStatusCode.OK, rS);
             Assert.Equal(10, rB!.data!.achievedScore);
+
+            // Contract: after a graded attempt the assigned list reports status + the latest attempt id
+            // (so the UI links "View result" by attemptId, not quizId) and the achieved score/percentage.
+            var assignedAfter = await student.GetAsync("/api/v1/assigned-quizzes");
+            var (_, abAfter) = await ReadEnv<List<AssignedData>>(assignedAfter);
+            var afterRow = abAfter!.data!.First(a => a.quizId == quizId);
+            Assert.Equal("graded", afterRow.status);
+            Assert.Equal(attemptId, afterRow.latestAttemptId);
+            Assert.Equal(10, afterRow.score);
+            Assert.Equal(100d, afterRow.percentage);
 
             // Teacher analytics.
             var analytics = await admin.GetAsync($"/api/v1/quizzes/{quizId}/analytics");

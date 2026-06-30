@@ -13,6 +13,17 @@ import { displayValue, formatDate, getField, itemId } from '../../../features/st
 import { getSubjectTheme } from '../../../features/student/theme'
 import { queryKeys } from '../../../lib/query/keys'
 
+const STATUS_LABELS = {
+  available: 'Available',
+  in_progress: 'In progress',
+  submitted: 'Submitted',
+  graded: 'Graded',
+  closed: 'Closed',
+}
+function statusLabel(status) {
+  return STATUS_LABELS[status] || status
+}
+
 function QuizzesPage({ userId, locale }) {
   const { t } = useTranslation()
   const { quizId } = useParams()
@@ -24,6 +35,8 @@ function QuizzesPage({ userId, locale }) {
   const tabs = [
     { key: 'all', label: t('student.quizzes.tabs.all', 'All') },
     { key: 'available', label: t('student.quizzes.tabs.available', 'Available') },
+    { key: 'in_progress', label: t('student.quizzes.tabs.inProgress', 'In progress') },
+    { key: 'submitted', label: t('student.quizzes.tabs.submitted', 'Submitted') },
     { key: 'graded', label: t('student.quizzes.tabs.graded', 'Graded') },
   ]
 
@@ -70,9 +83,8 @@ function QuizzesPage({ userId, locale }) {
         {(items) => {
           const filteredItems = items.filter((item) => {
             const status = String(getField(item, 'status') || 'available').toLowerCase()
-            if (activeTab === 'available') return status === 'available'
-            if (activeTab === 'graded') return status === 'graded' || status === 'submitted'
-            return true
+            if (activeTab === 'all') return true
+            return status === activeTab
           })
 
           if (filteredItems.length === 0) {
@@ -84,10 +96,12 @@ function QuizzesPage({ userId, locale }) {
               {filteredItems.map((item) => {
                 const theme = getSubjectTheme(item)
                 const status = String(getField(item, 'status') || 'available').toLowerCase()
-                const qCount = getField(item, 'questionsCount') || getField(item, 'q') || 20
-                const duration = getField(item, 'duration') || getField(item, 'min') || 30
-                const score = getField(item, 'score') || getField(item, 'scorePercentage')
+                const qCount = getField(item, 'questionCount')
+                const duration = getField(item, 'timeLimitMinutes')
+                const percentage = getField(item, 'percentage')
+                const latestAttemptId = getField(item, 'latestAttemptId')
                 const isGraded = status === 'graded'
+                const isResultViewable = (isGraded || status === 'submitted') && latestAttemptId
 
                 const quizItemId = itemId(item, ['quizId', 'QuizId', 'id', 'Id'])
 
@@ -108,10 +122,12 @@ function QuizzesPage({ userId, locale }) {
                       >
                         <ClipboardList size={22} />
                       </div>
-                      {isGraded ? (
-                        <Chip tone="success">{score}%</Chip>
+                      {isGraded && percentage != null ? (
+                        <Chip tone="success">{Math.round(percentage)}%</Chip>
                       ) : (
-                        <Chip tone="brand">{t('student.quizzes.available', 'Available')}</Chip>
+                        <Chip tone={status === 'available' ? 'brand' : 'neutral'}>
+                          {t(`student.quizzes.status.${status}`, statusLabel(status))}
+                        </Chip>
                       )}
                     </div>
 
@@ -120,28 +136,39 @@ function QuizzesPage({ userId, locale }) {
                     </h3>
 
                     <div className="flex gap-3.5 text-muted text-[13px] mb-4 flex-wrap">
-                      <span>{qCount} Q</span>
-                      <span>{duration} min</span>
-                      <span style={{ color: isGraded ? 'var(--success)' : 'var(--orange)', fontWeight: 600 }}>
-                        {formatDate(getField(item, 'dueDate') || getField(item, 'dueAt'), locale)}
-                      </span>
+                      {qCount != null && <span>{qCount} Q</span>}
+                      {duration ? <span>{duration} min</span> : null}
+                      {(getField(item, 'dueDate') || getField(item, 'dueAt')) && (
+                        <span style={{ color: isGraded ? 'var(--success)' : 'var(--orange)', fontWeight: 600 }}>
+                          {formatDate(getField(item, 'dueDate') || getField(item, 'dueAt'), locale)}
+                        </span>
+                      )}
                     </div>
 
-                    {isGraded ? (
+                    {isResultViewable ? (
                       <Link
-                        to={`/app/student/quiz-attempts/${quizItemId}/result`}
+                        to={`/app/student/quiz-attempts/${latestAttemptId}/result`}
                         className="ui-btn ui-btn--secondary"
                         style={{ width: '100%', textDecoration: 'none' }}
                       >
                         {t('student.quizzes.viewResultBtn', 'View result')}
                       </Link>
+                    ) : status === 'in_progress' && latestAttemptId ? (
+                      <Link
+                        to={`/app/student/quiz-attempts/${latestAttemptId}`}
+                        className="ui-btn ui-btn--primary"
+                        style={{ width: '100%', textDecoration: 'none' }}
+                      >
+                        {t('student.quizzes.continueBtn', 'Continue')}
+                      </Link>
                     ) : (
                       <Link
                         to={`/app/student/quizzes/${quizItemId}`}
                         className="ui-btn ui-btn--primary"
-                        style={{ width: '100%', textDecoration: 'none' }}
+                        aria-disabled={status === 'closed'}
+                        style={{ width: '100%', textDecoration: 'none', ...(status === 'closed' ? { pointerEvents: 'none', opacity: 0.5 } : {}) }}
                       >
-                        {t('student.quizzes.startBtn', 'Start quiz')}
+                        {status === 'closed' ? t('student.quizzes.closedBtn', 'Closed') : t('student.quizzes.startBtn', 'Start quiz')}
                       </Link>
                     )}
                   </Card>
@@ -175,12 +202,14 @@ function QuizDetails({ userId, quizId, list, locale }) {
   })
 
   const item = list.data?.find((q) => itemId(q, ['quizId', 'QuizId', 'id', 'Id']) === quizId)
-  const theme = getSubjectTheme(item)
 
   const title = displayValue(item) || t('student.quizzes.details')
-  const desc = getField(item, 'description') || getField(item, 'desc') || (isAr ? 'يركّز هذا الاختبار على فهمك للمنهج وتطبيقاته.' : 'Tests your understanding of the curriculum details.')
-  const qCount = getField(item, 'questionsCount') || getField(item, 'q') || 20
-  const duration = getField(item, 'duration') || getField(item, 'min') || 30
+  const desc = getField(item, 'description') || getField(item, 'desc') || ''
+  const qCount = getField(item, 'questionCount')
+  const duration = getField(item, 'timeLimitMinutes')
+  const attemptsUsed = getField(item, 'attemptsUsed') ?? 0
+  const maxAttempts = getField(item, 'maxAttempts')
+  const subjectName = getField(item, 'subjectName')
 
   return (
     <>
@@ -205,36 +234,40 @@ function QuizDetails({ userId, quizId, list, locale }) {
               <h1 className="m-0 text-[26px] font-extrabold text-ink">
                 {title}
               </h1>
-              <div className="text-muted text-sm mt-0.5">
-                {theme.teacher} &middot; {theme.units} {t('student.units.title', 'Units')}
-              </div>
+              {subjectName && (
+                <div className="text-muted text-sm mt-0.5">
+                  {subjectName}
+                </div>
+              )}
             </div>
           </div>
 
-          <p className="text-muted leading-[1.7] text-[15px] mb-[18px]">
-            {desc}
-          </p>
+          {desc && (
+            <p className="text-muted leading-[1.7] text-[15px] mb-[18px]">
+              {desc}
+            </p>
+          )}
 
           {/* Quiz metadata grid */}
           <div className="student-quiz-detail-stats">
             {/* Questions */}
             <div className="student-quiz-detail-stat">
               <ClipboardList size={20} className="student-quiz-detail-stat__icon" />
-              <div className="student-quiz-detail-stat__value">{qCount}</div>
+              <div className="student-quiz-detail-stat__value">{qCount ?? '—'}</div>
               <div className="student-quiz-detail-stat__label">{t('student.quizzes.stats.questions', 'Questions')}</div>
             </div>
 
             {/* Time */}
             <div className="student-quiz-detail-stat">
               <Clock size={20} className="student-quiz-detail-stat__icon" />
-              <div className="student-quiz-detail-stat__value">{duration} min</div>
+              <div className="student-quiz-detail-stat__value">{duration ? `${duration} min` : '—'}</div>
               <div className="student-quiz-detail-stat__label">{t('student.quizzes.stats.timeLimit', 'Time limit')}</div>
             </div>
 
             {/* Attempts */}
             <div className="student-quiz-detail-stat">
               <Check size={20} className="student-quiz-detail-stat__icon" />
-              <div className="student-quiz-detail-stat__value">1</div>
+              <div className="student-quiz-detail-stat__value">{maxAttempts ? `${attemptsUsed}/${maxAttempts}` : attemptsUsed}</div>
               <div className="student-quiz-detail-stat__label">{t('student.quizzes.stats.attempts', 'Attempts')}</div>
             </div>
           </div>
@@ -291,10 +324,12 @@ function QuizDetails({ userId, quizId, list, locale }) {
                       </div>
                       <div className="student-material-row__content">
                         <div className="student-material-row__title">
-                          {displayValue(attempt) || `${t('student.quizzes.attempt')} ${itemId(attempt)}`}
+                          {`${t('student.quizzes.attempt', 'Attempt')} ${getField(attempt, 'attemptNumber') ?? ''}`.trim()}
                         </div>
                         <div className="student-material-row__subtitle">
-                          {getField(attempt, 'score') ?? getField(attempt, 'scorePercentage')}%
+                          {getField(attempt, 'status') === 'Graded' && getField(attempt, 'percentage') != null
+                            ? `${Math.round(getField(attempt, 'percentage'))}%`
+                            : t('student.quizzes.status.submitted', 'Submitted')}
                         </div>
                       </div>
                       <div className="student-material-row__action">

@@ -277,6 +277,59 @@ namespace DerasaX.Application.Services.Progress
             });
         }
 
+        public async Task<ApiResponse<StudentLessonDetailDto>> GetLessonDetailAsync(string lessonId, CancellationToken ct = default)
+        {
+            var (lesson, unit, subject) = await ResolveAccessibleLessonAsync(lessonId, ct);
+
+            var studentId = _tenant.UserId!;
+            var progress = await _uow.Repository<StudentLessonProgress, string>().GetByIdWithSpecAsync(
+                new CriteriaSpecification<StudentLessonProgress, string>(x => x.StudentId == studentId && x.LessonId == lessonId));
+
+            return Ok(new StudentLessonDetailDto
+            {
+                LessonId = lesson.Id, Title = lesson.Title, Content = lesson.Content,
+                UnitId = unit.Id, UnitTitle = unit.Title,
+                SubjectId = subject.Id, SubjectName = subject.Name,
+                IsCompleted = progress?.IsCompleted ?? false,
+                CompletionPercentage = progress?.CompletionPercentage ?? 0,
+                CompletedAt = progress?.CompletedAt
+            });
+        }
+
+        /// <summary>Resolves a lesson the current student is authorized to see (enrolled in a class of the
+        /// lesson's grade), returning the lesson with its unit + subject. Cross-grade / unenrolled → 404
+        /// (no existence leak). Shared by lesson detail + completion.</summary>
+        private async Task<(Lesson lesson, Unit unit, Subject subject)> ResolveAccessibleLessonAsync(string lessonId, CancellationToken ct)
+        {
+            var tenantId = RequireTenant();
+            var studentId = _tenant.UserId ?? throw new UnauthorizedException("Authenticated student context is required.");
+
+            var student = await _users.FindByIdAsync(studentId);
+            if (student is not Student s || student.TenantId != tenantId || student.IsDeleted)
+                throw new NotFoundException("Lesson not found.");
+
+            var lesson = await _uow.Repository<Lesson, string>().GetByIdWithSpecAsync(
+                new CriteriaSpecification<Lesson, string>(x => x.Id == lessonId))
+                ?? throw new NotFoundException("Lesson not found.");
+            var unit = await _uow.Repository<Unit, string>().GetByIdWithSpecAsync(
+                new CriteriaSpecification<Unit, string>(x => x.Id == lesson.UnitId))
+                ?? throw new NotFoundException("Lesson not found.");
+            var subject = await _uow.Repository<Subject, string>().GetByIdWithSpecAsync(
+                new CriteriaSpecification<Subject, string>(x => x.Id == unit.SubjectId));
+            if (subject is null || subject.GradeId != s.GradeId)
+                throw new NotFoundException("Lesson not found.");
+
+            var enrollments = await _uow.Repository<Enrollment, string>().GetAllWithSpecAsync(
+                new CriteriaSpecification<Enrollment, string>(e => e.StudentId == studentId && e.Status == EnrollmentStatus.Active));
+            var classIds = enrollments.Select(e => e.SchoolClassId).Distinct().ToList();
+            if (classIds.Count == 0) throw new NotFoundException("Lesson not found.");
+            var classes = await _uow.Repository<SchoolClass, string>().GetAllWithSpecAsync(
+                new CriteriaSpecification<SchoolClass, string>(c => classIds.Contains(c.Id) && c.GradeId == subject.GradeId));
+            if (!classes.Any()) throw new NotFoundException("Lesson not found.");
+
+            return (lesson, unit, subject);
+        }
+
         // ---- helpers ----
 
         private static (DateTime? from, DateTime? to) ValidateRange(ProgressParameters p)

@@ -27,27 +27,35 @@ function QuizAttemptPage({ userId, locale }) {
 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedAnswers, setSelectedAnswers] = useState({})
-  
+
   const isAr = locale === 'ar'
 
-  // Timer countdown
-  const [timeLeft, setTimeLeft] = useState(30 * 60) // default 30 mins
-  
-  // Set the time limit from the loaded quiz duration. (Was a side-effect inside a
-  // useState initializer — corrected to a real effect so it tracks the data.)
-  const quizDuration = query.data?.quiz?.duration || query.data?.Quiz?.duration || query.data?.duration || query.data?.Duration || 30
+  // Authoritative timer source from the backend AttemptDetailDto: prefer the server-computed
+  // ExpiresAt (StartedAt + limit); fall back to TimeLimitMinutes. A quiz with no time limit is
+  // untimed and shows no countdown — we NEVER guess a 30-minute default.
+  const expiresAtRaw = query.data?.expiresAt ?? query.data?.ExpiresAt ?? null
+  const timeLimitMinutes = query.data?.timeLimitMinutes ?? query.data?.TimeLimitMinutes ?? 0
+  const isTimed = Boolean(expiresAtRaw) || timeLimitMinutes > 0
+  const [timeLeft, setTimeLeft] = useState(null)
 
   React.useEffect(() => {
-    setTimeLeft(quizDuration * 60)
-  }, [quizDuration])
+    if (expiresAtRaw) {
+      const ms = new Date(expiresAtRaw).getTime() - Date.now()
+      setTimeLeft(Math.max(0, Math.floor(ms / 1000)))
+    } else if (timeLimitMinutes > 0) {
+      setTimeLeft(timeLimitMinutes * 60)
+    } else {
+      setTimeLeft(null)
+    }
+  }, [expiresAtRaw, timeLimitMinutes])
 
-  // Timer effect
-  const activeTimer = timeLeft > 0
-  
+  // Timer effect — only runs for a timed quiz with remaining time.
+  const activeTimer = isTimed && timeLeft != null && timeLeft > 0
+
   React.useEffect(() => {
     if (!activeTimer) return
     const timer = setInterval(() => {
-      setTimeLeft(prev => Math.max(0, prev - 1))
+      setTimeLeft(prev => (prev == null ? prev : Math.max(0, prev - 1)))
     }, 1000)
     return () => clearInterval(timer)
   }, [activeTimer])
@@ -74,7 +82,7 @@ function QuizAttemptPage({ userId, locale }) {
   if (query.isError) return <ErrorState error={query.error} onRetry={query.refetch} />
 
   const questions = Array.isArray(query.data?.questions || query.data?.Questions) ? query.data.questions || query.data.Questions : []
-  const quizTitle = query.data?.quiz?.title || query.data?.Quiz?.title || query.data?.title || query.data?.Title || t('student.quizzes.attempt')
+  const quizTitle = query.data?.quizTitle || query.data?.QuizTitle || t('student.quizzes.attempt')
 
   const handleSelectOption = (qId, optionId) => {
     setSelectedAnswers(prev => ({
@@ -138,10 +146,12 @@ function QuizAttemptPage({ userId, locale }) {
             {t('student.quizzes.questionIndex', 'Question')} {currentQuestionIndex + 1} {t('student.quizzes.of', 'of')} {totalQuestions}
           </div>
         </div>
-        <div className="quiz-timer">
-          <Clock size={16} />
-          <span>{formatTime(timeLeft)}</span>
-        </div>
+        {isTimed && timeLeft != null && (
+          <div className="quiz-timer">
+            <Clock size={16} />
+            <span>{formatTime(timeLeft)}</span>
+          </div>
+        )}
       </div>
 
       {/* Progress Bar */}

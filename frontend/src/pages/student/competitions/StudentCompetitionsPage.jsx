@@ -40,33 +40,60 @@ function CompetitionDetails({ userId, competitionId, locale }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const competition = useStudentQuery(queryKeys.student.competition(userId, competitionId), (signal) => studentApi.competition(competitionId, signal), { staleTime: STALE.medium })
-  const leaderboard = useStudentQuery(queryKeys.student.leaderboard(userId, competitionId), (signal) => studentApi.leaderboard(competitionId, signal))
-  const enter = useMutation({ mutationFn: () => studentApi.enterCompetition(competitionId), onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.student.competition(userId, competitionId) }) })
+  const data = competition.data
+  // Authoritative student flags from the backend — never inferred from raw status.
+  const canEnter = getField(data, 'canEnter') === true
+  const hasEntered = getField(data, 'hasEntered') === true
+  const canSubmit = getField(data, 'canSubmit') === true
+  const canViewLeaderboard = getField(data, 'canViewLeaderboard') === true
+
+  // Only fetch the leaderboard once the backend says results are released (avoids a 403 while live).
+  const leaderboard = useStudentQuery(
+    queryKeys.student.leaderboard(userId, competitionId),
+    (signal) => studentApi.leaderboard(competitionId, signal),
+    { enabled: canViewLeaderboard },
+  )
+  const enter = useMutation({
+    mutationFn: () => studentApi.enterCompetition(competitionId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.student.competition(userId, competitionId) })
+      qc.invalidateQueries({ queryKey: queryKeys.student.competitions(userId) })
+    },
+  })
   return (
     <>
-      <PageHeader title={displayValue(competition.data) || t('student.competitions.details')} description={t('student.competitions.authoritative')} actions={<Button onClick={() => enter.mutate()} loading={enter.isPending}>{t('student.competitions.enter')}</Button>} />
+      <PageHeader
+        title={displayValue(data) || t('student.competitions.details')}
+        description={t('student.competitions.authoritative')}
+        actions={canEnter ? <Button onClick={() => enter.mutate()} loading={enter.isPending}>{t('student.competitions.enter')}</Button> : null}
+      />
       {(competition.isError || enter.isError) && <ErrorState error={competition.error || enter.error} onRetry={competition.refetch} />}
+      {hasEntered && <Alert variant="success" title={t('student.competitions.entered', 'You have entered this competition.')} />}
       <div className="ui-split">
         <div>
-          {competition.data && <Card title={t('student.details')}><DetailList item={competition.data} locale={locale} /></Card>}
-          <CompetitionSubmissionCard userId={userId} competitionId={competitionId} locale={locale} />
+          {data && <Card title={t('student.details')}><DetailList item={data} locale={locale} /></Card>}
+          {canSubmit && <CompetitionSubmissionCard userId={userId} competitionId={competitionId} locale={locale} />}
         </div>
         <Card title={t('student.leaderboard.title')}>
-          <QueryBoundary query={leaderboard} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.leaderboard')} emptyIcon={Trophy}>
-            {(items) => (
-              <ul className="domain-lb-list">
-                {items.map((item, i) => (
-                  <LeaderboardRow
-                    key={itemId(item) || i}
-                    rank={getField(item, 'rank') ?? i + 1}
-                    name={displayValue(item, ['studentName', 'StudentName', 'name', 'Name']) || itemId(item)}
-                    points={getField(item, 'totalPoints') ?? getField(item, 'points')}
-                    pointsLabel={t('student.points.unit', 'pts')}
-                  />
-                ))}
-              </ul>
-            )}
-          </QueryBoundary>
+          {canViewLeaderboard ? (
+            <QueryBoundary query={leaderboard} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.leaderboard')} emptyIcon={Trophy}>
+              {(items) => (
+                <ul className="domain-lb-list">
+                  {items.map((item, i) => (
+                    <LeaderboardRow
+                      key={itemId(item) || i}
+                      rank={getField(item, 'rank') ?? i + 1}
+                      name={displayValue(item, ['studentName', 'StudentName', 'name', 'Name']) || itemId(item)}
+                      points={getField(item, 'score') ?? getField(item, 'Score')}
+                      pointsLabel={t('student.points.unit', 'pts')}
+                    />
+                  ))}
+                </ul>
+              )}
+            </QueryBoundary>
+          ) : (
+            <EmptyState icon={Trophy} title={t('student.competitions.resultsPending', 'Results are not available yet.')} />
+          )}
         </Card>
       </div>
     </>

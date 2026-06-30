@@ -148,24 +148,60 @@ namespace DerasaX.Application.Services.Assessment
                 : (await UnitOfWork.Repository<QuizSubmission, string>().GetAllWithSpecAsync(
                     new CriteriaSpecification<QuizSubmission, string>(s => s.StudentId == studentId && quizIds.Contains(s.QuizId)))).ToList();
 
+            // Question counts per quiz (for the list + tabs) and subject names — resolved in bulk.
+            var questionCounts = quizIds.Count == 0
+                ? new Dictionary<string, int>()
+                : (await UnitOfWork.Repository<Question, string>().GetAllWithSpecAsync(
+                    new CriteriaSpecification<Question, string>(q => quizIds.Contains(q.QuizId))))
+                    .GroupBy(q => q.QuizId).ToDictionary(g => g.Key, g => g.Count());
+            var subjectIds = quizzes.Where(q => q.SubjectId != null).Select(q => q.SubjectId!).Distinct().ToList();
+            var subjectNames = subjectIds.Count == 0
+                ? new Dictionary<string, string>()
+                : (await UnitOfWork.Repository<Subject, string>().GetAllWithSpecAsync(
+                    new CriteriaSpecification<Subject, string>(s => subjectIds.Contains(s.Id))))
+                    .ToDictionary(s => s.Id, s => s.Name);
+
             var now = DateTime.UtcNow;
             var result = new List<AssignedQuizDto>();
             foreach (var quiz in quizzes)
             {
                 var a = eligible.First(x => x.QuizId == quiz.Id);
-                var used = submissions.Count(s => s.QuizId == quiz.Id && s.submissionStatus != SubmissionStatus.InProgress);
+                var quizSubs = submissions.Where(s => s.QuizId == quiz.Id).ToList();
+                var used = quizSubs.Count(s => s.submissionStatus != SubmissionStatus.InProgress);
                 var withinWindow = (a.AvailableFrom is null || a.AvailableFrom <= now) && (a.DueDate is null || a.DueDate >= now);
                 var underLimit = quiz.MaxAttempts is null || used < quiz.MaxAttempts.Value;
+                var canAttempt = withinWindow && underLimit;
+
+                var latest = quizSubs.OrderByDescending(s => s.IsLatestAttempt).ThenByDescending(s => s.AttemptNumber).FirstOrDefault();
+                int? score = null; double? pct = null;
+                if (latest?.submissionStatus == SubmissionStatus.Graded) { score = latest.AchievedScore; pct = latest.Percentage; }
+
                 result.Add(new AssignedQuizDto
                 {
                     QuizId = quiz.Id, Title = quiz.Title, Type = quiz.Type,
+                    SubjectName = quiz.SubjectId != null && subjectNames.TryGetValue(quiz.SubjectId, out var sn) ? sn : null,
                     TimeLimitMinutes = quiz.TimeLimitMinutes, MaxAttempts = quiz.MaxAttempts,
+                    QuestionCount = questionCounts.TryGetValue(quiz.Id, out var qc) ? qc : 0,
                     AvailableFrom = a.AvailableFrom, DueDate = a.DueDate,
-                    AttemptsUsed = used, CanAttempt = withinWindow && underLimit
+                    AttemptsUsed = used, CanAttempt = canAttempt,
+                    LatestAttemptId = latest?.Id,
+                    LatestAttemptStatus = latest?.submissionStatus,
+                    Score = score, Percentage = pct,
+                    Status = DeriveStatus(latest?.submissionStatus, canAttempt)
                 });
             }
             return Ok<IEnumerable<AssignedQuizDto>>(result, 200, "Assigned quizzes retrieved successfully.");
         }
+
+        /// <summary>Derives the stable student-facing lifecycle status from the latest attempt + attempt
+        /// availability. A graded/submitted/in-progress attempt takes precedence over a fresh "available".</summary>
+        private static string DeriveStatus(SubmissionStatus? latest, bool canAttempt) => latest switch
+        {
+            SubmissionStatus.InProgress => "in_progress",
+            SubmissionStatus.Graded => "graded",
+            SubmissionStatus.Submitted or SubmissionStatus.Late => "submitted",
+            _ => canAttempt ? "available" : "closed"
+        };
 
         private static AssignmentTarget NewTarget(string tenantId, AssignmentTargetType type,
             string? schoolClassId = null, string? studentId = null) => new()

@@ -33,13 +33,36 @@ function QuizResultPage({ userId, locale }) {
 
       <QueryBoundary query={query} loadingFallback={<Loading />} emptyWhen={(d) => !d}>
         {(data) => {
-          const pct = percentOf(data) ?? 88
-          const correct = getField(data, 'correctAnswersCount') ?? getField(data, 'correctCount') ?? 18
-          const total = getField(data, 'questionsCount') ?? getField(data, 'totalQuestions') ?? 20
-          const pts = getField(data, 'pointsEarned') ?? getField(data, 'points') ?? `+${pct}`
-          const title = getField(data, 'quizTitle') || getField(data, 'title') || t('student.quizzes.calculusMidterm', 'Calculus Midterm Quiz')
+          const status = String(getField(data, 'status') || '').toLowerCase()
+          const isGraded = status === 'graded'
+          const answers = toItems(getField(data, 'answers') || [])
+          const title = getField(data, 'quizTitle') || ''
 
-          const answers = toItems(getField(data, 'answers') || getField(data, 'questions') || [])
+          // Awaiting manual grading: show an honest pending state, never a fabricated score.
+          if (!isGraded) {
+            return (
+              <div className="max-w-[760px]">
+                <Card>
+                  <h1 className="[margin:0_0_8px] text-[22px] font-extrabold text-ink">{title || t('student.quizzes.result', 'Result')}</h1>
+                  <NotEnoughData title={t('student.quizzes.resultPending', 'Your quiz was submitted and is awaiting grading.')} />
+                  <div className="mt-4">
+                    <Link to="/app/student/quizzes" className="ui-btn ui-btn--secondary" style={{ textDecoration: 'none' }}>
+                      {t('student.quizzes.backToQuizzes', 'Back to quizzes')}
+                    </Link>
+                  </div>
+                </Card>
+              </div>
+            )
+          }
+
+          const pct = Math.round(percentOf(data) ?? getField(data, 'percentage') ?? 0)
+          const achieved = getField(data, 'achievedScore')
+          const totalScore = getField(data, 'totalScore')
+          // Real correctness counts come only from graded objective answers.
+          const correct = answers.filter((a) => getField(a, 'isCorrect') === true).length
+          const total = getField(data, 'questionCount') ?? answers.length
+          const pts = achieved != null && totalScore != null ? `${achieved}/${totalScore}` : (achieved ?? '—')
+          const passed = pct >= 50
 
           return (
             <div className="max-w-[760px]">
@@ -51,20 +74,23 @@ function QuizResultPage({ userId, locale }) {
                     size={140}
                     centerLabel={`${pct}%`}
                     stroke={12}
-                    color={pct >= 85 ? 'var(--success)' : 'var(--warning)'}
+                    color={pct >= 85 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)'}
                   />
                   <div className="flex-[1_1_240px]">
-                    <div className="inline-flex items-center gap-2 bg-[var(--success-bg)] text-success [padding:6px_12px] rounded-[20px] font-bold text-[13px] mb-2.5">
+                    <div
+                      className="inline-flex items-center gap-2 [padding:6px_12px] rounded-[20px] font-bold text-[13px] mb-2.5"
+                      style={{ background: passed ? 'var(--success-bg)' : 'var(--danger-bg)', color: passed ? 'var(--success)' : 'var(--danger)' }}
+                    >
                       <Check size={15} />
-                      <span>{t('student.quizzes.passed', 'Passed')}</span>
+                      <span>{passed ? t('student.quizzes.passed', 'Passed') : t('student.quizzes.notPassed', 'Keep practicing')}</span>
                     </div>
                     <h1 className="[margin:0_0_6px] text-[28px] font-extrabold text-ink">
-                      {t('student.quizzes.congrats', 'Great work!')}
+                      {title || t('student.quizzes.result', 'Result')}
                     </h1>
                     <p className="text-muted m-0 text-[15px]">
                       {isAr
-                        ? `لقد حصلت على ${correct} من ${total} في ${title}.`
-                        : `You scored ${correct} out of ${total} on the ${title}.`}
+                        ? `لقد حصلت على ${correct} من ${total}.`
+                        : `You scored ${correct} out of ${total}.`}
                     </p>
                   </div>
                 </div>
@@ -115,15 +141,19 @@ function QuizResultPage({ userId, locale }) {
                 <div className="flex flex-col">
                   {answers.length > 0 ? (
                     answers.map((ans, i) => {
-                      const isCorrect = getField(ans, 'isCorrect') ?? getField(ans, 'IsCorrect') ?? (i !== 2)
-                      const qText = getField(ans, 'questionText') || getField(ans, 'text') || getField(ans, 'title') || `Question ${i + 1}`
+                      // Correctness comes ONLY from the backend; never invented. Unknown → neutral.
+                      const isCorrect = getField(ans, 'isCorrect')
+                      const qText = getField(ans, 'questionText') || `${t('student.quizzes.questionIndex', 'Question')} ${i + 1}`
+                      const correctAnswer = getField(ans, 'correctAnswer')
+                      const explanation = getField(ans, 'explanation')
+                      const tone = isCorrect === true ? 'success' : isCorrect === false ? 'danger' : 'neutral'
                       return (
                         <div
-                          key={i}
+                          key={getField(ans, 'questionId') || i}
                           style={{
                             display: 'flex',
                             gap: '12px',
-                            alignItems: 'center',
+                            alignItems: 'flex-start',
                             padding: '12px 0',
                             borderBottom: i < answers.length - 1 ? '1px solid var(--border-2)' : 'none',
                           }}
@@ -133,22 +163,36 @@ function QuizResultPage({ userId, locale }) {
                               width: '30px',
                               height: '30px',
                               borderRadius: '50%',
-                              background: isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)',
+                              background: isCorrect === true ? 'var(--success-bg)' : isCorrect === false ? 'var(--danger-bg)' : 'var(--border-2)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               flexShrink: 0,
                             }}
                           >
-                            {isCorrect ? (
+                            {isCorrect === true ? (
                               <Check size={16} className="text-success" />
-                            ) : (
+                            ) : isCorrect === false ? (
                               <span className="text-danger font-bold text-sm">×</span>
+                            ) : (
+                              <span className="text-muted font-bold text-sm">?</span>
                             )}
                           </div>
-                          <span className="flex-1 text-sm text-ink-2">{qText}</span>
-                          <Chip tone={isCorrect ? 'success' : 'danger'}>
-                            {isCorrect ? t('student.quizzes.correctState', 'Correct') : t('student.quizzes.reviewState', 'Review')}
+                          <div className="flex-1">
+                            <span className="text-sm text-ink-2">{qText}</span>
+                            {isCorrect === false && correctAnswer && (
+                              <div className="text-[13px] text-success mt-1">
+                                {t('student.quizzes.correctAnswer', 'Correct answer')}: {correctAnswer}
+                              </div>
+                            )}
+                            {explanation && <div className="text-[13px] text-muted mt-1">{explanation}</div>}
+                          </div>
+                          <Chip tone={tone}>
+                            {isCorrect === true
+                              ? t('student.quizzes.correctState', 'Correct')
+                              : isCorrect === false
+                              ? t('student.quizzes.reviewState', 'Review')
+                              : t('student.quizzes.pendingState', 'Pending')}
                           </Chip>
                         </div>
                       )

@@ -26,6 +26,11 @@ export const studentApi = {
   async materials(lessonId, signal) {
     return toItems(await api.get(`/api/v1/LessonMaterial/GetMaterialByLessonId${qs({ id: lessonId })}`, { signal }))
   },
+  // Direct single-lesson detail (real backend data, authorization-gated) — replaces the
+  // brute-force subject→unit→lesson walk on the student lesson page.
+  async lessonDetail(lessonId, signal) {
+    return toObject(await api.get(`/api/v1/student/lessons/${encodeURIComponent(lessonId)}`, { signal }))
+  },
   async completeLesson(lessonId) {
     return unwrapEnvelope(await api.post(`/api/v1/student/lessons/${encodeURIComponent(lessonId)}/complete`))
   },
@@ -38,11 +43,18 @@ export const studentApi = {
   async homework(signal) {
     return toItems(await api.get('/api/v1/homework/assigned', { signal }))
   },
+  // A 404 means "no submission yet" (normal absence) — surfaced as null, not an error.
   async homeworkSubmission(homeworkId, signal) {
-    return toObject(await api.get(`/api/v1/homework/${encodeURIComponent(homeworkId)}/my-submission`, { signal }))
+    try {
+      return toObject(await api.get(`/api/v1/homework/${encodeURIComponent(homeworkId)}/my-submission`, { signal }))
+    } catch (error) {
+      if (error?.status === 404) return null
+      throw error
+    }
   },
-  async submitHomework(homeworkId, content) {
-    return unwrapEnvelope(await api.post(`/api/v1/homework/${encodeURIComponent(homeworkId)}/submit`, { content }))
+  // Submits homework with optional real attachment file id (uploaded via filesApi first).
+  async submitHomework(homeworkId, { content, attachmentFileId } = {}) {
+    return unwrapEnvelope(await api.post(`/api/v1/homework/${encodeURIComponent(homeworkId)}/submit`, { content, attachmentFileId }))
   },
   async assignedQuizzes(signal) {
     return toItems(await api.get('/api/v1/assigned-quizzes', { signal }))

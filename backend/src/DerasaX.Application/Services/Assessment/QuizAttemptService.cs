@@ -261,10 +261,17 @@ namespace DerasaX.Application.Services.Assessment
 
         private async Task<AttemptDetailDto> BuildDetailAsync(QuizSubmission s, List<SubmissionAnswer> answers, bool includeGrade)
         {
+            var quiz = await UnitOfWork.Repository<Quiz, string>()
+                .GetByIdWithSpecAsync(new CriteriaSpecification<Quiz, string>(q => q.Id == s.QuizId));
             var questions = await LoadQuizQuestionsAsync(s.QuizId);
+            var timeLimit = quiz?.TimeLimitMinutes ?? 0;
             var d = new AttemptDetailDto
             {
                 Id = s.Id, QuizId = s.QuizId, StudentId = s.StudentId, AttemptNumber = s.AttemptNumber,
+                QuizTitle = quiz?.Title,
+                TimeLimitMinutes = timeLimit,
+                ExpiresAt = (timeLimit > 0 && s.StartedAt is { } started) ? started.AddMinutes(timeLimit) : null,
+                QuestionCount = questions.Count,
                 Status = s.submissionStatus, StartedAt = s.StartedAt, SubmittedAt = s.SubmittedAt,
                 AchievedScore = includeGrade ? s.AchievedScore : 0,
                 TotalScore = includeGrade ? s.TotalScore : 0,
@@ -279,18 +286,40 @@ namespace DerasaX.Application.Services.Assessment
                 CorrectAnswerText = null, Explanation = null,
                 Options = q.Options.Select(o => new QuestionOptionDto { Id = o.Id, Text = o.Text, IsCorrect = null }).ToList()
             }).ToList();
-            d.Answers = answers.Select(a => new AnswerStateDto
+            d.Answers = answers.Select(a =>
             {
-                QuestionId = a.QuestionId,
-                SelectedOptionId = a.SelectedOptionId,
-                AnswerText = a.AnswerText,
-                // Correctness/points are released only once the attempt is graded — never
-                // expose the correct answer to an in-progress attempt.
-                IsCorrect = includeGrade ? a.IsCorrect : null,
-                PointsEarned = includeGrade ? a.PointsEarned : null,
-                Feedback = includeGrade ? a.Feedback : null
+                var question = questions.FirstOrDefault(q => q.Id == a.QuestionId);
+                return new AnswerStateDto
+                {
+                    Id = a.Id,
+                    QuestionId = a.QuestionId,
+                    QuestionText = question?.Text,
+                    SelectedOptionId = a.SelectedOptionId,
+                    AnswerText = a.AnswerText,
+                    PointsPossible = question?.Points,
+                    // Correctness/points/correct-answer are released only once the attempt is graded —
+                    // never expose the correct answer to an in-progress attempt.
+                    IsCorrect = includeGrade ? a.IsCorrect : null,
+                    PointsEarned = includeGrade ? a.PointsEarned : null,
+                    CorrectAnswer = includeGrade ? ResolveCorrectAnswer(question) : null,
+                    Explanation = includeGrade ? question?.Explanation : null,
+                    Feedback = includeGrade ? a.Feedback : null
+                };
             }).ToList();
             return d;
+        }
+
+        /// <summary>The human-readable correct answer for review: the correct option's text for
+        /// objective questions, otherwise the canonical CorrectAnswerText.</summary>
+        private static string? ResolveCorrectAnswer(Question? q)
+        {
+            if (q is null) return null;
+            if (IsObjective(q.Type))
+            {
+                var correct = q.Options.Where(o => o.IsCorrect).Select(o => o.Text).ToList();
+                return correct.Count > 0 ? string.Join(", ", correct) : q.CorrectAnswerText;
+            }
+            return q.CorrectAnswerText;
         }
     }
 }

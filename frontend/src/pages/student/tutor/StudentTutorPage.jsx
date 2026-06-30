@@ -2,17 +2,29 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { FileText, Send, Sparkles } from 'lucide-react'
-import { useStudentContext } from '../../../features/student/helpers'
+import { useStudentContext, useStudentQuery } from '../../../features/student/helpers'
 import { ErrorState } from '../../../shared/feedback'
+import { SelectField } from '../../../shared/form'
 import { studentApi } from '../../../features/student/studentApi'
 import { toItems } from '../../../features/student/studentSchemas'
 import { displayValue } from '../../../features/student/studentUtils'
+import { STALE, queryKeys } from '../../../lib/query/keys'
 
-function TutorPage() {
+function TutorPage({ userId }) {
   const { t, i18n } = useTranslation()
   const [message, setMessage] = useState('')
   const [chatHistory, setChatHistory] = useState([])
+  const [subject, setSubject] = useState('')
   const isAr = i18n.language === 'ar'
+
+  const subjects = useStudentQuery(
+    queryKeys.student.subjects(userId),
+    (signal) => studentApi.subjects(signal),
+    { staleTime: STALE.medium }
+  )
+  const subjectNames = (subjects.data || [])
+    .map((s) => displayValue(s, ['name', 'Name']))
+    .filter(Boolean)
 
   const mutation = useMutation({
     mutationFn: (payload) => studentApi.tutor(payload),
@@ -61,7 +73,8 @@ function TutorPage() {
     // Trigger AI tutor request
     mutation.mutate({
       message: trimmed,
-      language: i18n.language
+      language: i18n.language,
+      ...(subject ? { subject } : {})
     })
 
     // Scroll to bottom
@@ -94,6 +107,17 @@ function TutorPage() {
             <span className="w-2 h-2 rounded-full bg-success inline-block" />
             <span>{t('student.tutor.onlineStatus', 'Online · Answers cite your curriculum')}</span>
           </div>
+        </div>
+        <div style={{ marginInlineStart: 'auto', minWidth: '220px' }}>
+          <SelectField
+            label={t('student.tutor.subject', 'Subject')}
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            options={[
+              { value: '', label: t('student.tutor.allSubjects', 'All subjects') },
+              ...subjectNames.map((name) => ({ value: name, label: name }))
+            ]}
+          />
         </div>
       </div>
 

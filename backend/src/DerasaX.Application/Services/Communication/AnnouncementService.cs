@@ -41,13 +41,16 @@ namespace DerasaX.Application.Services.Communication
                 Body = dto.Body,
                 TargetAudience = dto.TargetAudience,
                 ExpiresAt = AsUtc(dto.ExpiresAt),
-                IsActive = true,
+                // Draft → Publish model: a created announcement is an inactive DRAFT. It becomes visible
+                // and fans out notifications only when explicitly published. This keeps "active in list"
+                // and "recipients notified" from diverging.
+                IsActive = false,
                 CreatedAt = DateTime.UtcNow
             };
             await UnitOfWork.Repository<Announcement, string>().AddAsync(announcement);
             await Audit.StageAsync(AuditActionType.Create, nameof(Announcement), announcement.Id, ct: ct);
             await UnitOfWork.SaveChangesAsync(ct);
-            return Ok(Map(announcement), 201, "Announcement created.");
+            return Ok(Map(announcement), 201, "Announcement draft created.");
         }
 
         public async Task<PaginationResponse<IEnumerable<AnnouncementDto>>> ListAsync(AnnouncementParameters p, CancellationToken ct = default)
@@ -88,6 +91,7 @@ namespace DerasaX.Application.Services.Communication
             var announcement = await UnitOfWork.Repository<Announcement, string>().GetByIdWithSpecAsync(
                 new CriteriaSpecification<Announcement, string>(a => a.Id == id))
                 ?? throw new NotFoundException("Announcement not found.");
+            var wasActive = announcement.IsActive;
             announcement.IsActive = publish;
             UnitOfWork.Repository<Announcement, string>().Update(announcement);
             await Audit.StageAsync(AuditActionType.Update, nameof(Announcement), announcement.Id, $"{{\"publish\":{publish.ToString().ToLowerInvariant()}}}", ct);
@@ -95,8 +99,9 @@ namespace DerasaX.Application.Services.Communication
             // Phase 13 — publishing (publish:true) is the moment we broadcast: fan out an in-app
             // notification to every targeted same-tenant user honoring TargetAudience. Recipients-only
             // (a teacher never receives a Students-targeted announcement). The create path stays
-            // notification-free so a draft/edit never spams the tenant.
-            if (publish)
+            // notification-free so a draft/edit never spams the tenant. Fan-out only on the
+            // inactive→active transition, so re-publishing an already-active announcement never duplicates.
+            if (publish && !wasActive)
                 await EmitAnnouncementNotificationsAsync(announcement, ct);
 
             await UnitOfWork.SaveChangesAsync(ct);

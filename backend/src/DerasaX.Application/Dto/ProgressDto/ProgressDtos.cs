@@ -22,6 +22,22 @@ namespace DerasaX.Application.Dto.ProgressDto
         public bool Created { get; set; }
     }
 
+    /// <summary>A single lesson's real detail for the student player, with the caller's progress.
+    /// Served by GET /api/v1/student/lessons/{lessonId} so the page never brute-force walks the tree.</summary>
+    public class StudentLessonDetailDto
+    {
+        public string LessonId { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string? Content { get; set; }
+        public string UnitId { get; set; } = string.Empty;
+        public string? UnitTitle { get; set; }
+        public string SubjectId { get; set; } = string.Empty;
+        public string? SubjectName { get; set; }
+        public bool IsCompleted { get; set; }
+        public decimal CompletionPercentage { get; set; }
+        public DateTime? CompletedAt { get; set; }
+    }
+
     public class AttendanceRecordDto
     {
         public string Id { get; set; } = string.Empty;

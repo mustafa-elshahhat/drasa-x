@@ -122,7 +122,25 @@ namespace DerasaX.Application.Services.Communication
                 new CriteriaSpecification<Conversation, string>(c => convIds.Contains(c.Id)));
             var allParts = await UnitOfWork.Repository<ConversationParticipant, string>().GetAllWithSpecAsync(
                 new CriteriaSpecification<ConversationParticipant, string>(p => convIds.Contains(p.ConversationId)));
-            var dto = convs.Select(c => Map(c, allParts.Where(p => p.ConversationId == c.Id))).ToList();
+
+            // Unread counts + last-message preview, computed per conversation for the caller.
+            var messages = (await UnitOfWork.Repository<Message, string>().GetAllWithSpecAsync(
+                new CriteriaSpecification<Message, string>(m => convIds.Contains(m.ConversationId)))).ToList();
+            var incomingIds = messages.Where(m => m.SenderId != caller).Select(m => m.Id).ToList();
+            var myReceipts = incomingIds.Count == 0 ? new HashSet<string>()
+                : (await UnitOfWork.Repository<MessageReadReceipt, string>().GetAllWithSpecAsync(
+                    new CriteriaSpecification<MessageReadReceipt, string>(r => r.UserId == caller && incomingIds.Contains(r.MessageId))))
+                    .Select(r => r.MessageId).ToHashSet();
+
+            var dto = convs.Select(c =>
+            {
+                var d = Map(c, allParts.Where(p => p.ConversationId == c.Id));
+                var convMsgs = messages.Where(m => m.ConversationId == c.Id).ToList();
+                d.UnreadCount = convMsgs.Count(m => m.SenderId != caller && !myReceipts.Contains(m.Id));
+                var last = convMsgs.OrderByDescending(m => m.SentAt).FirstOrDefault();
+                if (last is not null) { d.LastMessageAt = last.SentAt; d.LastMessagePreview = Preview(last.Body); }
+                return d;
+            }).OrderByDescending(d => d.LastMessageAt ?? d.StartedAt).ToList();
             return Ok<IEnumerable<ConversationDto>>(dto, 200, "Conversations retrieved.");
         }
 
@@ -164,10 +182,21 @@ namespace DerasaX.Application.Services.Communication
             await RequireParticipantConversationAsync(conversationId);
             var repo = UnitOfWork.Repository<Message, string>();
             System.Linq.Expressions.Expression<Func<Message, bool>> criteria = m => m.ConversationId == conversationId;
+            var caller = RequireUser();
             var total = await repo.CountAsync(new CriteriaSpecification<Message, string>(criteria));
-            var items = await repo.GetAllWithSpecAsync(
-                new PagedSpecification<Message, string>(criteria, m => m.SentAt, p.PageNumber, p.PageSize, descending: true));
-            var dto = items.Select(MapMessage).ToList();
+            var items = (await repo.GetAllWithSpecAsync(
+                new PagedSpecification<Message, string>(criteria, m => m.SentAt, p.PageNumber, p.PageSize, descending: true))).ToList();
+
+            // Read-state for the page: caller's receipts (incoming "read") + any-other receipts (outgoing "Read").
+            var pageIds = items.Select(m => m.Id).ToList();
+            var receipts = pageIds.Count == 0 ? new List<MessageReadReceipt>()
+                : (await UnitOfWork.Repository<MessageReadReceipt, string>().GetAllWithSpecAsync(
+                    new CriteriaSpecification<MessageReadReceipt, string>(r => pageIds.Contains(r.MessageId)))).ToList();
+            var callerRead = receipts.Where(r => r.UserId == caller).Select(r => r.MessageId).ToHashSet();
+            var othersRead = receipts.Where(r => r.UserId != caller).Select(r => r.MessageId).ToHashSet();
+
+            var dto = items.Select(m => MapMessage(m,
+                isRead: m.SenderId == caller ? othersRead.Contains(m.Id) : callerRead.Contains(m.Id))).ToList();
             return new PaginationResponse<IEnumerable<MessageDto>>(dto, total, p.PageNumber, p.PageSize)
             { Success = true, StatusCode = 200, Message = "Messages retrieved." };
         }
@@ -244,9 +273,12 @@ namespace DerasaX.Application.Services.Communication
             UserId = p.UserId, Role = p.Role, JoinedAt = p.JoinedAt
         };
 
-        private static MessageDto MapMessage(Message m) => new()
+        private static MessageDto MapMessage(Message m, bool isRead = false) => new()
         {
-            Id = m.Id, ConversationId = m.ConversationId, SenderId = m.SenderId, Body = m.Body, Type = m.Type, SentAt = m.SentAt
+            Id = m.Id, ConversationId = m.ConversationId, SenderId = m.SenderId, Body = m.Body, Type = m.Type, SentAt = m.SentAt,
+            IsRead = isRead
         };
+
+        private static string Preview(string body) => body.Length <= 120 ? body : body[..120];
     }
 }
