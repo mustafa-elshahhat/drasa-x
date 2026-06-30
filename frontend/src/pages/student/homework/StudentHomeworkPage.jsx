@@ -1,0 +1,376 @@
+import { useRef, useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { Check, ClipboardCheck, Clock, Download, FileText } from 'lucide-react'
+import { useStudentContext } from '../../../features/student/helpers'
+import { DetailList } from '../../../components/data/DetailList'
+import { TextareaField } from '../../../components/form/fields'
+import { Button } from '../../../components/ui/Button'
+import { Chip } from '../../../components/ui/Chip'
+import { Card } from '../../../components/ui/PageHeader'
+import { QueryBoundary } from '../../../components/ui/QueryBoundary'
+import { EmptyState, ErrorState } from '../../../components/ui/states'
+import { useStudentQuery } from '../../../features/student/helpers'
+import { Loading } from '../../../features/student/Loading'
+import { studentApi } from '../../../features/student/studentApi'
+import { displayValue, formatDate, getField, itemId } from '../../../features/student/studentUtils'
+import { getSubjectTheme } from '../../../features/student/theme'
+import { queryKeys } from '../../../lib/query/keys'
+
+function HomeworkPage({ userId, locale }) {
+  const { t } = useTranslation()
+  const { homeworkId } = useParams()
+  const list = useStudentQuery(queryKeys.student.homework(userId), (signal) => studentApi.homework(signal))
+  const [activeTab, setActiveTab] = useState('all')
+
+  if (homeworkId) return <HomeworkDetails userId={userId} homeworkId={homeworkId} list={list} locale={locale} />
+
+  const tabs = [
+    { key: 'all', label: t('student.homework.tabs.all', 'All') },
+    { key: 'pending', label: t('student.homework.tabs.pending', 'Pending') },
+    { key: 'submitted', label: t('student.homework.tabs.submitted', 'Submitted') },
+  ]
+
+  return (
+    <>
+      <div className="student-dashboard__welcome-header" style={{ marginBottom: '20px' }}>
+        <h1 className="student-dashboard__welcome-title" style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 6px' }}>
+          {t('student.homework.title', 'Homework')}
+        </h1>
+        <p className="student-dashboard__welcome-subtitle" style={{ color: 'var(--text-dim)', margin: 0 }}>
+          {t('student.homework.description', 'Track and submit your assignments')}
+        </p>
+      </div>
+
+      {/* Tabs list */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', borderBottom: '1px solid var(--border)', overflowX: 'auto' }}>
+        {tabs.map((tab) => {
+          const active = activeTab === tab.key
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                background: 'none',
+                border: 'none',
+                borderBottom: `2px solid ${active ? 'var(--brand)' : 'transparent'}`,
+                color: active ? 'var(--brand)' : 'var(--text-dim)',
+                fontWeight: active ? 700 : 500,
+                padding: '10px 14px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                whiteSpace: 'nowrap',
+                marginBottom: '-1px',
+                transition: 'all 0.12s ease',
+              }}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
+
+      <QueryBoundary query={list} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.homework')} emptyIcon={ClipboardCheck}>
+        {(items) => {
+          const filteredItems = items.filter((item) => {
+            const status = String(getField(item, 'status') || 'pending').toLowerCase()
+            if (activeTab === 'pending') return status === 'pending'
+            if (activeTab === 'submitted') return status === 'submitted' || status === 'graded'
+            return true
+          })
+
+          if (filteredItems.length === 0) {
+            return <EmptyState icon={ClipboardCheck} title={t('student.empty.homework', 'Nothing here')} message={t('student.homework.emptyCategory', 'You have no homework in this category.')} />
+          }
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {filteredItems.map((item) => {
+                const theme = getSubjectTheme(item)
+                const status = String(getField(item, 'status') || 'pending').toLowerCase()
+                const points = getField(item, 'points') || getField(item, 'totalPoints') || 20
+                const score = getField(item, 'score') || getField(item, 'earnedPoints')
+                const isPending = status === 'pending'
+
+                let statusPillText = t('student.homework.status.pending', 'Pending')
+                let statusPillTone = 'warning'
+                if (status === 'graded') {
+                  statusPillText = `${t('student.homework.status.graded', 'Graded')} ${score}/${points}`
+                  statusPillTone = 'success'
+                } else if (status === 'submitted') {
+                  statusPillText = t('student.homework.status.submitted', 'Submitted')
+                  statusPillTone = 'info'
+                }
+
+                return (
+                  <div key={itemId(item)} className="student-homework-row">
+                    <div
+                      className="student-homework-row__icon-tile"
+                      style={{ backgroundColor: `${theme.color}18`, color: theme.color }}
+                    >
+                      <FileText size={22} style={{ color: theme.color }} />
+                    </div>
+
+                    <div className="student-homework-row__content">
+                      <div className="student-homework-row__title">{displayValue(item)}</div>
+                      <div className="student-homework-row__meta">
+                        <span className="student-homework-row__meta-item">
+                          <Clock size={13} style={{ color: isPending ? 'var(--orange)' : 'var(--text-dim)' }} />
+                          {formatDate(getField(item, 'dueDate') || getField(item, 'dueAt'), locale)}
+                        </span>
+                        <span>
+                          {points} {t('student.homework.pointsText', 'points')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <Chip tone={statusPillTone}>{statusPillText}</Chip>
+                      <Link
+                        to={`/app/student/homework/${itemId(item)}`}
+                        className={`ui-btn ${isPending ? 'ui-btn--primary' : 'ui-btn--secondary'}`}
+                        style={{ padding: '8px 16px', fontSize: '13px', textDecoration: 'none' }}
+                      >
+                        {isPending ? t('actions.open', 'Open') : t('actions.view', 'View')}
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        }}
+      </QueryBoundary>
+    </>
+  )
+}
+
+function HomeworkDetails({ userId, homeworkId, list, locale }) {
+  const { t } = useTranslation()
+  const qc = useQueryClient()
+  const [content, setContent] = useState('')
+  const [fileName, setFileName] = useState(null)
+  const fileInputRef = useRef(null)
+
+  const isAr = locale === 'ar'
+
+  const submission = useStudentQuery(
+    queryKeys.student.homeworkSubmission(userId, homeworkId),
+    (signal) => studentApi.homeworkSubmission(homeworkId, signal)
+  )
+
+  const mutation = useMutation({
+    mutationFn: (text) => studentApi.submitHomework(homeworkId, text),
+    onSuccess: () => {
+      setContent('')
+      setFileName(null)
+      qc.invalidateQueries({ queryKey: queryKeys.student.homework(userId) })
+      qc.invalidateQueries({ queryKey: queryKeys.student.homeworkSubmission(userId, homeworkId) })
+    }
+  })
+
+  const item = list.data?.find((h) => itemId(h) === homeworkId)
+  const status = String(getField(item, 'status') || 'pending').toLowerCase()
+  const points = item ? (getField(item, 'points') || getField(item, 'totalPoints') || 20) : 20
+  const desc = item ? (getField(item, 'description') || getField(item, 'desc') || '') : ''
+
+  const subData = submission.data
+  const hasSubmitted = Boolean(subData || mutation.isSuccess || status === 'submitted' || status === 'graded')
+  const isGraded = status === 'graded'
+
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFileName(e.target.files[0].name)
+    }
+  }
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+    let textToSubmit = content.trim()
+    if (fileName) {
+      textToSubmit = `[Attached file: ${fileName}]\n\n${textToSubmit}`
+    }
+    if (textToSubmit) {
+      mutation.mutate(textToSubmit)
+    }
+  }
+
+  const handleSaveDraft = () => {
+    qc.invalidateQueries({ queryKey: queryKeys.student.homework(userId) })
+    alert(isAr ? 'تم حفظ المسودة بنجاح' : 'Draft saved successfully')
+  }
+
+  return (
+    <>
+      {/* Breadcrumb */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '22px', fontSize: '14px', color: 'var(--text-dim)' }}>
+        <Link to="/app/student/homework" style={{ textDecoration: 'none', color: 'var(--text-dim)' }}>
+          {t('student.homework.title', 'Homework')}
+        </Link>
+        <span style={{ color: 'var(--faint)' }}>{isAr ? '‹' : '›'}</span>
+        <span style={{ fontWeight: 600, color: 'var(--text)' }}>{displayValue(item) || 'Homework Detail'}</span>
+      </div>
+
+      {list.isError && <ErrorState error={list.error} onRetry={list.refetch} />}
+
+      <div className="ui-split">
+        {/* Left Column: Main Homework Details & Submission Card */}
+        <Card>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: 'var(--text)' }}>
+              {displayValue(item)}
+            </h1>
+            <Chip tone="purple">{points} {t('student.homework.pointsText', 'points')}</Chip>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '18px' }}>
+            <Chip tone="warning">
+              {t('student.homework.due', 'Due')}: {formatDate(getField(item, 'dueDate') || getField(item, 'dueAt'), locale)}
+            </Chip>
+          </div>
+
+          <p style={{ color: 'var(--text-dim)', lineHeight: 1.7, fontSize: '15px' }}>
+            {desc || (isAr ? 'حل التمارين وأظهر الحل كاملاً.' : 'Solve problems and show full working.')}
+          </p>
+
+          <div style={{ height: '1px', background: 'var(--border)', margin: '18px 0' }} />
+
+          {hasSubmitted ? (
+            <div style={{ textAlign: 'center', padding: '20px' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--success-bg)', display: 'flex', alignItems: 'center', justify: 'center', margin: '0 auto 14px' }}>
+                <Check size={32} style={{ color: 'var(--success)' }} />
+              </div>
+              <h3 style={{ margin: '0 0 6px', color: 'var(--text)', fontWeight: 800 }}>
+                {t('student.homework.submissionReceived', 'Submission received')}
+              </h3>
+              <p style={{ color: 'var(--text-dim)', fontSize: '14px', margin: 0 }}>
+                {isAr ? 'تم استلام تسليمك بنجاح. سيقوم معلمك بمراجعته قريباً.' : 'Submitted. Your teacher will review it soon.'}
+              </p>
+              {subData && (
+                <div style={{ marginTop: '16px', background: 'var(--surface-2)', padding: '12px', borderRadius: '8px', textAlign: 'start' }}>
+                  <DetailList item={subData} locale={locale} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--text-2)', marginBottom: '10px' }}>
+                {t('student.homework.yourSubmission', 'Your submission')}
+              </div>
+
+              {/* Upload Dropzone */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                style={{ display: 'none' }}
+                accept=".pdf,.docx,.png,.jpg,.jpeg"
+              />
+              <div onClick={handleUploadClick} className="student-upload-area">
+                <Download size={30} className="student-upload-area__icon" />
+                <div className="student-upload-area__text">
+                  {fileName ? (
+                    <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Check size={16} /> {fileName}
+                    </span>
+                  ) : (
+                    t('student.homework.clickToUpload', 'Click to upload your file')
+                  )}
+                </div>
+                <div className="student-upload-area__hint">
+                  {t('student.homework.acceptedFormats', 'PDF, DOCX or images up to 10MB')}
+                </div>
+              </div>
+
+              {/* Notes field */}
+              <div style={{ marginTop: '14px' }}>
+                <TextareaField
+                  label={t('student.homework.notes', 'Notes (optional)')}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder={t('student.homework.notesPlaceholder', 'Add a note for your teacher...')}
+                  maxLength={1000}
+                />
+              </div>
+
+              {/* Submission actions */}
+              <div style={{ marginTop: '16px', display: 'flex', gap: '10px' }}>
+                <Button
+                  onClick={handleSubmit}
+                  loading={mutation.isPending}
+                  disabled={mutation.isPending || (!content.trim() && !fileName)}
+                >
+                  <Check size={16} style={{ marginInlineEnd: '4px' }} />
+                  {t('student.homework.submitAction', 'Submit homework')}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={handleSaveDraft}
+                  disabled={mutation.isPending}
+                >
+                  {t('student.homework.saveDraft', 'Save draft')}
+                </Button>
+              </div>
+              {mutation.isError && <ErrorState error={mutation.error} />}
+            </div>
+          )}
+        </Card>
+
+        {/* Right Column: Status Card */}
+        <Card>
+          <h3 style={{ margin: '0 0 16px', fontWeight: 700, color: 'var(--text)', fontSize: '16px' }}>
+            {t('student.homework.statusCardTitle', 'Status')}
+          </h3>
+
+          <div className="student-status-steps">
+            {[
+              { label: t('student.homework.statusStep.assigned', 'Assigned'), active: true },
+              { label: t('student.homework.statusStep.submitted', 'Submitted'), active: hasSubmitted },
+              { label: t('student.homework.statusStep.graded', 'Graded'), active: isGraded },
+            ].map((step, i) => (
+              <div key={i} className="student-status-step">
+                <div
+                  className={`student-status-step__marker ${
+                    step.active ? 'student-status-step__marker--done' : 'student-status-step__marker--pending'
+                  }`}
+                >
+                  {step.active ? (
+                    <Check size={15} />
+                  ) : (
+                    <span className="student-status-step__dot" />
+                  )}
+                </div>
+                <span
+                  className={`student-status-step__label ${
+                    step.active ? 'student-status-step__label--active' : 'student-status-step__label--inactive'
+                  }`}
+                >
+                  {step.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </>
+  )
+}
+
+// =============================================================================
+// Quizzes
+// =============================================================================
+
+export default function StudentHomeworkPage(props) {
+  const { userId, locale } = useStudentContext()
+  if (!userId) {
+    return <ErrorState error={{ title: 'Missing session', detail: 'The authenticated user id is unavailable.' }} />
+  }
+  return <HomeworkPage userId={userId} locale={locale} {...props} />
+}

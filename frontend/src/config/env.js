@@ -38,6 +38,10 @@ const schema = z.object({
 
   // Optional explicit environment name; falls back to Vite's MODE.
   VITE_APP_ENV: z.enum(['local', 'test', 'staging', 'production']).optional(),
+
+  // Opt-in prototype-style demo/sample data for presentations. NEVER enabled in
+  // production (forced off below); demo data is otherwise confined to src/demo/.
+  VITE_ENABLE_DEMO_DATA: z.enum(['true', 'false']).optional(),
 })
 
 function buildConfig() {
@@ -64,6 +68,8 @@ function buildConfig() {
     isProduction: raw.PROD === true,
     isDev: raw.DEV === true,
     isTest: raw.MODE === 'test' || raw.MODE === 'vitest',
+    // Demo/sample data is opt-in via VITE_ENABLE_DEMO_DATA and HARD-OFF in prod.
+    enableDemoData: raw.PROD === true ? false : env.VITE_ENABLE_DEMO_DATA === 'true',
     mode: raw.MODE,
   })
 }
@@ -80,6 +86,7 @@ export const config =
     isProduction: false,
     isDev: true,
     isTest: raw.MODE === 'test',
+    enableDemoData: raw.VITE_ENABLE_DEMO_DATA === 'true',
     mode: raw.MODE,
   })
 

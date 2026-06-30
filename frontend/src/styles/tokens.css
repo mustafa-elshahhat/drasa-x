@@ -1,0 +1,72 @@
+/*
+ * DerasaX styles - design tokens.
+ * Source of truth: :root custom properties + [data-role] accents.
+ * Carved from the former monolithic app.css in SOURCE ORDER; cascade unchanged.
+ */
+/* ===========================================================================
+   DerasaX frontend foundation styles (Phase 7).
+   Uses CSS logical properties (margin-inline, inset-inline) so the same rules
+   work in LTR and RTL; [dir="rtl"] only overrides where a physical flip is
+   needed. Honors prefers-reduced-motion and prefers-color-scheme.
+   =========================================================================== */
+:root {
+  /* Typography (self-hosted; see fonts.css). Inter = Latin/LTR, Cairo = Arabic/RTL. */
+  --font: 'Inter', 'Segoe UI', system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-ar: 'Cairo', 'Segoe UI', system-ui, -apple-system, 'Noto Sans Arabic', sans-serif;
+
+  /* Brand (teal) — global accent for public/auth/status. */
+  --brand: #0c7288;
+  --brand-strong: #0a5c6e;
+  --brand-soft: #e5f0f2;
+  --brand-soft-2: #d2e6ea;
+
+  /* Light surfaces (prototype palette). */
+  --bg: #f1f5f8;
+  --surface: #ffffff;
+  --surface-2: #f7f9fb;
+  --border: #e9eaf0;
+  --border-2: #e6ebf0;
+
+  /* Text. */
+  --text: #1d2026;
+  --text-2: #252b42;
+  --text-dim: #6e7485;
+  --faint: #9aa1ad;
+
+  /* Status colors + soft backgrounds. */
+  --danger: #c8102e;
+  --danger-bg: #fbe7ea;
+  --warning: #e0a000;
+  --warning-bg: #fbf1d9;
+  --success: #00a824;
+  --success-bg: #e4f6ea;
+  --info: #2f6fed;
+  --info-bg: #e7effd;
+  --purple: #8a38f5;
+  --purple-bg: #f0e8fe;
+  --orange: #ff6636;
+  --orange-bg: #ffeee8;
+
+  /* Radii / shadows / focus. */
+  --radius: 16px;
+  --radius-sm: 11px;
+  --radius-xs: 9px;
+  --focus: 0 0 0 3px rgba(12, 114, 136, 0.35);
+  --shadow: 0 2px 10px rgba(16, 40, 60, 0.06);
+  --shadow-lg: 0 14px 40px rgba(16, 40, 60, 0.14);
+  --shadow-btn: 0 6px 16px rgba(12, 114, 136, 0.28);
+
+  --header-h: 64px;
+  --sidebar-w: 250px;
+
+  /* Per-portal accent — defaults to brand; switched by [data-role] on the shell. */
+  --accent: var(--brand);
+  --accent-strong: var(--brand-strong);
+  --accent-soft: var(--brand-soft);
+}
+
+/* Per-role accent colors (set via data-role on .app-shell). Teal stays global. */
+[data-role='Teacher'] { --accent: #8a38f5; --accent-strong: #6a26c4; --accent-soft: #f0e8fe; }
+[data-role='Parent'] { --accent: #ff6636; --accent-strong: #c44e22; --accent-soft: #ffeee8; }
+[data-role='SchoolAdmin'] { --accent: #2f6fed; --accent-strong: #1a4ba8; --accent-soft: #e7effd; }
+[data-role='SystemAdmin'] { --accent: #00a824; --accent-strong: #0a6e2a; --accent-soft: #e4f6ea; }

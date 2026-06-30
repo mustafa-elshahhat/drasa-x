@@ -1,0 +1,45 @@
+/*
+ * DerasaX styles - base layer.
+ * Reset, body/typography, RTL font swap, accessibility helpers.
+ * Carved from the former monolithic app.css in SOURCE ORDER; cascade unchanged.
+ */
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+/* Arabic uses Cairo; the swap keys off <html lang>/<dir> set by i18n/direction.js. */
+[lang='ar'] body,
+[dir='rtl'] body { font-family: var(--font-ar); }
+a { color: var(--brand); }
+::selection { background: rgba(12, 114, 136, 0.2); }
+
+/* Accessibility helpers ---------------------------------------------------- */
+.ui-visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 6px; }
+
+.app-skip-link {
+  position: absolute;
+  inset-inline-start: 8px;
+  top: -48px;
+  background: var(--brand-strong);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  z-index: 100;
+  transition: top 0.15s ease;
+}
+.app-skip-link:focus { top: 8px; }
+
