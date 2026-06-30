@@ -23,11 +23,11 @@ test.describe('Phase 8 I — competitions & leaderboards', () => {
   test('I63 eligible (tenant-scoped) competitions are listed', async () => {
     await nav(page, '/app/student/competitions')
     await expect(page.getByRole('heading', { name: /^competitions$/i })).toBeVisible()
-    await expect(page.getByText('Phase 8 Math Olympiad').first()).toBeVisible()
+    await expect(page.getByText('Mathematics Olympiad').first()).toBeVisible()
     // Tenant scoping is the real contract: the seeded same-tenant competition is listed and the
     // cross-tenant competition never leaks in. (An exact total count is not deterministic — a
     // later phase, e.g. Phase 14, seeds additional same-tenant competitions in the shared run.)
-    await expect(page.getByText('Phase 8 Tenant2 Competition')).toHaveCount(0)
+    await expect(page.getByText('Science Challenge')).toHaveCount(0)
   })
 
   test('I64 competition details render state and the entry action', async () => {

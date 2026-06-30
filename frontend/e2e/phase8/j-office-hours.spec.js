@@ -25,7 +25,7 @@ test.describe('Phase 8 J — office hours', () => {
     await nav(page, '/app/student/office-hours')
     await expect(page.getByRole('heading', { name: /office hours/i })).toBeVisible()
     const availableCard = page.locator('.ui-card', { hasText: /available sessions/i })
-    await expect(availableCard.getByText('Phase 8 Open Office Hour').first()).toBeVisible()
+    await expect(availableCard.getByText('Mathematics Office Hour').first()).toBeVisible()
     // The capacity-reached session is correctly excluded from the available list.
     await expect(availableCard.getByText(/full office hour/i)).toHaveCount(0)
   })
@@ -38,13 +38,13 @@ test.describe('Phase 8 J — office hours', () => {
     expect((await respP).status()).toBe(201)
     // It now appears under "My bookings".
     const mineCard = page.locator('.ui-card', { hasText: /my bookings/i })
-    await expect(mineCard.getByText('Phase 8 Open Office Hour').first()).toBeVisible()
+    await expect(mineCard.getByText('Mathematics Office Hour').first()).toBeVisible()
   })
 
   test('J70 the booking persists across reload', async () => {
     await page.goto('/app/student/office-hours')
     const mineCard = page.locator('.ui-card', { hasText: /my bookings/i })
-    await expect(mineCard.getByText('Phase 8 Open Office Hour').first()).toBeVisible()
+    await expect(mineCard.getByText('Mathematics Office Hour').first()).toBeVisible()
     await expect(mineCard.getByText(/no bookings yet/i)).toHaveCount(0)
   })
 

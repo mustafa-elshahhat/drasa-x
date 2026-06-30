@@ -15,13 +15,16 @@ using DerasaX.Domain.Enums;
 using DerasaX.Domain.Exceptions;
 using DerasaX.Domain.Interfaces;
 using DerasaX.Domain.Specification.Common;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace DerasaX.Application.Services.Engagement
 {
     public class CompetitionService : EngagementServiceBase, ICompetitionService
     {
-        public CompetitionService(IUnitOfWork unitOfWork, ITenantContext tenant, IAuditWriter audit)
-            : base(unitOfWork, tenant, audit) { }
+        private readonly UserManager<ApplicationUser> _users;
+        public CompetitionService(IUnitOfWork unitOfWork, ITenantContext tenant, IAuditWriter audit, UserManager<ApplicationUser> users)
+            : base(unitOfWork, tenant, audit) => _users = users;
 
         public async Task<PaginationResponse<IEnumerable<CompetitionDto>>> ListAsync(CompetitionParameters p, CancellationToken ct = default)
         {
@@ -182,6 +185,16 @@ namespace DerasaX.Application.Services.Engagement
                 .OrderByDescending(x => x.Score)
                 .Select((x, i) => new LeaderboardRowDto { StudentId = x.StudentId, Score = x.Score, Rank = i + 1 })
                 .ToList();
+
+            // Resolve display names so the leaderboard shows real names, not raw ids.
+            var rowIds = rows.Select(r => r.StudentId).Distinct().ToList();
+            if (rowIds.Count > 0)
+            {
+                var names = await _users.Users.Where(u => rowIds.Contains(u.Id))
+                    .Select(u => new { u.Id, u.FullName }).ToListAsync(ct);
+                foreach (var r in rows)
+                    r.StudentName = names.FirstOrDefault(n => n.Id == r.StudentId)?.FullName;
+            }
             return Ok<IEnumerable<LeaderboardRowDto>>(rows, 200, "Leaderboard retrieved.");
         }
 

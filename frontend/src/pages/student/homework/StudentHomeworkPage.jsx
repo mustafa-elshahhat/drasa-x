@@ -15,6 +15,21 @@ import { displayValue, formatDate, getField, itemId } from '../../../features/st
 import { getSubjectTheme } from '../../../features/student/theme'
 import { queryKeys } from '../../../lib/query/keys'
 
+// The backend AssignedHomeworkDto exposes `submissionStatus` (SubmissionStatus
+// enum) + `hasSubmitted`, NOT a `status` string. Derive the UI bucket from those
+// real fields so submitted/graded homework lands in the right tab and pill.
+function homeworkStatus(item) {
+  const raw = String(getField(item, 'submissionStatus') ?? '').toLowerCase()
+  if (raw === 'graded' || raw === '2') return 'graded'
+  if (getField(item, 'hasSubmitted') || ['submitted', '1', 'late', '3'].includes(raw)) return 'submitted'
+  return 'pending'
+}
+
+// Points come from the assignment's MaxScore.
+function homeworkPoints(item) {
+  return getField(item, 'maxScore') || getField(item, 'points') || getField(item, 'totalPoints') || 20
+}
+
 function HomeworkPage({ userId, locale }) {
   const { t } = useTranslation()
   const { homeworkId } = useParams()
@@ -71,7 +86,7 @@ function HomeworkPage({ userId, locale }) {
       <QueryBoundary query={list} loadingFallback={<Loading />} emptyWhen={(d) => !d?.length} emptyTitle={t('student.empty.homework')} emptyIcon={ClipboardCheck}>
         {(items) => {
           const filteredItems = items.filter((item) => {
-            const status = String(getField(item, 'status') || 'pending').toLowerCase()
+            const status = homeworkStatus(item)
             if (activeTab === 'pending') return status === 'pending'
             if (activeTab === 'submitted') return status === 'submitted' || status === 'graded'
             return true
@@ -85,8 +100,8 @@ function HomeworkPage({ userId, locale }) {
             <div className="flex flex-col gap-3">
               {filteredItems.map((item) => {
                 const theme = getSubjectTheme(item)
-                const status = String(getField(item, 'status') || 'pending').toLowerCase()
-                const points = getField(item, 'points') || getField(item, 'totalPoints') || 20
+                const status = homeworkStatus(item)
+                const points = homeworkPoints(item)
                 const score = getField(item, 'score') || getField(item, 'earnedPoints')
                 const isPending = status === 'pending'
 
@@ -168,8 +183,8 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
   })
 
   const item = list.data?.find((h) => itemId(h) === homeworkId)
-  const status = String(getField(item, 'status') || 'pending').toLowerCase()
-  const points = item ? (getField(item, 'points') || getField(item, 'totalPoints') || 20) : 20
+  const status = item ? homeworkStatus(item) : 'pending'
+  const points = item ? homeworkPoints(item) : 20
   const desc = item ? (getField(item, 'description') || getField(item, 'desc') || '') : ''
 
   const subData = submission.data

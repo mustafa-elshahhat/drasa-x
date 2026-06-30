@@ -23,7 +23,7 @@ test.describe('Phase 8 C — homework', () => {
   test('C21 only assigned homework is listed (self-scoped)', async () => {
     await nav(page, '/app/student/homework')
     await expect(page.getByRole('heading', { name: /^homework$/i })).toBeVisible()
-    await expect(page.getByText('Phase 8 Open Homework').first()).toBeVisible()
+    await expect(page.getByText('Linear Equations Practice Set').first()).toBeVisible()
     // Unassigned and cross-tenant homework never appear in the student's list.
     await expect(page.getByText(/unassigned/i)).toHaveCount(0)
     const rows = await page.locator('.student-row-link').count()
@@ -32,7 +32,7 @@ test.describe('Phase 8 C — homework', () => {
 
   test('C22 homework details show backend instructions and status', async () => {
     await nav(page, `/app/student/homework/${FIX.hwOpen}`)
-    await expect(page.getByRole('heading', { name: /phase 8 open homework/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /linear equations practice set/i })).toBeVisible()
     await expect(page.getByText(/submission history/i)).toBeVisible()
   })
 

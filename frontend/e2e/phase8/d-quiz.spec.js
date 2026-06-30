@@ -26,13 +26,13 @@ test.describe('Phase 8 D — quiz lifecycle', () => {
   test('D26 only assigned quizzes are listed (self-scoped)', async () => {
     await nav(page, '/app/student/quizzes')
     await expect(page.getByRole('heading', { name: /^quizzes$/i })).toBeVisible()
-    await expect(page.getByText('Phase 8 Algebra Quiz').first()).toBeVisible()
+    await expect(page.getByText('Algebra Quiz').first()).toBeVisible()
     expect(await page.locator('.student-row-link').count()).toBe(1)
   })
 
   test('D27 quiz details expose no correct answers or score before submission', async () => {
     await nav(page, `/app/student/quizzes/${FIX.quizT1}`)
-    await expect(page.getByRole('heading', { name: /phase 8 algebra quiz/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /algebra quiz/i })).toBeVisible()
     const body = await page.locator('main').innerText()
     for (const leak of ['isCorrect', 'correctOption', 'correctAnswer', 'correctOptionId']) {
       expect(body, `details leaked ${leak}`).not.toContain(leak)

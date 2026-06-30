@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "FullName": "Omar Ahmed",
     "UserName": "omar.ahmed",
@@ -8,11 +8,11 @@
     "LoginCode": "ST-001"
   },
   {
-    "FullName": "nada Ashraf",
+    "FullName": "Nada Ashraf",
     "UserName": "nada.ashraf",
     "GradeId": "G7-ID",
     "TenantId": "tenant-1",
-    "Gender": 1,
+    "Gender": 2,
     "LoginCode": "ST-002"
   }
 ]

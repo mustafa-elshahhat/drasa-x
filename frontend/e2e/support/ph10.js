@@ -20,7 +20,7 @@ export const CODES10 = {
   schoolAdmin: 'ADMIN-T1',
 }
 
-export const CHILD_NAME = 'Tenant1 Student' // STU-T1 full name (seeded)
+export const CHILD_NAME = 'Youssef Ibrahim' // STU-T1 full name (seeded)
 
 // Resolve a user's real id (GUID) the way a client does: from the login identity.
 // Parent routes take the student's actual id, not the login code.

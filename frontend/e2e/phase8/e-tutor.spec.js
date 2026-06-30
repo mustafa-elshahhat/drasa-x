@@ -92,7 +92,7 @@ test.describe('Phase 8 E — AI tutor (backend-mediated, grounded)', () => {
     await expect(page.getByRole('heading', { name: /^citations$/i })).toBeVisible()
     // A real citation (the ingested reference) is shown — not the empty state.
     await expect(page.getByText(/no citations returned/i)).toHaveCount(0)
-    await expect(page.getByText(/E2E-PH8-DOC-T1|Phase 8 Algebra Reference/i).first()).toBeVisible()
+    await expect(page.getByText(/E2E-PH8-DOC-T1|Algebra Reference/i).first()).toBeVisible()
   })
 
   test('E45 the correlation id is surfaced for traceability', async () => {

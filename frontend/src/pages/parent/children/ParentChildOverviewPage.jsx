@@ -26,7 +26,7 @@ function ChildOverviewPage({ userId }) {
           <Card title={t('parent.child.profile')}>
             <dl className="ui-detail-list">
               <div className="ui-detail-list__row"><dt>{t('parent.child.name')}</dt><dd>{child.fullName ?? '—'}</dd></div>
-              <div className="ui-detail-list__row"><dt>{t('parent.child.grade')}</dt><dd>{child.gradeId ?? '—'}</dd></div>
+              <div className="ui-detail-list__row"><dt>{t('parent.child.grade')}</dt><dd>{child.gradeName ?? '—'}</dd></div>
               <div className="ui-detail-list__row"><dt>{t('parent.child.class')}</dt><dd>{child.className ?? '—'}</dd></div>
               <div className="ui-detail-list__row"><dt>{t('parent.child.relationship')}</dt><dd>{child.relationship ?? '—'}</dd></div>
             </dl>

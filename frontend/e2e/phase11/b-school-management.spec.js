@@ -17,7 +17,7 @@ test.describe('Phase 11 — school-admin management', () => {
     const guards = attachGuards(page)
     await login(page, CODES11.schoolAdmin)
     await expect(page).toHaveURL(/\/app\/school$/)
-    await expect(page.getByText('Main School')).toBeVisible() // real tenant name
+    await expect(page.getByText('Nile Future International School')).toBeVisible() // real tenant name
     await expect(h1(page)).toHaveText('School administration')
     guards.assertNoForbidden()
   })

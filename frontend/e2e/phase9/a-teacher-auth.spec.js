@@ -87,7 +87,7 @@ test('PH9-A6 a cross-tenant teacher cannot read another tenant\'s class students
     await login(page, CODES9.teacherT2)
     // TEACH-T2 is tenant-2; PH8-CLASS-T1 is tenant-1 → backend returns 404, UI shows error, no roster leak.
     await nav(page, `/app/teacher/classes/${FIX9.classT1}`)
-    await expect(page.getByText(/Tenant1 Student|Phase 8 Other Student/)).toHaveCount(0)
+    await expect(page.getByText(/Youssef Ibrahim|Salma Adel/)).toHaveCount(0)
     guards.assertNoForbidden() // 4xx is allowed; only 5xx/AI/archived calls are defects
   } finally {
     await context.close()

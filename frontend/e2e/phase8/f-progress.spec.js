@@ -38,7 +38,7 @@ test.describe('Phase 8 F — recommendations / progress / engagement', () => {
   test('F50 engagement renders persisted metrics/insights', async () => {
     await nav(page, '/app/student/engagement')
     await expect(page.getByRole('heading', { name: /engagement summary/i })).toBeVisible()
-    await expect(page.getByText('Phase 8 fixture insight: steady progress in algebra.').first()).toBeVisible()
+    await expect(page.getByText('Steady progress in algebra; keep practising word problems.').first()).toBeVisible()
   })
 
   test('F51 recommendations/progress/engagement stay accurate after reload', async () => {

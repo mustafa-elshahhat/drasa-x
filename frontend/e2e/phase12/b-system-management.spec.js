@@ -25,7 +25,7 @@ test.describe('Phase 12 — system-admin management', () => {
     await login(page, CODES12.systemAdmin)
     await nav(page, '/app/system/tenants')
     await expect(h1(page)).toHaveText('Tenants')
-    await expect(page.getByText('Main School').first()).toBeVisible()
+    await expect(page.getByText('Nile Future International School').first()).toBeVisible()
     await nav(page, `/app/system/tenants/${FIX12.lifecycleTenant}`)
     await expect(h1(page)).toHaveText('Tenant details')
     await expect(page.getByText(FIX12.lifecycleTenantName).first()).toBeVisible()

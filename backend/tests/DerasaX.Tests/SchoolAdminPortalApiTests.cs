@@ -58,7 +58,7 @@ public class SchoolAdminPortalApiTests : IClassFixture<IntegrationFactory>
         var resp = await client.GetAsync("/api/v1/school-admin/dashboard");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
         var d = await DataAsync(resp);
-        Assert.Equal("Main School", d.GetProperty("tenantName").GetString());
+        Assert.Equal("Nile Future International School", d.GetProperty("tenantName").GetString());
         // Real counts from authoritative data — tenant-1 has seeded students/teachers/classes.
         Assert.True(d.GetProperty("students").GetInt32() >= 1);
         Assert.True(d.GetProperty("teachers").GetInt32() >= 1);
@@ -71,8 +71,8 @@ public class SchoolAdminPortalApiTests : IClassFixture<IntegrationFactory>
     {
         var t1 = await DataAsync(await (await TestClient.AuthedClientAsync(_factory, "PH11-SCHOOLADMIN-T1")).GetAsync("/api/v1/school-admin/dashboard"));
         var t2 = await DataAsync(await (await TestClient.AuthedClientAsync(_factory, "PH11-SCHOOLADMIN-T2")).GetAsync("/api/v1/school-admin/dashboard"));
-        Assert.Equal("Main School", t1.GetProperty("tenantName").GetString());
-        Assert.Equal("North Academy", t2.GetProperty("tenantName").GetString());
+        Assert.Equal("Nile Future International School", t1.GetProperty("tenantName").GetString());
+        Assert.Equal("Al-Nahda STEM School", t2.GetProperty("tenantName").GetString());
         // tenant-2 is a separate, smaller tenant — it must not inherit tenant-1's totals.
         Assert.True(t1.GetProperty("students").GetInt32() > t2.GetProperty("students").GetInt32());
     }

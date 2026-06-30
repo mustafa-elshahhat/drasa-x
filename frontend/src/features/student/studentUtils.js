@@ -1,4 +1,7 @@
-export function displayValue(item, keys = ['title', 'Title', 'name', 'Name', 'id', 'Id']) {
+// Default keys deliberately EXCLUDE id/Id: a user-facing title/name must never
+// silently fall back to a raw identifier. Callers that genuinely want an id as a
+// last resort use `itemId` or pass explicit keys.
+export function displayValue(item, keys = ['title', 'Title', 'name', 'Name']) {
   if (!item || typeof item !== 'object') return ''
   for (const key of keys) {
     const value = item[key]
@@ -108,6 +111,9 @@ export function autoColumns(rows, { limit = 6, hide = [] } = {}) {
   const first = (rows || []).find((r) => r && typeof r === 'object')
   if (!first) return []
   const hidden = new Set(['id', 'Id', 'tenantId', 'TenantId', ...hide])
+  // Foreign-key identifiers (anything ending in `Id`, e.g. gradeId/subjectId/
+  // studentId) are raw GUIDs and must never auto-surface as a table column.
+  const isIdKey = (k) => /Id$/.test(k)
   const score = (k) => {
     const lk = k.toLowerCase()
     if (/(fullname|^name$|title|displayname)/.test(lk)) return 0
@@ -119,7 +125,7 @@ export function autoColumns(rows, { limit = 6, hide = [] } = {}) {
     return 6
   }
   return Object.entries(first)
-    .filter(([k, v]) => !hidden.has(k) && v !== null && v !== undefined && typeof v !== 'object')
+    .filter(([k, v]) => !hidden.has(k) && !isIdKey(k) && v !== null && v !== undefined && typeof v !== 'object')
     .map(([k, v]) => ({ k, v }))
     .sort((a, b) => score(a.k) - score(b.k))
     .slice(0, limit)
@@ -141,7 +147,7 @@ export function autoFields(item, { limit = 16, hide = [] } = {}) {
   if (!item || typeof item !== 'object') return []
   const hidden = new Set(['id', 'Id', 'tenantId', 'TenantId', ...hide])
   return Object.entries(item)
-    .filter(([key, value]) => !hidden.has(key) && value !== null && value !== undefined && typeof value !== 'object')
+    .filter(([key, value]) => !hidden.has(key) && !/Id$/.test(key) && value !== null && value !== undefined && typeof value !== 'object')
     .slice(0, limit)
     .map(([key]) => {
       const lower = key.toLowerCase()

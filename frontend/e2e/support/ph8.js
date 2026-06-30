@@ -94,7 +94,7 @@ export async function apiLogin(code, password = PASSWORD) {
 export const TUTOR_DOC = {
   documentId: 'E2E-PH8-DOC-T1',
   version: 1,
-  title: 'Phase 8 Algebra Reference',
+  title: 'Algebra Reference',
   materialType: 'textbook',
   language: 'en',
   grade: 7,

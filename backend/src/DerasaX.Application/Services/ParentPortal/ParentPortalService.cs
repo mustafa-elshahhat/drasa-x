@@ -88,12 +88,20 @@ namespace DerasaX.Application.Services.ParentPortal
                 : (await _uow.Repository<SchoolClass, string>().GetAllWithSpecAsync(
                     new CriteriaSpecification<SchoolClass, string>(c => classIds.Contains(c.Id)))).ToList();
 
+            // Resolve grade names so the parent UI shows a real grade name, never a raw id.
+            var gradeIds = students.OfType<Student>().Select(s => s.GradeId).Where(g => g != null).Distinct().ToList();
+            var grades = gradeIds.Count == 0
+                ? new List<Grade>()
+                : (await _uow.Repository<Grade, string>().GetAllWithSpecAsync(
+                    new CriteriaSpecification<Grade, string>(g => gradeIds.Contains(g.Id)))).ToList();
+
             var rows = new List<ParentChildDto>();
             foreach (var student in students)
             {
                 var link = links.First(l => l.StudentId == student.Id);
                 var enrollment = enrollments.FirstOrDefault(e => e.StudentId == student.Id);
                 var schoolClass = enrollment is null ? null : classes.FirstOrDefault(c => c.Id == enrollment.SchoolClassId);
+                var gradeId = (student as Student)?.GradeId;
 
                 // Reuse the relationship-authorized progress summary (re-verifies the link).
                 var summary = (await _progress.SummaryAsync(student.Id, ct)).Data ?? new ProgressSummaryDto();
@@ -102,7 +110,8 @@ namespace DerasaX.Application.Services.ParentPortal
                 {
                     StudentId = student.Id,
                     FullName = student.FullName ?? string.Empty,
-                    GradeId = (student as Student)?.GradeId,
+                    GradeId = gradeId,
+                    GradeName = gradeId is null ? null : grades.FirstOrDefault(g => g.Id == gradeId)?.Name,
                     Relationship = link.Relationship.ToString(),
                     IsPrimary = link.IsPrimary,
                     CanViewProgress = link.CanViewProgress,
@@ -150,11 +159,16 @@ namespace DerasaX.Application.Services.ParentPortal
 
             var summary = (await _progress.SummaryAsync(childId, ct)).Data ?? new ProgressSummaryDto();
 
+            var gradeId = (student as Student)?.GradeId;
+            var grade = gradeId is null ? null : await _uow.Repository<Grade, string>().GetByIdWithSpecAsync(
+                new CriteriaSpecification<Grade, string>(g => g.Id == gradeId));
+
             return Ok(new ParentChildOverviewDto
             {
                 StudentId = student.Id,
                 FullName = student.FullName ?? string.Empty,
-                GradeId = (student as Student)?.GradeId,
+                GradeId = gradeId,
+                GradeName = grade?.Name,
                 Relationship = link.Relationship.ToString(),
                 IsPrimary = link.IsPrimary,
                 CanViewProgress = link.CanViewProgress,

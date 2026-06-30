@@ -39,8 +39,8 @@ export async function ensurePh9CurriculumDoc() {
     const res = await ctx.post(`${BACKEND}/api/v1/ai/documents`, {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       data: {
-        documentId: 'E2E-PH9-DOC-T1', version: 1, title: 'Phase 9 Linear Equations',
-        materialType: 'textbook', language: 'en', grade: 7, subject: 'Phase 8 Mathematics',
+        documentId: 'E2E-PH9-DOC-T1', version: 1, title: 'Linear Equations Reference',
+        materialType: 'textbook', language: 'en', grade: 7, subject: 'Mathematics',
         content:
           'A linear equation is an algebraic equation in which each term is a constant or the ' +
           'product of a constant and a single variable. The graph of a linear equation is a ' +

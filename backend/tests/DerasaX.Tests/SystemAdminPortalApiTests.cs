@@ -117,7 +117,7 @@ public class SystemAdminPortalApiTests : IClassFixture<IntegrationFactory>
         var sys = await TestClient.AuthedClientAsync(_factory, Sys);
         var resp = await sys.GetAsync("/api/v1/tenants");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        Assert.Contains("Main School", await resp.Content.ReadAsStringAsync());
+        Assert.Contains("Nile Future International School", await resp.Content.ReadAsStringAsync());
     }
 
     // ---- full onboarding + lifecycle + audit (the canonical end-to-end) ----

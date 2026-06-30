@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace DerasaX.Api.SeedData
 {
-    public class DataSeederService
+    public partial class DataSeederService
     {
         private readonly DerasaXDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -48,6 +48,13 @@ namespace DerasaX.Api.SeedData
             await SeedPhase11SchoolAdminPortalFixturesAsync();
             await SeedPhase12SystemAdminPortalFixturesAsync();
             await SeedPhase13CommunicationFixturesAsync();
+
+            // Realistic, richly-connected "showcase" data for the natural local demo
+            // accounts (Omar Ahmed / Nada Ashraf students, Malak Hassan teacher, their
+            // parent and the tenant-1 school admin) so every role lands on a non-empty,
+            // realistic dashboard after a reset + reseed. These actors are NOT E2E
+            // reset actors, so the data is stable and never wiped by the E2E reset.
+            await SeedShowcaseFixturesAsync();
         }
         private async Task SeedRoles()
         {
@@ -141,6 +148,8 @@ namespace DerasaX.Api.SeedData
 
             if (students == null) return;
 
+            var password = _configuration["Seed:DefaultPassword"] ?? "Local@Dev123";
+
             foreach (var s in students)
             {
                 // Create the Student directly as a Table-Per-Hierarchy subtype of
@@ -158,7 +167,7 @@ namespace DerasaX.Api.SeedData
                     GradeId = s.GradeId
                 };
 
-                var result = await _userManager.CreateAsync(student, "P@ssword123");
+                var result = await _userManager.CreateAsync(student, password);
 
                 if (!result.Succeeded)
                     continue;
@@ -170,18 +179,20 @@ namespace DerasaX.Api.SeedData
         {
             if (await _context.SchoolAdmin.AnyAsync()) return;
 
+            var password = _configuration["Seed:DefaultPassword"] ?? "Local@Dev123";
+
             // Create the SchoolAdmin directly as a TPH subtype (see SeedStudents note).
             var admin = new SchoolAdmin
             {
                 UserName = "admin",
-                FullName = "System Admin",
+                FullName = "Nabil Sherif",
                 LoginCode = "27102004",
                 Gender =(Domain.Enums.Gender?)1,
                 TenantId = "tenant-1"
 
             };
 
-            var result = await _userManager.CreateAsync(admin, "Admin@123");
+            var result = await _userManager.CreateAsync(admin, password);
 
             if (!result.Succeeded)
                 return;
@@ -192,6 +203,7 @@ namespace DerasaX.Api.SeedData
         private async Task SeedTeachers()
         {
             var userName = "malak";
+            var password = _configuration["Seed:DefaultPassword"] ?? "Local@Dev123";
 
             var user = await _userManager.FindByNameAsync(userName);
 
@@ -200,13 +212,13 @@ namespace DerasaX.Api.SeedData
                 var teacher = new Teacher
                 {
                     UserName = userName,
-                    FullName = "Malak",
+                    FullName = "Malak Hassan",
                     LoginCode = "TEACH002",
                     TenantId = "tenant-1",
                     Gender = (Domain.Enums.Gender?)2,
                 };
 
-                var result = await _userManager.CreateAsync(teacher, "MMmm2004@");
+                var result = await _userManager.CreateAsync(teacher, password);
 
                 if (!result.Succeeded)
                 {
@@ -226,30 +238,30 @@ namespace DerasaX.Api.SeedData
         {
             var password = _configuration["Seed:DefaultPassword"] ?? "Local@Dev123";
 
-            await EnsureTenant("tenant-1", "Main School", TenantStatus.Active);
-            await EnsureTenant("tenant-2", "North Academy", TenantStatus.Active);
-            await EnsureTenant("tenant-suspended", "Suspended School", TenantStatus.Suspended);
+            await EnsureTenant("tenant-1", "Nile Future International School", TenantStatus.Active);
+            await EnsureTenant("tenant-2", "Al-Nahda STEM School", TenantStatus.Active);
+            await EnsureTenant("tenant-suspended", "Horizon Language Academy", TenantStatus.Suspended);
 
             await EnsureGrade("G7-ID", "Grade 7", "tenant-1");
             await EnsureGrade("T2-G7", "Grade 7", "tenant-2");
             await EnsureGrade("SUS-G7", "Grade 7", "tenant-suspended");
 
             // Tenant 1 — full role set
-            await EnsureUser<SchoolAdmin>("ADMIN-T1", "Tenant1 Admin", "tenant-1", "SchoolAdmin", password);
-            await EnsureUser<Teacher>("TEACH-T1", "Tenant1 Teacher", "tenant-1", "Teacher", password);
-            await EnsureUser<Parent>("PARENT-T1", "Tenant1 Parent", "tenant-1", "Parent", password);
-            await EnsureUser<Student>("STU-T1", "Tenant1 Student", "tenant-1", "Student", password, gradeId: "G7-ID");
+            await EnsureUser<SchoolAdmin>("ADMIN-T1", "Hala Mansour", "tenant-1", "SchoolAdmin", password);
+            await EnsureUser<Teacher>("TEACH-T1", "Karim Adel", "tenant-1", "Teacher", password);
+            await EnsureUser<Parent>("PARENT-T1", "Sherif Naguib", "tenant-1", "Parent", password);
+            await EnsureUser<Student>("STU-T1", "Youssef Ibrahim", "tenant-1", "Student", password, gradeId: "G7-ID");
 
             // Tenant 2 — full role set (overlapping roles, distinct records)
-            await EnsureUser<SchoolAdmin>("ADMIN-T2", "Tenant2 Admin", "tenant-2", "SchoolAdmin", password);
-            await EnsureUser<Teacher>("TEACH-T2", "Tenant2 Teacher", "tenant-2", "Teacher", password);
-            await EnsureUser<Parent>("PARENT-T2", "Tenant2 Parent", "tenant-2", "Parent", password);
-            await EnsureUser<Student>("STU-T2", "Tenant2 Student", "tenant-2", "Student", password, gradeId: "T2-G7");
+            await EnsureUser<SchoolAdmin>("ADMIN-T2", "Mona Saleh", "tenant-2", "SchoolAdmin", password);
+            await EnsureUser<Teacher>("TEACH-T2", "Tarek Fahmy", "tenant-2", "Teacher", password);
+            await EnsureUser<Parent>("PARENT-T2", "Amani Darwish", "tenant-2", "Parent", password);
+            await EnsureUser<Student>("STU-T2", "Laila Hosny", "tenant-2", "Student", password, gradeId: "T2-G7");
 
             // Platform SystemAdmin (no tenant) + suspended-tenant user + disabled user
-            await EnsureUser<SystemAdmin>("SYS-1", "Platform Admin", null, "SystemAdmin", password);
-            await EnsureUser<Student>("STU-SUS", "Suspended Student", "tenant-suspended", "Student", password, gradeId: "SUS-G7");
-            await EnsureUser<Student>("STU-DIS", "Disabled Student", "tenant-1", "Student", password, gradeId: "G7-ID", isDisabled: true);
+            await EnsureUser<SystemAdmin>("SYS-1", "Adham Roushdy", null, "SystemAdmin", password);
+            await EnsureUser<Student>("STU-SUS", "Hana Lotfy", "tenant-suspended", "Student", password, gradeId: "SUS-G7");
+            await EnsureUser<Student>("STU-DIS", "Fares Zaki", "tenant-1", "Student", password, gradeId: "G7-ID", isDisabled: true);
         }
 
         private async Task EnsureTenant(string id, string name, TenantStatus status)
@@ -341,17 +353,17 @@ namespace DerasaX.Api.SeedData
 
         private async Task SeedPhase8StudentPortalFixturesAsync()
         {
-            await EnsureAcademicYear("PH8-AY-T1", "Phase 8 Academic Year", "PH8AYT1", "tenant-1");
-            await EnsureAcademicYear("PH8-AY-T2", "Phase 8 Academic Year", "PH8AYT2", "tenant-2");
-            await EnsureSchoolClass("PH8-CLASS-T1", "Phase 8 Class", "PH8C1", "tenant-1", "G7-ID", "PH8-AY-T1");
-            await EnsureSchoolClass("PH8-CLASS-T2", "Phase 8 Class", "PH8C2", "tenant-2", "T2-G7", "PH8-AY-T2");
+            await EnsureAcademicYear("PH8-AY-T1", "Academic Year 2030/2031", "PH8AYT1", "tenant-1");
+            await EnsureAcademicYear("PH8-AY-T2", "Academic Year 2030/2031", "PH8AYT2", "tenant-2");
+            await EnsureSchoolClass("PH8-CLASS-T1", "Grade 7 - A", "PH8C1", "tenant-1", "G7-ID", "PH8-AY-T1");
+            await EnsureSchoolClass("PH8-CLASS-T2", "Grade 7 - B", "PH8C2", "tenant-2", "T2-G7", "PH8-AY-T2");
 
-            await EnsureSubject("PH8-SUBJECT-T1", "Phase 8 Mathematics", "tenant-1", "G7-ID");
-            await EnsureSubject("PH8-SUBJECT-T2", "Phase 8 Mathematics", "tenant-2", "T2-G7");
-            await EnsureUnit("PH8-UNIT-T1", "Phase 8 Algebra", "tenant-1", "PH8-SUBJECT-T1");
-            await EnsureUnit("PH8-UNIT-T2", "Phase 8 Algebra", "tenant-2", "PH8-SUBJECT-T2");
-            await EnsureLesson("PH8-LESSON-T1", "Phase 8 Linear Equations", "tenant-1", "PH8-UNIT-T1");
-            await EnsureLesson("PH8-LESSON-T2", "Phase 8 Linear Equations", "tenant-2", "PH8-UNIT-T2");
+            await EnsureSubject("PH8-SUBJECT-T1", "Mathematics", "tenant-1", "G7-ID");
+            await EnsureSubject("PH8-SUBJECT-T2", "Mathematics", "tenant-2", "T2-G7");
+            await EnsureUnit("PH8-UNIT-T1", "Algebra", "tenant-1", "PH8-SUBJECT-T1");
+            await EnsureUnit("PH8-UNIT-T2", "Algebra", "tenant-2", "PH8-SUBJECT-T2");
+            await EnsureLesson("PH8-LESSON-T1", "Linear Equations", "tenant-1", "PH8-UNIT-T1");
+            await EnsureLesson("PH8-LESSON-T2", "Linear Equations", "tenant-2", "PH8-UNIT-T2");
 
             var stuT1 = await _userManager.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.LoginCode == "STU-T1");
             var stuT2 = await _userManager.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.LoginCode == "STU-T2");
@@ -400,7 +412,7 @@ namespace DerasaX.Api.SeedData
         private async Task EnsureLesson(string id, string title, string tenantId, string unitId)
         {
             if (await _context.lessons.IgnoreQueryFilters().AnyAsync(x => x.Id == id)) return;
-            _context.lessons.Add(new Lesson { Id = id, TenantId = tenantId, Title = title, Content = "Deterministic Phase 8 lesson content.", UnitId = unitId });
+            _context.lessons.Add(new Lesson { Id = id, TenantId = tenantId, Title = title, Content = "An introduction to solving linear equations and graphing straight lines, with worked examples and practice problems.", UnitId = unitId });
             await _context.SaveChangesAsync();
         }
 
@@ -461,7 +473,7 @@ namespace DerasaX.Api.SeedData
             // Supporting "other" tenant-1 student: the second actor used to make a
             // capacity-full office-hour slot, to seed leaderboard rivals and to own
             // pre-existing community content. It is NEVER reset.
-            await EnsureUser<Student>("PH8-OTHER-T1", "Phase 8 Other Student", "tenant-1", "Student", password, gradeId: "G7-ID");
+            await EnsureUser<Student>("PH8-OTHER-T1", "Salma Adel", "tenant-1", "Student", password, gradeId: "G7-ID");
             await EnsureEnrollmentSafe("PH8-ENR-OTHER-T1", "tenant-1", "PH8-OTHER-T1", "PH8-CLASS-T1", "PH8-AY-T1");
 
             var stuT1 = await UserIdByLoginCodeAsync("STU-T1");
@@ -477,30 +489,30 @@ namespace DerasaX.Api.SeedData
             await Ensure(_context.lessonMaterials, x => x.Id == "E2E-PH8-MAT-T1", () => new LessonMaterial
             {
                 Id = "E2E-PH8-MAT-T1", TenantId = "tenant-1", LessonId = "PH8-LESSON-T1",
-                Title = "Phase 8 Worksheet", Url = "/files/ph8-worksheet.pdf", Type = AttachmentType.Document
+                Title = "Algebra Worksheet", Url = "/files/algebra-worksheet.pdf", Type = AttachmentType.Document
             });
 
             // ---- B19 unassigned lesson (different grade in same tenant → completion 404) ----
             await EnsureGrade("PH8-G8-T1", "Grade 8", "tenant-1");
-            await EnsureSubject("E2E-PH8-SUBJECT-G8-T1", "Phase 8 Science (G8)", "tenant-1", "PH8-G8-T1");
-            await EnsureUnit("E2E-PH8-UNIT-G8-T1", "Phase 8 Forces", "tenant-1", "E2E-PH8-SUBJECT-G8-T1");
-            await EnsureLesson("E2E-PH8-LESSON-UNASSIGNED-T1", "Phase 8 Unassigned Lesson", "tenant-1", "E2E-PH8-UNIT-G8-T1");
+            await EnsureSubject("E2E-PH8-SUBJECT-G8-T1", "Science", "tenant-1", "PH8-G8-T1");
+            await EnsureUnit("E2E-PH8-UNIT-G8-T1", "Forces and Motion", "tenant-1", "E2E-PH8-SUBJECT-G8-T1");
+            await EnsureLesson("E2E-PH8-LESSON-UNASSIGNED-T1", "Solving Inequalities", "tenant-1", "E2E-PH8-UNIT-G8-T1");
 
             // ---- C homework (tenant-1 open, unassigned, and cross-tenant) ----
-            await EnsureAssignment("E2E-PH8-HW-OPEN", "tenant-1", "Phase 8 Open Homework", AssignmentType.Homework,
+            await EnsureAssignment("E2E-PH8-HW-OPEN", "tenant-1", "Linear Equations Practice Set", AssignmentType.Homework,
                 AssignmentStatus.Published, teachT1, availableFrom: now.AddDays(-2), dueDate: now.AddDays(7), maxScore: 100, subjectId: "PH8-SUBJECT-T1");
             await EnsureAssignmentTarget("E2E-PH8-HWT-OPEN", "tenant-1", "E2E-PH8-HW-OPEN", AssignmentTargetType.Class, schoolClassId: "PH8-CLASS-T1");
 
-            await EnsureAssignment("E2E-PH8-HW-UNASSIGNED", "tenant-1", "Phase 8 Unassigned Homework", AssignmentType.Homework,
+            await EnsureAssignment("E2E-PH8-HW-UNASSIGNED", "tenant-1", "Word Problems Worksheet", AssignmentType.Homework,
                 AssignmentStatus.Published, teachT1, availableFrom: now.AddDays(-2), dueDate: now.AddDays(7), maxScore: 100);
             await EnsureAssignmentTarget("E2E-PH8-HWT-UNASSIGNED", "tenant-1", "E2E-PH8-HW-UNASSIGNED", AssignmentTargetType.Student, studentId: otherT1);
 
-            await EnsureAssignment("E2E-PH8-HW-T2", "tenant-2", "Phase 8 Tenant2 Homework", AssignmentType.Homework,
+            await EnsureAssignment("E2E-PH8-HW-T2", "tenant-2", "Mathematics Homework", AssignmentType.Homework,
                 AssignmentStatus.Published, teachT2, availableFrom: now.AddDays(-2), dueDate: now.AddDays(7), maxScore: 100);
             await EnsureAssignmentTarget("E2E-PH8-HWT-T2", "tenant-2", "E2E-PH8-HW-T2", AssignmentTargetType.Class, schoolClassId: "PH8-CLASS-T2");
 
             // ---- D quiz (tenant-1 published+assigned; cross-tenant published) ----
-            await EnsureQuiz("E2E-PH8-QUIZ-T1", "tenant-1", "Phase 8 Algebra Quiz", "PH8-SUBJECT-T1", "PH8-LESSON-T1");
+            await EnsureQuiz("E2E-PH8-QUIZ-T1", "tenant-1", "Algebra Quiz", "PH8-SUBJECT-T1", "PH8-LESSON-T1");
             await EnsureQuestion("E2E-PH8-Q1", "tenant-1", "E2E-PH8-QUIZ-T1", "2 + 2 = ?", QuestionType.MCQ, 1, 1);
             await EnsureOption("E2E-PH8-Q1-A", "tenant-1", "E2E-PH8-Q1", "3", false);
             await EnsureOption("E2E-PH8-Q1-B", "tenant-1", "E2E-PH8-Q1", "4", true);
@@ -509,11 +521,11 @@ namespace DerasaX.Api.SeedData
             await EnsureOption("E2E-PH8-Q2-T", "tenant-1", "E2E-PH8-Q2", "True", true);
             await EnsureOption("E2E-PH8-Q2-F", "tenant-1", "E2E-PH8-Q2", "False", false);
             await EnsureQuestion("E2E-PH8-Q3", "tenant-1", "E2E-PH8-QUIZ-T1", "Explain how to solve x + 1 = 3.", QuestionType.Essay, 3, 2);
-            await EnsureAssignment("E2E-PH8-QASSIGN-T1", "tenant-1", "Phase 8 Algebra Quiz", AssignmentType.Quiz,
+            await EnsureAssignment("E2E-PH8-QASSIGN-T1", "tenant-1", "Algebra Quiz", AssignmentType.Quiz,
                 AssignmentStatus.Published, teachT1, availableFrom: now.AddDays(-2), dueDate: now.AddDays(7), quizId: "E2E-PH8-QUIZ-T1");
             await EnsureAssignmentTarget("E2E-PH8-QASSIGNT-T1", "tenant-1", "E2E-PH8-QASSIGN-T1", AssignmentTargetType.Class, schoolClassId: "PH8-CLASS-T1");
 
-            await EnsureQuiz("E2E-PH8-QUIZ-T2", "tenant-2", "Phase 8 Tenant2 Quiz", "PH8-SUBJECT-T2", "PH8-LESSON-T2");
+            await EnsureQuiz("E2E-PH8-QUIZ-T2", "tenant-2", "Mathematics Quiz", "PH8-SUBJECT-T2", "PH8-LESSON-T2");
             await EnsureQuestion("E2E-PH8-Q1-T2", "tenant-2", "E2E-PH8-QUIZ-T2", "1 + 1 = ?", QuestionType.MCQ, 1, 1);
             await EnsureOption("E2E-PH8-Q1-T2-A", "tenant-2", "E2E-PH8-Q1-T2", "2", true);
             await EnsureOption("E2E-PH8-Q1-T2-B", "tenant-2", "E2E-PH8-Q1-T2", "3", false);
@@ -527,12 +539,12 @@ namespace DerasaX.Api.SeedData
             await Ensure(_context.studentMetricHistories, x => x.Id == "E2E-PH8-METRIC-T1", () => new StudentMetricHistory
             {
                 Id = "E2E-PH8-METRIC-T1", TenantId = "tenant-1", StudentId = stuT1, MetricType = ProgressMetricType.QuizScore,
-                Value = 78m, MeasuredAt = now.AddDays(-3), Notes = "Phase 8 fixture metric"
+                Value = 78m, MeasuredAt = now.AddDays(-3), Notes = "Algebra quiz score recorded"
             });
             await Ensure(_context.studentInsights, x => x.Id == "E2E-PH8-INSIGHT-T1", () => new StudentInsight
             {
                 Id = "E2E-PH8-INSIGHT-T1", TenantId = "tenant-1", StudentId = stuT1, Performance = PerformanceLevel.OnTrack,
-                ConfidenceScore = 0.8m, Summary = "Phase 8 fixture insight: steady progress in algebra.",
+                ConfidenceScore = 0.8m, Summary = "Steady progress in algebra; keep practising word problems.",
                 Period = InsightPeriod.Weekly, PeriodStart = now.AddDays(-7), PeriodEnd = now
             });
             await Ensure(_context.painPoints, x => x.Id == "E2E-PH8-PAIN-T1", () => new PainPoint
@@ -551,8 +563,8 @@ namespace DerasaX.Api.SeedData
             // ---- H communities (tenant-1; seeded with an "other" member + post; STU-T1 not a member) ----
             await Ensure(_context.communities, x => x.Id == "E2E-PH8-COMM-T1", () => new Community
             {
-                Id = "E2E-PH8-COMM-T1", TenantId = "tenant-1", Name = "Phase 8 Math Club",
-                Description = "Deterministic Phase 8 community.", Visibility = CommunityVisibility.TenantOnly
+                Id = "E2E-PH8-COMM-T1", TenantId = "tenant-1", Name = "Mathematics Club",
+                Description = "A place to discuss math problems and share solutions.", Visibility = CommunityVisibility.TenantOnly
             });
             if (otherT1 is not null)
             {
@@ -564,21 +576,21 @@ namespace DerasaX.Api.SeedData
                 await Ensure(_context.posts, x => x.Id == "E2E-PH8-POST-SEED-T1", () => new Post
                 {
                     Id = "E2E-PH8-POST-SEED-T1", TenantId = "tenant-1", CommunityId = "E2E-PH8-COMM-T1", UserId = otherT1,
-                    Content = "Welcome to the Phase 8 Math Club!", CreatedAt = now.AddDays(-5)
+                    Content = "Welcome to the Mathematics Club! Share your favourite problems here.", CreatedAt = now.AddDays(-5)
                 });
             }
             // Cross-tenant community (tenant-2) for H62 isolation.
             await Ensure(_context.communities, x => x.Id == "E2E-PH8-COMM-T2", () => new Community
             {
-                Id = "E2E-PH8-COMM-T2", TenantId = "tenant-2", Name = "Phase 8 Tenant2 Club",
-                Description = "Tenant 2 community.", Visibility = CommunityVisibility.TenantOnly
+                Id = "E2E-PH8-COMM-T2", TenantId = "tenant-2", Name = "Science Club",
+                Description = "Science enthusiasts at Al-Nahda STEM School.", Visibility = CommunityVisibility.TenantOnly
             });
 
             // ---- I competitions + leaderboard (tenant-1 active; cross-tenant) ----
             await Ensure(_context.competitions, x => x.Id == "E2E-PH8-COMP-T1", () => new Competition
             {
-                Id = "E2E-PH8-COMP-T1", TenantId = "tenant-1", Title = "Phase 8 Math Olympiad",
-                Description = "Deterministic Phase 8 competition.", Status = CompetitionStatus.Active,
+                Id = "E2E-PH8-COMP-T1", TenantId = "tenant-1", Title = "Mathematics Olympiad",
+                Description = "Solve challenging problems to climb the leaderboard.", Status = CompetitionStatus.Active,
                 StartsAt = now.AddDays(-1), EndsAt = now.AddDays(14)
             });
             if (otherT1 is not null)
@@ -598,19 +610,19 @@ namespace DerasaX.Api.SeedData
             }
             await Ensure(_context.competitions, x => x.Id == "E2E-PH8-COMP-T2", () => new Competition
             {
-                Id = "E2E-PH8-COMP-T2", TenantId = "tenant-2", Title = "Phase 8 Tenant2 Competition",
+                Id = "E2E-PH8-COMP-T2", TenantId = "tenant-2", Title = "Science Challenge",
                 Status = CompetitionStatus.Active, StartsAt = now.AddDays(-1), EndsAt = now.AddDays(14)
             });
 
             // ---- J office hours (tenant-1 open slot + a capacity-full slot) ----
             await Ensure(_context.officeHourSessions, x => x.Id == "E2E-PH8-OH-OPEN-T1", () => new OfficeHourSession
             {
-                Id = "E2E-PH8-OH-OPEN-T1", TenantId = "tenant-1", TeacherId = teachT1, Title = "Phase 8 Open Office Hour",
+                Id = "E2E-PH8-OH-OPEN-T1", TenantId = "tenant-1", TeacherId = teachT1, Title = "Mathematics Office Hour",
                 StartsAt = now.AddDays(2), EndsAt = now.AddDays(2).AddHours(1), Capacity = 5, Status = OfficeHourStatus.Scheduled
             });
             await Ensure(_context.officeHourSessions, x => x.Id == "E2E-PH8-OH-FULL-T1", () => new OfficeHourSession
             {
-                Id = "E2E-PH8-OH-FULL-T1", TenantId = "tenant-1", TeacherId = teachT1, Title = "Phase 8 Full Office Hour",
+                Id = "E2E-PH8-OH-FULL-T1", TenantId = "tenant-1", TeacherId = teachT1, Title = "Algebra Help Session",
                 StartsAt = now.AddDays(3), EndsAt = now.AddDays(3).AddHours(1), Capacity = 1, Status = OfficeHourStatus.Scheduled
             });
             if (otherT1 is not null)
@@ -625,8 +637,8 @@ namespace DerasaX.Api.SeedData
             // ---- K announcements (tenant-1) ----
             await Ensure(_context.announcements, x => x.Id == "E2E-PH8-ANN-T1", () => new Announcement
             {
-                Id = "E2E-PH8-ANN-T1", TenantId = "tenant-1", Title = "Phase 8 School Announcement",
-                Body = "Deterministic Phase 8 announcement for all students.", TargetAudience = TargetAudience.All,
+                Id = "E2E-PH8-ANN-T1", TenantId = "tenant-1", Title = "Welcome Back to School",
+                Body = "Welcome to the new term! Please check your timetable and review this week's homework.", TargetAudience = TargetAudience.All,
                 IsActive = true, CreatedAt = now.AddDays(-1)
             });
 
@@ -644,7 +656,7 @@ namespace DerasaX.Api.SeedData
             await Ensure(_context.studentBadges, x => x.Id == "E2E-PH8-SB-T1", () => new StudentBadge
             {
                 Id = "E2E-PH8-SB-T1", TenantId = "tenant-1", StudentId = stuT1, BadgeId = "E2E-PH8-BADGE-1",
-                AwardedAt = now.AddDays(-2), AwardedReason = "Phase 8 fixture award"
+                AwardedAt = now.AddDays(-2), AwardedReason = "Completed your first lesson"
             });
             // The streak fixture is owned by the supporting PH8-OTHER-T1 student, not
             // STU-T1: a pre-existing engagement integration test creates and tears down
@@ -721,15 +733,19 @@ namespace DerasaX.Api.SeedData
         {
             // Fresh deterministic unread notifications for the K group. Re-created by
             // the reset; here we only ensure at least the two fixture rows exist.
-            var ids = new[] { "E2E-PH8-NOTIF-1", "E2E-PH8-NOTIF-2" };
-            var idx = 1;
-            foreach (var nid in ids)
+            var notifs = new[]
             {
-                var n = nid; var i = idx;
+                ("E2E-PH8-NOTIF-1", "New homework assigned", "Your teacher assigned 'Linear Equations Practice Set'. It is due in 7 days."),
+                ("E2E-PH8-NOTIF-2", "Quiz results published", "Your results for the 'Algebra Quiz' are now available to review."),
+            };
+            var idx = 1;
+            foreach (var (nid, title, body) in notifs)
+            {
+                var n = nid; var i = idx; var ti = title; var bo = body;
                 await Ensure(_context.notifications, x => x.Id == n, () => new Notification
                 {
-                    Id = n, TenantId = "tenant-1", UserId = studentId, Title = $"Phase 8 Notification {i}",
-                    Body = $"Deterministic Phase 8 notification {i}.", NotificationCategory = NotificationCategory.General,
+                    Id = n, TenantId = "tenant-1", UserId = studentId, Title = ti,
+                    Body = bo, NotificationCategory = NotificationCategory.General,
                     NotificationType = NotificationType.System, IsRead = false, CreatedAt = DateTime.UtcNow.AddMinutes(-i)
                 });
                 idx++;
@@ -927,7 +943,7 @@ namespace DerasaX.Api.SeedData
             var password = _configuration["Seed:DefaultPassword"] ?? "Local@Dev123";
 
             // Unassigned same-tenant teacher (negative actor).
-            await EnsureUser<Teacher>("TEACH-T9-UNASSIGNED", "Phase 9 Unassigned Teacher", "tenant-1", "Teacher", password);
+            await EnsureUser<Teacher>("TEACH-T9-UNASSIGNED", "Rana Magdy", "tenant-1", "Teacher", password);
 
             var teachT1 = await UserIdByLoginCodeAsync("TEACH-T1");
             var teachT2 = await UserIdByLoginCodeAsync("TEACH-T2");
@@ -945,7 +961,7 @@ namespace DerasaX.Api.SeedData
             }
 
             // AI-generated quiz DRAFT on the assigned subject (review-gated; never published on seed).
-            await EnsureDraftQuiz("E2E-PH9-DRAFT-T1", "tenant-1", "Phase 9 AI Draft Quiz", "PH8-SUBJECT-T1", "PH8-LESSON-T1");
+            await EnsureDraftQuiz("E2E-PH9-DRAFT-T1", "tenant-1", "Linear Equations Review Quiz", "PH8-SUBJECT-T1", "PH8-LESSON-T1");
             await EnsureQuestion("E2E-PH9-DRAFT-Q1", "tenant-1", "E2E-PH9-DRAFT-T1", "What is 5 + 7?", QuestionType.MCQ, 1, 1);
             await EnsureOption("E2E-PH9-DRAFT-Q1-A", "tenant-1", "E2E-PH9-DRAFT-Q1", "12", true);
             await EnsureOption("E2E-PH9-DRAFT-Q1-B", "tenant-1", "E2E-PH9-DRAFT-Q1", "11", false);
@@ -984,7 +1000,7 @@ namespace DerasaX.Api.SeedData
         {
             await Ensure(_context.quizGenerations, x => x.Id == id, () => new QuizGeneration
             {
-                Id = id, TenantId = tenantId, QuizId = quizId, PromptUsed = "Phase 9 fixture draft (seeded, not a live AI call).",
+                Id = id, TenantId = tenantId, QuizId = quizId, PromptUsed = "Generate a short review quiz from the Linear Equations lesson.",
                 AiProvider = "fixture", AiModel = "fixture", ModelVersion = "fixture-v1", PromptVersion = "quiz.v1",
                 Status = QuizGenerationStatus.Pending, GeneratedAt = DateTime.UtcNow.AddDays(-1)
             });
@@ -1041,8 +1057,8 @@ namespace DerasaX.Api.SeedData
             var password = _configuration["Seed:DefaultPassword"] ?? "Local@Dev123";
 
             // Dedicated linked parent + a same-tenant parent with NO linked children.
-            await EnsureUser<Parent>("PH10-PARENT-T1", "Phase 10 Linked Parent", "tenant-1", "Parent", password);
-            await EnsureUser<Parent>("PH10-PARENT-NOCHILD-T1", "Phase 10 Parent No Children", "tenant-1", "Parent", password);
+            await EnsureUser<Parent>("PH10-PARENT-T1", "Hassan Fathy", "tenant-1", "Parent", password);
+            await EnsureUser<Parent>("PH10-PARENT-NOCHILD-T1", "Dalia Sami", "tenant-1", "Parent", password);
 
             var parentT1 = await UserIdByLoginCodeAsync("PH10-PARENT-T1");
             var stuT1 = await UserIdByLoginCodeAsync("STU-T1");
@@ -1112,16 +1128,16 @@ namespace DerasaX.Api.SeedData
         {
             var password = _configuration["Seed:DefaultPassword"] ?? "Local@Dev123";
 
-            await EnsureUser<SchoolAdmin>("PH11-SCHOOLADMIN-T1", "Phase 11 School Admin", "tenant-1", "SchoolAdmin", password);
-            await EnsureUser<SchoolAdmin>("PH11-SCHOOLADMIN-T2", "Phase 11 School Admin T2", "tenant-2", "SchoolAdmin", password);
+            await EnsureUser<SchoolAdmin>("PH11-SCHOOLADMIN-T1", "Walid Abdel Rahman", "tenant-1", "SchoolAdmin", password);
+            await EnsureUser<SchoolAdmin>("PH11-SCHOOLADMIN-T2", "Nour El-Sayed", "tenant-2", "SchoolAdmin", password);
 
             // Unlinked parent + student in tenant-1 for the create-relationship flow.
-            await EnsureUser<Parent>("PH11-PARENT-T1", "Phase 11 Unlinked Parent", "tenant-1", "Parent", password);
-            await EnsureUser<Student>("PH11-STUDENT-T1", "Phase 11 Unlinked Student", "tenant-1", "Student", password, gradeId: "G7-ID");
+            await EnsureUser<Parent>("PH11-PARENT-T1", "Ayman Sobhy", "tenant-1", "Parent", password);
+            await EnsureUser<Student>("PH11-STUDENT-T1", "Omar Khaled", "tenant-1", "Student", password, gradeId: "G7-ID");
 
             // Unassigned teacher + a class in tenant-1 for the create-assignment flow.
-            await EnsureUser<Teacher>("PH11-TEACHER-T1", "Phase 11 Unassigned Teacher", "tenant-1", "Teacher", password);
-            await EnsureSchoolClass("PH11-CLASS-T1", "Phase 11 Class", "PH11C1", "tenant-1", "G7-ID", "PH8-AY-T1");
+            await EnsureUser<Teacher>("PH11-TEACHER-T1", "Ghada Talaat", "tenant-1", "Teacher", password);
+            await EnsureSchoolClass("PH11-CLASS-T1", "Grade 7 - C", "PH11C1", "tenant-1", "G7-ID", "PH8-AY-T1");
         }
 
         // Remove the parent↔student links and teacher↔class assignments created during a
@@ -1168,7 +1184,7 @@ namespace DerasaX.Api.SeedData
             var password = _configuration["Seed:DefaultPassword"] ?? "Local@Dev123";
 
             // Dedicated platform SystemAdmin (TenantId stays null).
-            await EnsureUser<SystemAdmin>("PH12-SYSADMIN", "Phase 12 Platform Admin", null, "SystemAdmin", password);
+            await EnsureUser<SystemAdmin>("PH12-SYSADMIN", "Sameh Victor", null, "SystemAdmin", password);
 
             // Real subscription-plan definitions (platform-owned catalog) so the Plans page and the
             // onboarding assign-plan step operate on genuine data (no fabricated plans in the UI).
@@ -1176,11 +1192,11 @@ namespace DerasaX.Api.SeedData
             await EnsurePlan("PH12-PLAN-PRO", "PRO", "Pro", SubscriptionPlan.Pro, 49m, 1000, 100, 10240, 5000);
 
             // A dedicated Active tenant the live matrix can suspend then reactivate.
-            await EnsureTenant("PH12-TENANT-SUSPEND", "Phase 12 Lifecycle Tenant", TenantStatus.Active);
+            await EnsureTenant("PH12-TENANT-SUSPEND", "Rosetta Modern School", TenantStatus.Active);
 
             // A Pending support ticket in tenant-1 for the handle-support-ticket flow.
             await EnsureSupportRequest("PH12-SUPPORT-REQ-T1", "tenant-1", "STU-T1",
-                "Phase 12 seeded support ticket — please assist.");
+                "I can't open my child's report card. Please assist.");
         }
 
         // Restore the Phase 12 lifecycle tenant to Active and the seeded support ticket to
@@ -1243,20 +1259,20 @@ namespace DerasaX.Api.SeedData
         {
             var password = _configuration["Seed:DefaultPassword"] ?? "Local@Dev123";
 
-            await EnsureTenant("PH13-TENANT", "Phase 13 Comms School", TenantStatus.Active);
+            await EnsureTenant("PH13-TENANT", "Pyramids International School", TenantStatus.Active);
 
-            await EnsureUser<SchoolAdmin>("PH13-ADMIN", "Phase 13 School Admin", "PH13-TENANT", "SchoolAdmin", password);
-            await EnsureUser<Teacher>("PH13-TEACHER", "Phase 13 Teacher", "PH13-TENANT", "Teacher", password);
-            await EnsureUser<Student>("PH13-STUDENT-A", "Phase 13 Student A", "PH13-TENANT", "Student", password, gradeId: "G7-ID");
-            await EnsureUser<Student>("PH13-STUDENT-B", "Phase 13 Student B", "PH13-TENANT", "Student", password, gradeId: "G7-ID");
-            await EnsureUser<Parent>("PH13-PARENT", "Phase 13 Parent", "PH13-TENANT", "Parent", password);
+            await EnsureUser<SchoolAdmin>("PH13-ADMIN", "Heba Rashad", "PH13-TENANT", "SchoolAdmin", password);
+            await EnsureUser<Teacher>("PH13-TEACHER", "Ziad Mostafa", "PH13-TENANT", "Teacher", password);
+            await EnsureUser<Student>("PH13-STUDENT-A", "Mariam Adel", "PH13-TENANT", "Student", password, gradeId: "G7-ID");
+            await EnsureUser<Student>("PH13-STUDENT-B", "Kareem Wael", "PH13-TENANT", "Student", password, gradeId: "G7-ID");
+            await EnsureUser<Parent>("PH13-PARENT", "Sara Lamloum", "PH13-TENANT", "Parent", password);
 
             // Minimal academic structure so teacher↔student messaging is allowed for STUDENT-A only.
             // schoolClasses carries a COMPOSITE FK (TenantId, GradeId) → grades, so the class needs a
             // grade that lives in PH13-TENANT (the shared G7-ID belongs to another tenant).
             await EnsureGrade("PH13-G7", "Grade 7", "PH13-TENANT");
-            await EnsureAcademicYear("PH13-AY", "Phase 13 Academic Year", "PH13AY", "PH13-TENANT");
-            await EnsureSchoolClass("PH13-CLASS", "Phase 13 Class", "PH13C1", "PH13-TENANT", "PH13-G7", "PH13-AY");
+            await EnsureAcademicYear("PH13-AY", "Academic Year 2030/2031", "PH13AY", "PH13-TENANT");
+            await EnsureSchoolClass("PH13-CLASS", "Grade 7 - A", "PH13C1", "PH13-TENANT", "PH13-G7", "PH13-AY");
 
             var teacherId = await UserIdByLoginCodeAsync("PH13-TEACHER");
             var studentAId = await UserIdByLoginCodeAsync("PH13-STUDENT-A");
@@ -1273,15 +1289,19 @@ namespace DerasaX.Api.SeedData
         // mark-read tests, owned by PH13-STUDENT-A. Re-created by reset.
         private async Task EnsurePhase13NotificationsAsync(string studentId)
         {
-            var ids = new[] { "PH13-NOTIF-1", "PH13-NOTIF-2" };
-            var idx = 1;
-            foreach (var nid in ids)
+            var notifs = new[]
             {
-                var n = nid; var i = idx;
+                ("PH13-NOTIF-1", "New message from your teacher", "You have a new message about this week's lesson."),
+                ("PH13-NOTIF-2", "School announcement posted", "A new announcement has been posted for your class."),
+            };
+            var idx = 1;
+            foreach (var (nid, title, body) in notifs)
+            {
+                var n = nid; var i = idx; var ti = title; var bo = body;
                 await Ensure(_context.notifications, x => x.Id == n, () => new Notification
                 {
-                    Id = n, TenantId = "PH13-TENANT", UserId = studentId, Title = $"Phase 13 Notification {i}",
-                    Body = $"Deterministic Phase 13 notification {i}.", NotificationCategory = NotificationCategory.General,
+                    Id = n, TenantId = "PH13-TENANT", UserId = studentId, Title = ti,
+                    Body = bo, NotificationCategory = NotificationCategory.General,
                     NotificationType = NotificationType.System, IsRead = false, CreatedAt = DateTime.UtcNow.AddMinutes(-i)
                 });
                 idx++;

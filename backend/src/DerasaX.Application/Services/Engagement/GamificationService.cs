@@ -145,6 +145,16 @@ namespace DerasaX.Application.Services.Engagement
                     Rank = ((p.PageNumber - 1) * p.PageSize) + i + 1
                 })
                 .ToList();
+
+            // Resolve display names so the leaderboard shows real names, not raw ids.
+            var rowIds = rows.Select(r => r.StudentId).ToList();
+            if (rowIds.Count > 0)
+            {
+                var names = await _users.Users.Where(u => rowIds.Contains(u.Id))
+                    .Select(u => new { u.Id, u.FullName }).ToListAsync(ct);
+                foreach (var r in rows)
+                    r.StudentName = names.FirstOrDefault(n => n.Id == r.StudentId)?.FullName;
+            }
             return Ok<IEnumerable<PointLeaderboardRowDto>>(rows, 200, "Leaderboard retrieved.");
         }
 

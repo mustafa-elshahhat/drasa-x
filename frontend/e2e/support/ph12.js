@@ -19,7 +19,7 @@ export const CODES12 = {
 // Deterministic Phase 12 fixture identifiers.
 export const FIX12 = {
   lifecycleTenant: 'PH12-TENANT-SUSPEND', // Active tenant the suspend→reactivate flow drives
-  lifecycleTenantName: 'Phase 12 Lifecycle Tenant',
+  lifecycleTenantName: 'Rosetta Modern School',
   planPro: 'Pro', // seeded SubscriptionPlanDefinition name (PH12-PLAN-PRO)
-  supportTicketMessage: 'Phase 12 seeded support ticket', // seeded Pending ticket in tenant-1
+  supportTicketMessage: "I can't open my child's report card", // seeded Pending ticket in tenant-1
 }

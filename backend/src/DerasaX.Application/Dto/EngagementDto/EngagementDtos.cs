@@ -141,6 +141,7 @@ namespace DerasaX.Application.Dto.EngagementDto
     public class LeaderboardRowDto
     {
         public string StudentId { get; set; } = string.Empty;
+        public string? StudentName { get; set; }
         public decimal Score { get; set; }
         public int Rank { get; set; }
     }
@@ -267,6 +268,7 @@ namespace DerasaX.Application.Dto.EngagementDto
     public class PointLeaderboardRowDto
     {
         public string StudentId { get; set; } = string.Empty;
+        public string? StudentName { get; set; }
         public int TotalPoints { get; set; }
         public int Rank { get; set; }
     }

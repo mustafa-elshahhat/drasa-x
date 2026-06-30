@@ -29,6 +29,7 @@ namespace DerasaX.Application.Dto.ParentDto
         public string StudentId { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string? GradeId { get; set; }
+        public string? GradeName { get; set; }
 
         // Relationship metadata (from the parent-student link).
         public string Relationship { get; set; } = string.Empty;
@@ -57,6 +58,7 @@ namespace DerasaX.Application.Dto.ParentDto
         public string StudentId { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string? GradeId { get; set; }
+        public string? GradeName { get; set; }
 
         public string Relationship { get; set; } = string.Empty;
         public bool IsPrimary { get; set; }

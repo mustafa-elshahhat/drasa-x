@@ -20,26 +20,26 @@ test.afterAll(async () => { await context?.close() })
 
 test('PH9-B1 teacher sees the assigned class in the class list', async () => {
   await nav(page, '/app/teacher/classes')
-  await expect(page.getByText(/Phase 8 Class/).first()).toBeVisible()
+  await expect(page.getByText(/Grade 7 - A/).first()).toBeVisible()
   guards.assertNoForbidden()
 })
 
 test('PH9-B2 teacher opens the assigned class and sees enrolled students', async () => {
   await nav(page, `/app/teacher/classes/${FIX9.classT1}`)
-  await expect(page.getByText(/Tenant1 Student|Phase 8 Other Student/).first()).toBeVisible()
+  await expect(page.getByText(/Youssef Ibrahim|Salma Adel/).first()).toBeVisible()
   guards.assertNoForbidden()
 })
 
 test('PH9-B3 teacher cannot read students of a class they are not assigned to', async () => {
   // A tenant-2 class id → backend 404 → UI shows no roster.
   await nav(page, `/app/teacher/classes/${FIX9.classT2}`)
-  await expect(page.getByText(/Tenant1 Student/)).toHaveCount(0)
+  await expect(page.getByText(/Youssef Ibrahim/)).toHaveCount(0)
   guards.assertNoForbidden()
 })
 
 test('PH9-B4 teacher browses curriculum: subjects → units → lessons → lesson detail', async () => {
   await nav(page, '/app/teacher/subjects')
-  await expect(page.getByText(/Phase 8 Mathematics/).first()).toBeVisible()
+  await expect(page.getByText(/Mathematics/).first()).toBeVisible()
   await nav(page, `/app/teacher/subjects/${FIX9.subjectT1}`)
   await expect(page.getByRole('heading', { name: /units/i })).toBeVisible()
   // Drill into the seeded unit and lesson.

@@ -1,7 +1,10 @@
-﻿[
+[
   {
     "Id": "tenant-1",
-    "Name": "Main School",
+    "Name": "Nile Future International School",
+    "Domain": "nilefuture.edu.eg",
+    "Address": "12 El-Nasr Road, New Cairo, Cairo",
+    "Phone": "+20 2 2618 4500",
     "IsDeleted": false
   }
 ]

@@ -57,7 +57,7 @@ test.describe('Phase 8 M — badges / streaks / profile / settings', () => {
   test('M89 the profile shows the real signed-in identity; localStorage is not authoritative', async () => {
     await page.goto('/app/student/profile')
     await expect(page.getByText('STU-T1').first()).toBeVisible()
-    await expect(page.getByText('Tenant1 Student').first()).toBeVisible()
+    await expect(page.getByText('Youssef Ibrahim').first()).toBeVisible()
     // No access token / identity authority is persisted in localStorage.
     const dump = await page.evaluate(() => JSON.stringify(window.localStorage))
     expect(dump).not.toMatch(/eyJ[A-Za-z0-9_-]+\./) // no JWT

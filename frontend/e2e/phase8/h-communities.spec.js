@@ -23,11 +23,11 @@ test.describe('Phase 8 H — communities', () => {
   test('H57 eligible (tenant-scoped) communities are listed', async () => {
     await nav(page, '/app/student/communities')
     await expect(page.getByRole('heading', { name: /^communities$/i })).toBeVisible()
-    await expect(page.getByText('Phase 8 Math Club').first()).toBeVisible()
+    await expect(page.getByText('Mathematics Club').first()).toBeVisible()
     // Tenant scoping is the real contract here: the seeded same-tenant community is listed and
     // the cross-tenant community never leaks in. (An exact total count is not deterministic — a
     // later phase, e.g. Phase 14, seeds additional same-tenant communities in the shared run.)
-    await expect(page.getByText('Phase 8 Tenant2 Club')).toHaveCount(0)
+    await expect(page.getByText('Science Club')).toHaveCount(0)
   })
 
   test('H58 community details render info and the membership action', async () => {
@@ -87,7 +87,7 @@ test.describe('Phase 8 H — communities', () => {
     // The UI surfaces a usable error state (no foreign-tenant content rendered).
     await page.goto(`/app/student/communities/${FIX.commT2}`)
     await expect(page.locator('[role="alert"]').first()).toBeVisible()
-    await expect(page.getByText('Phase 8 Math Club')).toHaveCount(0)
+    await expect(page.getByText('Mathematics Club')).toHaveCount(0)
 
     // Existing posts render as escaped text (no raw HTML / injected script).
     await page.goto(`/app/student/communities/${FIX.commT1}`)

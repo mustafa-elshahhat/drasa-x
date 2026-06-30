@@ -73,7 +73,7 @@ test.describe('Phase 8 K — notifications & announcements', () => {
   test('K78 announcements show tenant-targeted records', async () => {
     await page.goto('/app/student/announcements')
     await expect(page.getByRole('heading', { name: /^announcements$/i })).toBeVisible()
-    await expect(page.getByText('Phase 8 School Announcement').first()).toBeVisible()
+    await expect(page.getByText('Welcome Back to School').first()).toBeVisible()
   })
 
   test('K79 the inbox exposes no external or foreign-tenant deep links', async () => {

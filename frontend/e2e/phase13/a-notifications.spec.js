@@ -21,7 +21,7 @@ test.describe('Phase 13 A — notification centre', () => {
   test('A1 the inbox lists the student\'s own seeded notifications', async () => {
     await nav(page, '/app/notifications')
     await expect(page.getByRole('heading', { name: /^notifications$/i })).toBeVisible()
-    await expect(page.getByText(/Phase 13 Notification/i).first()).toBeVisible({ timeout: 15000 })
+    await expect(page.getByText(/new message from your teacher|school announcement posted/i).first()).toBeVisible({ timeout: 15000 })
     guards.assertNoForbidden()
   })
 

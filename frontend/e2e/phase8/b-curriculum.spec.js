@@ -33,7 +33,7 @@ test.describe('Phase 8 B — curriculum & lesson progress', () => {
   test('B10 my subjects lists the enrolled subject and is tenant-scoped', async () => {
     await nav(page, '/app/student/subjects')
     await expect(page.getByRole('heading', { name: /my subjects/i })).toBeVisible()
-    await expect(page.getByText('Phase 8 Mathematics').first()).toBeVisible()
+    await expect(page.getByText('Mathematics').first()).toBeVisible()
     // Real backend rows only (tenant-scoped curriculum; cross-tenant isolation is
     // proven by B11/B20). The list reflects persisted subjects, not demo data.
     const rows = await page.locator('.student-row-link').count()
@@ -42,27 +42,27 @@ test.describe('Phase 8 B — curriculum & lesson progress', () => {
 
   test('B11 subject details loads the authorized subject; a cross-tenant subject id leaks nothing', async () => {
     await nav(page, `/app/student/subjects/${FIX.subjectT1}`)
-    await expect(page.getByText('Phase 8 Algebra').first()).toBeVisible() // authorized unit loaded
+    await expect(page.getByText('Algebra').first()).toBeVisible() // authorized unit loaded
     // Cross-tenant subject id → no authorized unit content rendered.
     await nav(page, `/app/student/subjects/${FIX.subjectT1.replace('T1', 'T2')}`)
     await expect(page.locator('main')).toBeVisible()
-    await expect(page.getByText('Phase 8 Linear Equations')).toHaveCount(0)
+    await expect(page.getByText('Linear Equations')).toHaveCount(0)
     await expect(page.locator('.student-row-link')).toHaveCount(0)
   })
 
   test('B12 units flow renders only units of the authorized subject', async () => {
     await nav(page, `/app/student/subjects/${FIX.subjectT1}`)
-    await expect(page.getByText('Phase 8 Algebra').first()).toBeVisible()
+    await expect(page.getByText('Algebra').first()).toBeVisible()
   })
 
   test('B13 lessons flow renders only lessons of the authorized unit', async () => {
     await nav(page, `/app/student/units/${FIX.unitT1}`)
-    await expect(page.getByText('Phase 8 Linear Equations').first()).toBeVisible()
+    await expect(page.getByText('Linear Equations').first()).toBeVisible()
   })
 
   test('B14 lesson materials render persisted backend material as safe text', async () => {
     await nav(page, `/app/student/lessons/${FIX.lessonT1}`)
-    await expect(page.getByText('Phase 8 Worksheet').first()).toBeVisible()
+    await expect(page.getByText('Algebra Worksheet').first()).toBeVisible()
   })
 
   test('B15 viewing a lesson does not mark it complete', async () => {

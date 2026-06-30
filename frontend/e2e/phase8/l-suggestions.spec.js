@@ -90,6 +90,6 @@ test.describe('Phase 8 L — anonymous suggestions', () => {
     }
     // And the success state does not name the author within the suggestion form region.
     await expect(page.getByText(/suggestion submitted/i)).toBeVisible()
-    await expect(page.getByText(/^suggestion submitted$/i).locator('..')).not.toContainText('Tenant1 Student')
+    await expect(page.getByText(/^suggestion submitted$/i).locator('..')).not.toContainText('Youssef Ibrahim')
   })
 })

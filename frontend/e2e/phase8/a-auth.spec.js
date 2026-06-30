@@ -76,7 +76,7 @@ test.describe('Phase 8 A — authentication & role boundaries', () => {
       // Cross-tenant subject id must not leak the foreign subject.
       await nav(page, `/app/student/subjects/${FIX.subjectT1.replace('T1', 'T2')}`)
       await expect(page.locator('main')).toBeVisible()
-      await expect(page.locator('body')).not.toContainText('Phase 8 Tenant2')
+      await expect(page.locator('body')).not.toContainText('Al-Nahda STEM School')
       // The client supplies NO tenant/student/role identity header (identity is from the JWT only).
       expect(identityHeaders, `client identity headers leaked: ${identityHeaders.join(', ')}`).toEqual([])
       // Access token is held in memory, never in localStorage (storage is not authoritative).
