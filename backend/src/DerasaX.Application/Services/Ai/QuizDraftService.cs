@@ -36,18 +36,21 @@ namespace DerasaX.Application.Services.Ai
         private readonly IAiRagClient _ai;
         private readonly IAiUsageService _usage;
         private readonly ILogger<QuizDraftService> _logger;
+        private readonly IPlanLimitEnforcer _limits;
 
         public QuizDraftService(IUnitOfWork uow, ITenantContext tenant, IAuditWriter audit,
-            IAiRagClient ai, IAiUsageService usage, ILogger<QuizDraftService> logger) : base(uow, tenant, audit)
+            IAiRagClient ai, IAiUsageService usage, ILogger<QuizDraftService> logger, IPlanLimitEnforcer limits) : base(uow, tenant, audit)
         {
             _ai = ai;
             _usage = usage;
             _logger = logger;
+            _limits = limits;
         }
 
         public async Task<QuizDraftResultDto> GenerateDraftAsync(GenerateQuizDraftDto request, CancellationToken ct = default)
         {
             var tenantId = RequireTenant();
+            await _limits.EnsureWithinAiMonthlyQuotaAsync(tenantId, ct);
 
             if (string.IsNullOrWhiteSpace(request.SubjectId))
                 throw new BadRequestException("SubjectId is required.");

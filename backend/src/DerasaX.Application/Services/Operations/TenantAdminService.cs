@@ -82,6 +82,83 @@ namespace DerasaX.Application.Services.Operations
             return Ok<IEnumerable<PlanDto>>(plans.Select(MapPlan).ToList());
         }
 
+        public async Task<ApiResponse<PlanDto>> CreatePlanAsync(CreatePlanDto dto, CancellationToken ct = default)
+        {
+            ValidatePlanFields(dto.Code, dto.Name, dto.Price, dto.Currency, dto.BillingPeriod, dto.Tier, dto.TrialDays,
+                dto.MaxStudents, dto.MaxTeachers, dto.MaxParents, dto.MaxSchoolAdmins, dto.MaxClasses, dto.MaxSubjects,
+                dto.MaxLessonMaterials, dto.MaxStorageMb, dto.MaxAiGenerationsPerMonth, dto.MaxAiTokensPerMonth, out var currency);
+
+            if (await _plans.FirstOrDefaultAsync(p => p.Code == dto.Code.Trim(), ct) is not null)
+                throw new ConflictException("A plan with this code already exists.");
+
+            var plan = new SubscriptionPlanDefinition
+            {
+                Id = Guid.NewGuid().ToString(),
+                Code = dto.Code.Trim(),
+                Name = dto.Name.Trim(),
+                Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim(),
+                Tier = dto.Tier,
+                BillingPeriod = dto.BillingPeriod,
+                Price = dto.Price,
+                Currency = currency,
+                TrialDays = dto.TrialDays,
+                IsActive = dto.IsActive,
+                MaxStudents = dto.MaxStudents,
+                MaxTeachers = dto.MaxTeachers,
+                MaxParents = dto.MaxParents,
+                MaxSchoolAdmins = dto.MaxSchoolAdmins,
+                MaxClasses = dto.MaxClasses,
+                MaxSubjects = dto.MaxSubjects,
+                MaxLessonMaterials = dto.MaxLessonMaterials,
+                MaxStorageMb = dto.MaxStorageMb,
+                MaxAiGenerationsPerMonth = dto.MaxAiGenerationsPerMonth,
+                MaxAiTokensPerMonth = dto.MaxAiTokensPerMonth,
+            };
+            // SubscriptionPlanDefinition is platform-owned (no TenantId) — it is audited via its
+            // own IAuditable CreatedBy/CreatedAt stamping (DerasaXDbContext.StampAudit), the same
+            // pattern used for other platform-only writes (announcements, settings, feature flags).
+            // A dedicated AuditLog row is not used here: that table requires a non-null TenantId,
+            // and a plan is never attributable to one specific tenant.
+            await _plans.AddAsync(plan, ct);
+            await UnitOfWork.SaveChangesAsync(ct);
+            return Ok(MapPlan(plan), 201, "Plan created.");
+        }
+
+        public async Task<ApiResponse<PlanDto>> UpdatePlanAsync(string id, UpdatePlanDto dto, CancellationToken ct = default)
+        {
+            var plan = await _plans.FirstOrDefaultAsync(p => p.Id == id, ct) ?? throw new NotFoundException("Plan not found.");
+
+            ValidatePlanFields(dto.Code, dto.Name, dto.Price, dto.Currency, dto.BillingPeriod, dto.Tier, dto.TrialDays,
+                dto.MaxStudents, dto.MaxTeachers, dto.MaxParents, dto.MaxSchoolAdmins, dto.MaxClasses, dto.MaxSubjects,
+                dto.MaxLessonMaterials, dto.MaxStorageMb, dto.MaxAiGenerationsPerMonth, dto.MaxAiTokensPerMonth, out var currency);
+
+            if (await _plans.FirstOrDefaultAsync(p => p.Code == dto.Code.Trim() && p.Id != id, ct) is not null)
+                throw new ConflictException("A plan with this code already exists.");
+
+            plan.Code = dto.Code.Trim();
+            plan.Name = dto.Name.Trim();
+            plan.Description = string.IsNullOrWhiteSpace(dto.Description) ? null : dto.Description.Trim();
+            plan.Tier = dto.Tier;
+            plan.BillingPeriod = dto.BillingPeriod;
+            plan.Price = dto.Price;
+            plan.Currency = currency;
+            plan.TrialDays = dto.TrialDays;
+            plan.IsActive = dto.IsActive;
+            plan.MaxStudents = dto.MaxStudents;
+            plan.MaxTeachers = dto.MaxTeachers;
+            plan.MaxParents = dto.MaxParents;
+            plan.MaxSchoolAdmins = dto.MaxSchoolAdmins;
+            plan.MaxClasses = dto.MaxClasses;
+            plan.MaxSubjects = dto.MaxSubjects;
+            plan.MaxLessonMaterials = dto.MaxLessonMaterials;
+            plan.MaxStorageMb = dto.MaxStorageMb;
+            plan.MaxAiGenerationsPerMonth = dto.MaxAiGenerationsPerMonth;
+            plan.MaxAiTokensPerMonth = dto.MaxAiTokensPerMonth;
+            _plans.Update(plan);
+            await UnitOfWork.SaveChangesAsync(ct);
+            return Ok(MapPlan(plan), 200, "Plan updated.");
+        }
+
         public async Task<ApiResponse<SubscriptionDto>> AssignPlanAsync(AssignPlanDto dto, CancellationToken ct = default)
         {
             var tenant = await _tenants.FirstOrDefaultAsync(t => t.Id == dto.TenantId, ct) ?? throw new NotFoundException("Tenant not found.");
@@ -152,8 +229,18 @@ namespace DerasaX.Application.Services.Operations
         {
             var students = await _users.Users.CountAsync(u => u.TenantId == tenantId && !u.IsDeleted && u is Student, ct);
             var teachers = await _users.Users.CountAsync(u => u.TenantId == tenantId && !u.IsDeleted && u is Teacher, ct);
-            var aiUsed = await UnitOfWork.Repository<AiUsageRecord, string>().CountAsync(
-                new CriteriaSpecification<AiUsageRecord, string>(a => a.TenantId == tenantId));
+
+            var now = DateTime.UtcNow;
+            var startOfMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            var aiRecordsThisMonth = await UnitOfWork.Repository<AiUsageRecord, string>().GetAllWithSpecAsync(
+                new CriteriaSpecification<AiUsageRecord, string>(a => a.TenantId == tenantId && a.UsedAt >= startOfMonth), asNoTracking: true);
+            var aiList = aiRecordsThisMonth.ToList();
+            var aiUsed = aiList.Count;
+            var aiTokensUsed = aiList.Sum(a => a.TotalTokens ?? 0);
+
+            var files = await UnitOfWork.Repository<FileRecord, string>().GetAllWithSpecAsync(
+                new CriteriaSpecification<FileRecord, string>(f => f.TenantId == tenantId && !f.IsDeleted), asNoTracking: true);
+            var storageUsedBytes = files.Sum(f => f.SizeBytes);
 
             var sub = await LatestSubscription(tenantId);
             SubscriptionPlanDefinition? plan = sub is null ? null
@@ -167,7 +254,13 @@ namespace DerasaX.Application.Services.Operations
                 AiGenerationsUsed = aiUsed,
                 MaxStudents = plan?.MaxStudents,
                 MaxAiGenerationsPerMonth = plan?.MaxAiGenerationsPerMonth,
-                OverStudentLimit = plan?.MaxStudents is int max && students > max
+                OverStudentLimit = plan?.MaxStudents is int max && students > max,
+                StorageUsedBytes = storageUsedBytes,
+                MaxStorageMb = plan?.MaxStorageMb,
+                OverStorageLimit = plan?.MaxStorageMb is int maxMb && storageUsedBytes > (long)maxMb * 1024 * 1024,
+                AiTokensUsed = aiTokensUsed,
+                MaxAiTokensPerMonth = plan?.MaxAiTokensPerMonth,
+                OverAiTokenLimit = plan?.MaxAiTokensPerMonth is int maxTokens && aiTokensUsed > maxTokens
             };
         }
 
@@ -183,9 +276,40 @@ namespace DerasaX.Application.Services.Operations
         private static TenantDto Map(Tenant t) => new() { Id = t.Id, Name = t.Name, Domain = t.Domain, Status = t.Status, Type = t.Type };
         private static PlanDto MapPlan(SubscriptionPlanDefinition p) => new()
         {
-            Id = p.Id, Code = p.Code, Name = p.Name, Tier = p.Tier, Price = p.Price, Currency = p.Currency,
-            MaxStudents = p.MaxStudents, MaxTeachers = p.MaxTeachers, MaxAiGenerationsPerMonth = p.MaxAiGenerationsPerMonth, IsActive = p.IsActive
+            Id = p.Id, Code = p.Code, Name = p.Name, Description = p.Description, Tier = p.Tier, BillingPeriod = p.BillingPeriod,
+            Price = p.Price, Currency = p.Currency, TrialDays = p.TrialDays, IsActive = p.IsActive,
+            MaxStudents = p.MaxStudents, MaxTeachers = p.MaxTeachers, MaxParents = p.MaxParents, MaxSchoolAdmins = p.MaxSchoolAdmins,
+            MaxClasses = p.MaxClasses, MaxSubjects = p.MaxSubjects, MaxLessonMaterials = p.MaxLessonMaterials,
+            MaxStorageMb = p.MaxStorageMb, MaxAiGenerationsPerMonth = p.MaxAiGenerationsPerMonth, MaxAiTokensPerMonth = p.MaxAiTokensPerMonth
         };
+
+        /// <summary>Shared guard-clause validation for plan create/update (no FluentValidation in this codebase).</summary>
+        private static void ValidatePlanFields(string code, string name, decimal price, string currencyInput,
+            BillingPeriod billingPeriod, SubscriptionPlan tier, int trialDays,
+            int? maxStudents, int? maxTeachers, int? maxParents, int? maxSchoolAdmins, int? maxClasses, int? maxSubjects,
+            int? maxLessonMaterials, int? maxStorageMb, int? maxAiGenerationsPerMonth, int? maxAiTokensPerMonth,
+            out string currency)
+        {
+            if (string.IsNullOrWhiteSpace(code)) throw new BadRequestException("Code is required.");
+            if (string.IsNullOrWhiteSpace(name)) throw new BadRequestException("Name is required.");
+            if (price < 0) throw new BadRequestException("Price must not be negative.");
+            currency = (currencyInput ?? string.Empty).Trim().ToUpperInvariant();
+            if (currency.Length != 3 || !currency.All(char.IsLetter))
+                throw new BadRequestException("Currency must be a 3-letter ISO code (e.g. USD).");
+            if (!Enum.IsDefined(typeof(BillingPeriod), billingPeriod)) throw new BadRequestException("BillingPeriod is invalid.");
+            if (!Enum.IsDefined(typeof(SubscriptionPlan), tier)) throw new BadRequestException("Tier is invalid.");
+            if (trialDays < 0) throw new BadRequestException("TrialDays must not be negative.");
+            foreach (var (label, value) in new (string, int?)[]
+            {
+                (nameof(maxStudents), maxStudents), (nameof(maxTeachers), maxTeachers), (nameof(maxParents), maxParents),
+                (nameof(maxSchoolAdmins), maxSchoolAdmins), (nameof(maxClasses), maxClasses), (nameof(maxSubjects), maxSubjects),
+                (nameof(maxLessonMaterials), maxLessonMaterials), (nameof(maxStorageMb), maxStorageMb),
+                (nameof(maxAiGenerationsPerMonth), maxAiGenerationsPerMonth), (nameof(maxAiTokensPerMonth), maxAiTokensPerMonth),
+            })
+            {
+                if (value is < 0) throw new BadRequestException($"{label} must not be negative.");
+            }
+        }
         private static SubscriptionDto MapSub(TenantSubscription s) => new()
         {
             Id = s.Id, PlanDefinitionId = s.PlanDefinitionId, Status = s.Status, StartsAt = s.StartsAt,

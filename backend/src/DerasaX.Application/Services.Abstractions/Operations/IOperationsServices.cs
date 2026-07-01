@@ -14,6 +14,8 @@ namespace DerasaX.Application.Services.Abstractions.Operations
         Task<ApiResponse<TenantDto>> CreateTenantAsync(CreateTenantDto dto, CancellationToken ct = default);
         Task<ApiResponse<TenantDto>> SetStatusAsync(string id, Domain.Enums.TenantStatus status, CancellationToken ct = default);
         Task<ApiResponse<IEnumerable<PlanDto>>> ListPlansAsync(CancellationToken ct = default);
+        Task<ApiResponse<PlanDto>> CreatePlanAsync(CreatePlanDto dto, CancellationToken ct = default);
+        Task<ApiResponse<PlanDto>> UpdatePlanAsync(string id, UpdatePlanDto dto, CancellationToken ct = default);
         Task<ApiResponse<SubscriptionDto>> AssignPlanAsync(AssignPlanDto dto, CancellationToken ct = default);
         Task<ApiResponse<SubscriptionDto>> GetSubscriptionAsync(string tenantId, CancellationToken ct = default);
         Task<ApiResponse<RenewalDto>> ProcessRenewalAsync(string renewalId, ProcessRenewalDto dto, CancellationToken ct = default);
@@ -75,6 +77,27 @@ namespace DerasaX.Application.Services.Abstractions.Operations
         Task<PaginationResponse<IEnumerable<FileRecordDto>>> ListAsync(FileParameters p, CancellationToken ct = default);
         Task<ApiResponse<FileRecordDto>> GetAsync(string id, CancellationToken ct = default);
         Task<ApiResponse<bool>> ArchiveAsync(string id, CancellationToken ct = default);
+    }
+
+    /// <summary>
+    /// Enforces the current tenant's subscription-plan limits at the write-time
+    /// service boundary (not just display). Resolves the tenant's latest
+    /// <c>TenantSubscription</c> -&gt; <c>SubscriptionPlanDefinition</c> once per check;
+    /// a tenant with no subscription at all is treated as unlimited (backward
+    /// compatible with tenants that predate plan assignment). Throws
+    /// <see cref="DerasaX.Domain.Exceptions.PlanLimitExceededException"/> (409) when a
+    /// write would meet or exceed the plan's limit.
+    /// </summary>
+    public interface IPlanLimitEnforcer
+    {
+        /// <summary>role: Roles.Student, Roles.Teacher, Roles.Parent, or Roles.SchoolAdmin.</summary>
+        Task EnsureCanAddUserAsync(string tenantId, string role, CancellationToken ct = default);
+        Task EnsureCanAddClassAsync(string tenantId, CancellationToken ct = default);
+        Task EnsureCanAddSubjectAsync(string tenantId, CancellationToken ct = default);
+        Task EnsureCanAddLessonMaterialAsync(string tenantId, CancellationToken ct = default);
+        Task EnsureCanUploadBytesAsync(string tenantId, long additionalBytes, CancellationToken ct = default);
+        /// <summary>Checks both the request-count and token-sum ceilings for the current UTC calendar month.</summary>
+        Task EnsureWithinAiMonthlyQuotaAsync(string tenantId, CancellationToken ct = default);
     }
 
     public interface IReportService

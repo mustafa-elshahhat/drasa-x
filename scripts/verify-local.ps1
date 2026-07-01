@@ -31,8 +31,6 @@
 param(
     [ValidateSet("Core", "Full")]
     [string]$AiMode = "Full",
-    [ValidateSet("auto", "docker", "native")]
-    [string]$Mode = "auto",
     [switch]$SkipBuilds
 )
 
@@ -420,11 +418,12 @@ Write-Step "Archived backend protection"
 Check "Archived backend process NOT running (:10000)" {
     return @((-not (Test-PortListening 10000)), "no :10000 listener")
 }
-Check "Archived backend absent from docker-compose.yml" {
-    # Ignore comment lines (the file documents the archived backend's ABSENCE).
-    $lines = Get-Content (Join-Path $Workspace "docker-compose.yml") | Where-Object { $_.TrimStart() -notmatch '^#' }
-    $code = ($lines -join "`n").ToLower()
-    return @((($code -notmatch "archived") -and ($code -notmatch ":10000")), "not a compose service")
+Check "No Docker files remain (Docker removed from local tooling)" {
+    $hits = @()
+    foreach ($rel in @("docker-compose.yml", "backend\Dockerfile", "ai\Dockerfile", "backend\.dockerignore", "ai\.dockerignore")) {
+        if (Test-Path (Join-Path $Workspace $rel)) { $hits += $rel }
+    }
+    return @(($hits.Count -eq 0), $(if ($hits.Count) { "found: $($hits -join ', ')" } else { "no Docker files present" }))
 }
 Check "No frontend/backend config references archived backend" {
     $bad = @("onrender.com","railway.app","vercel.app","school-ai-backend",":10000")

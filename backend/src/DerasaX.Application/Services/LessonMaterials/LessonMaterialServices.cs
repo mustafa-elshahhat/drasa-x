@@ -2,6 +2,7 @@
 using DerasaX.Application.Dto.LessonDto;
 using DerasaX.Application.Dto.LessonMaterialDto;
 using DerasaX.Application.Services.Abstractions.LessonMaterial;
+using DerasaX.Application.Services.Abstractions.Operations;
 using DerasaX.Application.Services.Units;
 using DerasaX.Domain.Common;
 using DerasaX.Domain.Entities.Models;
@@ -26,12 +27,14 @@ namespace DerasaX.Application.Services.LessonMaterials
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<LessonMaterialServices> _logger;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public LessonMaterialServices(IMapper mapper, IUnitOfWork unitOfWork, ILogger<LessonMaterialServices> logger, IHttpContextAccessor httpContextAccessor)
+        private readonly IPlanLimitEnforcer _limits;
+        public LessonMaterialServices(IMapper mapper, IUnitOfWork unitOfWork, ILogger<LessonMaterialServices> logger, IHttpContextAccessor httpContextAccessor, IPlanLimitEnforcer limits)
         {
             _mapper=mapper;
             _unitOfWork=unitOfWork;
             _logger=logger;
             _httpContextAccessor=httpContextAccessor;
+            _limits=limits;
         }
         private string? GetTenantId()
         {
@@ -70,6 +73,8 @@ namespace DerasaX.Application.Services.LessonMaterials
                 throw new BadRequestException("Invalid material data provided");
             }
 
+            await _limits.EnsureCanAddLessonMaterialAsync(tenantId);
+
             var material = _mapper.Map<LessonMaterial>(addLessonMaterialDto);
             material.Id = Guid.NewGuid().ToString();
             material.TenantId = tenantId;
@@ -96,6 +101,8 @@ namespace DerasaX.Application.Services.LessonMaterials
                 throw new UnauthorizedException("Tenant is missing.");
             if (string.IsNullOrWhiteSpace(lessonId) || string.IsNullOrWhiteSpace(title))
                 throw new BadRequestException("Lesson and title are required.");
+
+            await _limits.EnsureCanAddLessonMaterialAsync(tenantId);
 
             var material = new LessonMaterial
             {

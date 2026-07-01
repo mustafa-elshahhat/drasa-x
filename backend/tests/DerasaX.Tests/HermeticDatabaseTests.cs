@@ -29,7 +29,7 @@ namespace DerasaX.Tests;
 /// </summary>
 public sealed class PostgresContainerFixture : IAsyncLifetime
 {
-    // Pinned to the same major version as docker-compose.yml and the dev DB so behaviour matches.
+    // Pinned to the same major version as the local dev PostgreSQL (16) so behaviour matches.
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
         .WithImage("postgres:16")
         .Build();

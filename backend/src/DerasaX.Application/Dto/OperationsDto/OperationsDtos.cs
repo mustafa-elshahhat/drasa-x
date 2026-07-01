@@ -29,13 +29,69 @@ namespace DerasaX.Application.Dto.OperationsDto
         public string Id { get; set; } = string.Empty;
         public string Code { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
         public SubscriptionPlan Tier { get; set; }
+        public BillingPeriod BillingPeriod { get; set; }
         public decimal Price { get; set; }
         public string Currency { get; set; } = "USD";
+        public int TrialDays { get; set; }
         public int? MaxStudents { get; set; }
         public int? MaxTeachers { get; set; }
+        public int? MaxParents { get; set; }
+        public int? MaxSchoolAdmins { get; set; }
+        public int? MaxClasses { get; set; }
+        public int? MaxSubjects { get; set; }
+        public int? MaxLessonMaterials { get; set; }
+        public int? MaxStorageMb { get; set; }
         public int? MaxAiGenerationsPerMonth { get; set; }
+        public int? MaxAiTokensPerMonth { get; set; }
         public bool IsActive { get; set; }
+    }
+
+    public class CreatePlanDto
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public SubscriptionPlan Tier { get; set; } = SubscriptionPlan.Free;
+        public BillingPeriod BillingPeriod { get; set; } = BillingPeriod.Monthly;
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = "USD";
+        public int TrialDays { get; set; }
+        public bool IsActive { get; set; } = true;
+        public int? MaxStudents { get; set; }
+        public int? MaxTeachers { get; set; }
+        public int? MaxParents { get; set; }
+        public int? MaxSchoolAdmins { get; set; }
+        public int? MaxClasses { get; set; }
+        public int? MaxSubjects { get; set; }
+        public int? MaxLessonMaterials { get; set; }
+        public int? MaxStorageMb { get; set; }
+        public int? MaxAiGenerationsPerMonth { get; set; }
+        public int? MaxAiTokensPerMonth { get; set; }
+    }
+
+    public class UpdatePlanDto
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public SubscriptionPlan Tier { get; set; } = SubscriptionPlan.Free;
+        public BillingPeriod BillingPeriod { get; set; } = BillingPeriod.Monthly;
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = "USD";
+        public int TrialDays { get; set; }
+        public bool IsActive { get; set; } = true;
+        public int? MaxStudents { get; set; }
+        public int? MaxTeachers { get; set; }
+        public int? MaxParents { get; set; }
+        public int? MaxSchoolAdmins { get; set; }
+        public int? MaxClasses { get; set; }
+        public int? MaxSubjects { get; set; }
+        public int? MaxLessonMaterials { get; set; }
+        public int? MaxStorageMb { get; set; }
+        public int? MaxAiGenerationsPerMonth { get; set; }
+        public int? MaxAiTokensPerMonth { get; set; }
     }
 
     public class AssignPlanDto
@@ -88,6 +144,12 @@ namespace DerasaX.Application.Dto.OperationsDto
         public int? MaxStudents { get; set; }
         public int? MaxAiGenerationsPerMonth { get; set; }
         public bool OverStudentLimit { get; set; }
+        public long StorageUsedBytes { get; set; }
+        public int? MaxStorageMb { get; set; }
+        public bool OverStorageLimit { get; set; }
+        public int AiTokensUsed { get; set; }
+        public int? MaxAiTokensPerMonth { get; set; }
+        public bool OverAiTokenLimit { get; set; }
     }
 
     public class TenantParameters : PaginationParameters

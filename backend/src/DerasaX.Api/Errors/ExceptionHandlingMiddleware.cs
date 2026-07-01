@@ -39,6 +39,7 @@ namespace DerasaX.Api.Errors
                     BadRequestException => (StatusCodes.Status400BadRequest, ErrorCodes.BadRequest, "Bad request."),
                     NotFoundException => (StatusCodes.Status404NotFound, ErrorCodes.NotFound, "Resource not found."),
                     ConflictException => (StatusCodes.Status409Conflict, ErrorCodes.Conflict, "Conflict."),
+                    PlanLimitExceededException => (StatusCodes.Status409Conflict, ErrorCodes.PlanLimitExceeded, "Plan limit exceeded."),
                     ForbiddenException => (StatusCodes.Status403Forbidden, ErrorCodes.Forbidden, "Forbidden."),
                     UnauthorizedException => (StatusCodes.Status401Unauthorized, ErrorCodes.Unauthenticated, "Unauthenticated."),
                     ImageValidationException => (StatusCodes.Status400BadRequest, ErrorCodes.ValidationError, "Validation failed."),

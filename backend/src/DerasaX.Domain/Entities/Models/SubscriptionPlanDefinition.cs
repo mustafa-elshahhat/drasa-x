@@ -27,6 +27,12 @@ namespace DerasaX.Domain.Entities.Models
         public int? MaxTeachers { get; set; }
         public int? MaxStorageMb { get; set; }
         public int? MaxAiGenerationsPerMonth { get; set; }
+        public int? MaxParents { get; set; }
+        public int? MaxSchoolAdmins { get; set; }
+        public int? MaxClasses { get; set; }
+        public int? MaxSubjects { get; set; }
+        public int? MaxLessonMaterials { get; set; }
+        public int? MaxAiTokensPerMonth { get; set; }
 
         public int TrialDays { get; set; } = 0;
         public bool IsActive { get; set; } = true;

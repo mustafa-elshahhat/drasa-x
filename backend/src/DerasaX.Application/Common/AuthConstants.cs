@@ -49,5 +49,7 @@ namespace DerasaX.Application.Common
         public const string AccountDisabled = "ACCOUNT_DISABLED";
         // Phase 16 — durable file storage provider is selected but unreachable / unconfigured.
         public const string StorageUnavailable = "STORAGE_UNAVAILABLE";
+        // The requested write would exceed a limit on the tenant's current subscription plan.
+        public const string PlanLimitExceeded = "PLAN_LIMIT_EXCEEDED";
     }
 }

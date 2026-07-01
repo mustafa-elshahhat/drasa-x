@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DerasaX.Application.Dto.LessonDto;
 using DerasaX.Application.Dto.SubjectDto;
+using DerasaX.Application.Services.Abstractions.Operations;
 using DerasaX.Application.Services.Abstractions.Subject;
 using DerasaX.Application.Services.Image.FileServices;
 using DerasaX.Domain.Common;
@@ -26,13 +27,15 @@ namespace DerasaX.Application.Services.Subjects
         private readonly ILogger<SubjectServices> _logger;
         private readonly IFileService _fileService;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public SubjectServices(IMapper mapper, IUnitOfWork unitOfWork, ILogger<SubjectServices> logger, IFileService fileService, IHttpContextAccessor httpContextAccessor)
+        private readonly IPlanLimitEnforcer _limits;
+        public SubjectServices(IMapper mapper, IUnitOfWork unitOfWork, ILogger<SubjectServices> logger, IFileService fileService, IHttpContextAccessor httpContextAccessor, IPlanLimitEnforcer limits)
         {
             _mapper=mapper;
             _unitOfWork=unitOfWork;
             _logger=logger;
             _fileService=fileService;
             _httpContextAccessor = httpContextAccessor;
+            _limits = limits;
         }
         private string? GetTenantId()
         {
@@ -119,6 +122,8 @@ namespace DerasaX.Application.Services.Subjects
                 _logger.LogError("Invalid Subject data provided for addition");
                 throw new BadRequestException("Invalid subject data provided");
             }
+
+            await _limits.EnsureCanAddSubjectAsync(tenantId);
 
             string? imagePath = null;
             if (addSubjectDto.ImageUrl != null && addSubjectDto.ImageUrl.Length > 0)

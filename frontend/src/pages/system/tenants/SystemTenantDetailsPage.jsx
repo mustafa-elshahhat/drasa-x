@@ -3,14 +3,15 @@ import { useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { DetailList } from '../../../shared/data-display'
-import { TextField } from '../../../shared/form'
+import { CheckboxField, SelectField, TextField } from '../../../shared/form'
 import { Alert, Button, Chip, Card } from '../../../shared/ui'
 import { EmptyState, ErrorState } from '../../../shared/feedback'
 import { Head, Loading } from '../../../features/system/components'
 import { TENANT_STATUS, TENANT_TONE } from '../../../features/system/constants'
 import { useSystemQuery } from '../../../features/system/helpers'
 import { systemApi } from '../../../features/system/systemApi'
-import { queryKeys } from '../../../lib/query/keys'
+import { displayValue, itemId } from '../../../features/student/studentUtils'
+import { STALE, queryKeys } from '../../../lib/query/keys'
 import { usePortalContext } from '../../../features/portal/context'
 
 function TenantDetailsPage({ userId, locale }) {
@@ -20,16 +21,27 @@ function TenantDetailsPage({ userId, locale }) {
   const tenant = useSystemQuery(queryKeys.system.tenant(userId, tenantId), (s) => systemApi.tenant(tenantId, s), { enabled: Boolean(tenantId) })
   const subscription = useSystemQuery(queryKeys.system.tenantSubscription(userId, tenantId), (s) => systemApi.tenantSubscription(tenantId, s), { enabled: Boolean(tenantId) })
   const usage = useSystemQuery(queryKeys.system.tenantUsage(userId, tenantId), (s) => systemApi.tenantUsage(tenantId, s), { enabled: Boolean(tenantId) })
+  const plans = useSystemQuery(queryKeys.system.plans(userId), (s) => systemApi.plans(s), { staleTime: STALE.medium })
 
   const [adminForm, setAdminForm] = useState({ fullName: '', loginCode: '' })
   const [credential, setCredential] = useState(null)
   const [dataResult, setDataResult] = useState(null)
+  const [planForm, setPlanForm] = useState({ planDefinitionId: '', isTrial: false })
 
   const lifecycle = useMutation({
     mutationFn: (action) => systemApi.setTenantStatus(tenantId, action),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: queryKeys.system.tenant(userId, tenantId) })
       qc.invalidateQueries({ queryKey: queryKeys.system.dashboard(userId) })
+    },
+  })
+  const assignPlan = useMutation({
+    mutationFn: () => systemApi.assignPlan({ tenantId, planDefinitionId: planForm.planDefinitionId, isTrial: planForm.isTrial }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.system.tenantSubscription(userId, tenantId) })
+      qc.invalidateQueries({ queryKey: queryKeys.system.tenantUsage(userId, tenantId) })
+      qc.invalidateQueries({ queryKey: queryKeys.system.tenant(userId, tenantId) })
+      setPlanForm({ planDefinitionId: '', isTrial: false })
     },
   })
   const createAdmin = useMutation({
@@ -69,6 +81,24 @@ function TenantDetailsPage({ userId, locale }) {
               {subscription.isLoading && <Loading />}
               {subscription.isError && <EmptyState title={t('system.empty.subscription')} />}
               {subscription.data && <DetailList item={subscription.data} locale={locale} />}
+
+              {assignPlan.isSuccess && <Alert variant="success" title={t('system.common.saved')}>{t('system.tenant.planAssigned')}</Alert>}
+              {assignPlan.isError && <ErrorState error={assignPlan.error} onRetry={() => assignPlan.reset()} />}
+              <div className="ui-form-row">
+                <SelectField
+                  label={t('system.tenant.assignPlan')}
+                  value={planForm.planDefinitionId}
+                  onChange={(e) => setPlanForm((f) => ({ ...f, planDefinitionId: e.target.value }))}
+                  options={[
+                    { value: '', label: t('system.common.choose') },
+                    ...(Array.isArray(plans.data) ? plans.data : []).map((p) => ({ value: itemId(p), label: displayValue(p, ['name', 'Name']) || itemId(p) })),
+                  ]}
+                />
+                <CheckboxField label={t('system.common.trial')} checked={planForm.isTrial} onChange={(e) => setPlanForm((f) => ({ ...f, isTrial: e.target.checked }))} />
+              </div>
+              <Button onClick={() => assignPlan.mutate()} loading={assignPlan.isPending} disabled={!planForm.planDefinitionId}>
+                {t('system.tenant.assignPlan')}
+              </Button>
             </Card>
             <Card title={t('system.tenant.usage')}>
               {usage.isLoading && <Loading />}

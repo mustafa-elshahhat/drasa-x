@@ -2,10 +2,8 @@
 # scripts/_common.ps1 - shared helpers/config for the DerasaX local scripts.
 # Dot-source this from the other scripts:  . "$PSScriptRoot\_common.ps1"
 #
-# Two run modes are supported:
-#   docker  - PostgreSQL + backend + ai-rag via docker compose
-#   native  - local PostgreSQL (pg_ctl) + `dotnet` + uvicorn venv (no Docker)
-# `auto` (default) picks docker when the docker CLI is available, else native.
+# Native-only local stack: local PostgreSQL (pg_ctl) + `dotnet` + uvicorn venv +
+# Vite. Docker is not used by this project's local tooling.
 # =============================================================================
 
 $ErrorActionPreference = "Stop"
@@ -110,19 +108,6 @@ function Get-WorkspaceEnv {
 function Test-Command($name) {
     $c = Get-Command $name -ErrorAction SilentlyContinue
     return [bool]$c
-}
-
-function Get-DockerAvailable {
-    if (-not (Test-Command "docker")) { return $false }
-    try { docker info *> $null; return ($LASTEXITCODE -eq 0) } catch { return $false }
-}
-
-function Resolve-Mode {
-    param([string]$Requested)
-    if ($Requested -eq "docker") { return "docker" }
-    if ($Requested -eq "native") { return "native" }
-    if (Get-DockerAvailable) { return "docker" }
-    return "native"
 }
 
 function Get-PgBin {

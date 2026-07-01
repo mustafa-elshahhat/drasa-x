@@ -1188,8 +1188,10 @@ namespace DerasaX.Api.SeedData
 
             // Real subscription-plan definitions (platform-owned catalog) so the Plans page and the
             // onboarding assign-plan step operate on genuine data (no fabricated plans in the UI).
-            await EnsurePlan("PH12-PLAN-FREE", "FREE", "Free", SubscriptionPlan.Free, 0m, 50, 5, 1024, 100);
-            await EnsurePlan("PH12-PLAN-PRO", "PRO", "Pro", SubscriptionPlan.Pro, 49m, 1000, 100, 10240, 5000);
+            await EnsurePlan("PH12-PLAN-FREE", "FREE", "Free", SubscriptionPlan.Free, 0m, 50, 5, 1024, 100,
+                maxParents: 100, maxSchoolAdmins: 2, maxClasses: 5, maxSubjects: 10, maxLessonMaterials: 200, maxAiTokensPerMonth: 200_000);
+            await EnsurePlan("PH12-PLAN-PRO", "PRO", "Pro", SubscriptionPlan.Pro, 49m, 1000, 100, 10240, 5000,
+                maxParents: 2000, maxSchoolAdmins: 10, maxClasses: 100, maxSubjects: 50, maxLessonMaterials: 5000, maxAiTokensPerMonth: 2_000_000);
 
             // A dedicated Active tenant the live matrix can suspend then reactivate.
             await EnsureTenant("PH12-TENANT-SUSPEND", "Rosetta Modern School", TenantStatus.Active);
@@ -1225,7 +1227,9 @@ namespace DerasaX.Api.SeedData
 
         // Idempotent seed of a platform-owned subscription-plan definition.
         private async Task EnsurePlan(string id, string code, string name, SubscriptionPlan tier, decimal price,
-            int maxStudents, int maxTeachers, int maxStorageMb, int maxAi)
+            int maxStudents, int maxTeachers, int maxStorageMb, int maxAi,
+            int? maxParents = null, int? maxSchoolAdmins = null, int? maxClasses = null, int? maxSubjects = null,
+            int? maxLessonMaterials = null, int? maxAiTokensPerMonth = null)
         {
             var exists = await _context.subscriptionPlanDefinitions.IgnoreQueryFilters().AnyAsync(p => p.Id == id);
             if (!exists)
@@ -1234,7 +1238,9 @@ namespace DerasaX.Api.SeedData
                 {
                     Id = id, Code = code, Name = name, Tier = tier, BillingPeriod = BillingPeriod.Monthly,
                     Price = price, Currency = "USD", MaxStudents = maxStudents, MaxTeachers = maxTeachers,
-                    MaxStorageMb = maxStorageMb, MaxAiGenerationsPerMonth = maxAi, TrialDays = 14, IsActive = true
+                    MaxStorageMb = maxStorageMb, MaxAiGenerationsPerMonth = maxAi, TrialDays = 14, IsActive = true,
+                    MaxParents = maxParents, MaxSchoolAdmins = maxSchoolAdmins, MaxClasses = maxClasses,
+                    MaxSubjects = maxSubjects, MaxLessonMaterials = maxLessonMaterials, MaxAiTokensPerMonth = maxAiTokensPerMonth
                 });
                 await _context.SaveChangesAsync();
             }

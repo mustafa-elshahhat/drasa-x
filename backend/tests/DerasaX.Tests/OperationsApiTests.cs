@@ -47,9 +47,15 @@ public class OperationsApiTests : IClassFixture<IntegrationFactory>
         await using var db = Phase4Db.Platform(_factory);
         db.subscriptionPlanDefinitions.Add(new SubscriptionPlanDefinition
         {
+            // No Max* limits: this test suite exercises the subscription/usage/renewal
+            // *endpoints*, not limit enforcement. One caller assigns this plan to the
+            // shared "tenant-1" fixture (used by many other, unrelated parallel tests
+            // for student provisioning and AI/vision calls) — a low cap here would make
+            // this test transiently and non-deterministically block those other tests'
+            // writes once plan-limit enforcement is real. Dedicated enforcement coverage
+            // lives in PlanLimitEnforcementApiTests, always against a throwaway tenant.
             Id = planId, Code = NewId("PL")[..12], Name = "Pro", Tier = SubscriptionPlan.Pro,
-            BillingPeriod = BillingPeriod.Monthly, Price = 10, Currency = "USD", MaxStudents = 1000,
-            MaxAiGenerationsPerMonth = 500, IsActive = true
+            BillingPeriod = BillingPeriod.Monthly, Price = 10, Currency = "USD", IsActive = true
         });
         await db.SaveChangesAsync();
         return planId;

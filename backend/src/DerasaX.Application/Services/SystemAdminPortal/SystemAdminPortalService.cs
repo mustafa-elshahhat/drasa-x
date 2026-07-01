@@ -49,6 +49,7 @@ namespace DerasaX.Application.Services.SystemAdminPortal
         private readonly IPlatformRepository<SystemSetting> _systemSettings;
         private readonly UserManager<ApplicationUser> _users;
         private readonly IAuditQueryService _auditQuery;
+        private readonly IPlanLimitEnforcer _limits;
 
         public SystemAdminPortalService(
             IUnitOfWork unitOfWork,
@@ -58,7 +59,8 @@ namespace DerasaX.Application.Services.SystemAdminPortal
             IPlatformRepository<SubscriptionPlanDefinition> plans,
             IPlatformRepository<SystemSetting> systemSettings,
             UserManager<ApplicationUser> users,
-            IAuditQueryService auditQuery)
+            IAuditQueryService auditQuery,
+            IPlanLimitEnforcer limits)
             : base(unitOfWork, tenant, audit)
         {
             _tenants = tenants;
@@ -66,6 +68,7 @@ namespace DerasaX.Application.Services.SystemAdminPortal
             _systemSettings = systemSettings;
             _users = users;
             _auditQuery = auditQuery;
+            _limits = limits;
         }
 
         // ---------------------------------------------------------------
@@ -408,6 +411,8 @@ namespace DerasaX.Application.Services.SystemAdminPortal
 
             if (await _users.Users.AnyAsync(u => u.LoginCode == dto.LoginCode, ct))
                 throw new ConflictException("An account with this login code already exists.");
+
+            await _limits.EnsureCanAddUserAsync(tenant.Id, Roles.SchoolAdmin, ct);
 
             var user = new SchoolAdmin
             {

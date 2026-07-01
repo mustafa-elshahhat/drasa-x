@@ -12,6 +12,7 @@ using DerasaX.Application.Services.Abstractions;
 using DerasaX.Application.Services.Abstractions.Ai;
 using DerasaX.Application.Services.Abstractions.Audit;
 using DerasaX.Application.Services.Abstractions.Authorization;
+using DerasaX.Application.Services.Abstractions.Operations;
 using DerasaX.Application.Services.Abstractions.Vision;
 using DerasaX.Domain.Common;
 using DerasaX.Domain.Entities.Models;
@@ -41,11 +42,12 @@ namespace DerasaX.Application.Services.Vision
         private readonly IStudentAccessAuthorizer _access;
         private readonly UserManager<ApplicationUser> _users;
         private readonly ILogger<ClassroomVisionService> _logger;
+        private readonly IPlanLimitEnforcer _limits;
 
         public ClassroomVisionService(
             IUnitOfWork uow, ITenantContext tenant, IAuditWriter audit, IAiRagClient ai,
             IStudentAccessAuthorizer access, UserManager<ApplicationUser> users,
-            ILogger<ClassroomVisionService> logger)
+            ILogger<ClassroomVisionService> logger, IPlanLimitEnforcer limits)
         {
             _uow = uow;
             _tenant = tenant;
@@ -54,6 +56,7 @@ namespace DerasaX.Application.Services.Vision
             _access = access;
             _users = users;
             _logger = logger;
+            _limits = limits;
         }
 
         // =====================================================================
@@ -178,6 +181,7 @@ namespace DerasaX.Application.Services.Vision
                 throw new BadRequestException("The image frame is too large.");
 
             var tenantId = session.TenantId!;
+            await _limits.EnsureWithinAiMonthlyQuotaAsync(tenantId, ct);
             var correlationId = Guid.NewGuid().ToString("N");
             var aiRequest = new AiVisionAnalyzeRequest
             {

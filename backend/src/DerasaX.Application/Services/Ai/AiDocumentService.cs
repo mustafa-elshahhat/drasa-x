@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DerasaX.Application.Dto.AiDto;
 using DerasaX.Application.Services.Abstractions;
 using DerasaX.Application.Services.Abstractions.Ai;
+using DerasaX.Application.Services.Abstractions.Operations;
 using DerasaX.Domain.Exceptions;
 using Microsoft.Extensions.Logging;
 
@@ -22,12 +23,14 @@ namespace DerasaX.Application.Services.Ai
         private readonly IAiRagClient _ai;
         private readonly ITenantContext _tenant;
         private readonly ILogger<AiDocumentService> _logger;
+        private readonly IPlanLimitEnforcer _limits;
 
-        public AiDocumentService(IAiRagClient ai, ITenantContext tenant, ILogger<AiDocumentService> logger)
+        public AiDocumentService(IAiRagClient ai, ITenantContext tenant, ILogger<AiDocumentService> logger, IPlanLimitEnforcer limits)
         {
             _ai = ai;
             _tenant = tenant;
             _logger = logger;
+            _limits = limits;
         }
 
         public async Task<IngestResultDto> IngestAsync(IngestCurriculumDocumentDto request, CancellationToken ct = default)
@@ -44,6 +47,8 @@ namespace DerasaX.Application.Services.Ai
                 throw new BadRequestException("Document content is too large.");
             if (request.Version < 1)
                 throw new BadRequestException("Version must be >= 1.");
+
+            await _limits.EnsureWithinAiMonthlyQuotaAsync(tenantId, ct);
 
             var correlationId = Guid.NewGuid().ToString("N");
             var aiReq = new AiIngestRequest

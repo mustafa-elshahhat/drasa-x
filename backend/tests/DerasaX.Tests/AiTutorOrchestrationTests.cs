@@ -51,6 +51,17 @@ public class AiTutorOrchestrationTests
         public Task<ApiResponse<AiUsageSummaryDto>> SummaryAsync(CancellationToken ct = default) => throw new NotImplementedException();
     }
 
+    /// <summary>Never blocks — these orchestration tests exercise AI call plumbing, not plan-limit enforcement.</summary>
+    private sealed class FakeLimits : IPlanLimitEnforcer
+    {
+        public Task EnsureCanAddUserAsync(string tenantId, string role, CancellationToken ct = default) => Task.CompletedTask;
+        public Task EnsureCanAddClassAsync(string tenantId, CancellationToken ct = default) => Task.CompletedTask;
+        public Task EnsureCanAddSubjectAsync(string tenantId, CancellationToken ct = default) => Task.CompletedTask;
+        public Task EnsureCanAddLessonMaterialAsync(string tenantId, CancellationToken ct = default) => Task.CompletedTask;
+        public Task EnsureCanUploadBytesAsync(string tenantId, long additionalBytes, CancellationToken ct = default) => Task.CompletedTask;
+        public Task EnsureWithinAiMonthlyQuotaAsync(string tenantId, CancellationToken ct = default) => Task.CompletedTask;
+    }
+
     private sealed class FakeAiClient : IAiRagClient
     {
         public Task<AiVisionAnalyzeResponse> AnalyzeVisionFrameAsync(AiVisionAnalyzeRequest r, string t, string? u, CancellationToken ct = default) => throw new NotImplementedException();
@@ -140,7 +151,7 @@ public class AiTutorOrchestrationTests
     };
 
     private static TutorService NewService(FakeAiClient ai, FakeUsage usage, ITenantContext? tenant = null) =>
-        new(ai, tenant ?? new FakeTenant(), usage, NullLogger<TutorService>.Instance);
+        new(ai, tenant ?? new FakeTenant(), usage, NullLogger<TutorService>.Instance, new FakeLimits());
 
     // ----- TutorService ------------------------------------------------------
 
@@ -322,7 +333,7 @@ public class AiTutorOrchestrationTests
     // ----- Document ingestion orchestration (§7) -----------------------------
 
     private static AiDocumentService NewDocSvc(FakeAiClient ai, ITenantContext? tenant = null) =>
-        new(ai, tenant ?? new FakeTenant(), NullLogger<AiDocumentService>.Instance);
+        new(ai, tenant ?? new FakeTenant(), NullLogger<AiDocumentService>.Instance, new FakeLimits());
 
     [Fact]
     public async Task Ingest_forwards_tenant_from_context_and_returns_result()

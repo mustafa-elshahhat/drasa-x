@@ -7,6 +7,7 @@ using DerasaX.Application.Dto.AcademicDto;
 using DerasaX.Application.Services.Abstractions;
 using DerasaX.Application.Services.Abstractions.Academic;
 using DerasaX.Application.Services.Abstractions.Audit;
+using DerasaX.Application.Services.Abstractions.Operations;
 using DerasaX.Domain.Common;
 using DerasaX.Domain.Entities.Models;
 using DerasaX.Domain.Enums;
@@ -20,11 +21,13 @@ namespace DerasaX.Application.Services.Academic
     public class SchoolClassService : AcademicServiceBase, ISchoolClassService
     {
         private readonly ILogger<SchoolClassService> _logger;
+        private readonly IPlanLimitEnforcer _limits;
 
         public SchoolClassService(IUnitOfWork unitOfWork, ITenantContext tenant, IAuditWriter audit,
-            ILogger<SchoolClassService> logger) : base(unitOfWork, tenant, audit)
+            ILogger<SchoolClassService> logger, IPlanLimitEnforcer limits) : base(unitOfWork, tenant, audit)
         {
             _logger = logger;
+            _limits = limits;
         }
 
         public async Task<PaginationResponse<IEnumerable<SchoolClassDto>>> ListAsync(SchoolClassParameters p, CancellationToken ct = default)
@@ -69,6 +72,7 @@ namespace DerasaX.Application.Services.Academic
                 ?? throw new NotFoundException("Academic year not found.");
 
             await EnsureCodeUniqueAsync(dto.AcademicYearId, dto.Code, excludeId: null);
+            await _limits.EnsureCanAddClassAsync(tenantId, ct);
 
             var entity = new SchoolClass
             {

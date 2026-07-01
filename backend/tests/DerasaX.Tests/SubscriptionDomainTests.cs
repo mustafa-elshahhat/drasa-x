@@ -17,12 +17,16 @@ public class SubscriptionDomainTests : IClassFixture<IntegrationFactory>
     {
         var plan = new SubscriptionPlanDefinition
         {
+            // No MaxStudents: one caller attaches this plan to the shared "tenant-1"
+            // fixture (used by many other parallel tests for student provisioning), and
+            // these tests only assert on FK/domain integrity, never on limit values — a
+            // low cap here would transiently and non-deterministically block those other
+            // tests' student-creation calls now that plan-limit enforcement is real.
             Id = Phase4Db.NewId("plan"),
             Code = code,
             Name = "Test Plan",
             Tier = SubscriptionPlan.Pro,
             Price = 9.99m,
-            MaxStudents = 100
         };
         await using var db = Phase4Db.Platform(_factory);
         db.subscriptionPlanDefinitions.Add(plan);

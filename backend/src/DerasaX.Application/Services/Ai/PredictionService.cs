@@ -46,16 +46,18 @@ namespace DerasaX.Application.Services.Ai
         private readonly IStudentAccessAuthorizer _access;
         private readonly UserManager<ApplicationUser> _users;
         private readonly ILogger<PredictionService> _logger;
+        private readonly IPlanLimitEnforcer _limits;
 
         public PredictionService(IUnitOfWork uow, ITenantContext tenant, IAuditWriter audit,
             IAiRagClient ai, IAiUsageService usage, IStudentAccessAuthorizer access,
-            UserManager<ApplicationUser> users, ILogger<PredictionService> logger) : base(uow, tenant, audit)
+            UserManager<ApplicationUser> users, ILogger<PredictionService> logger, IPlanLimitEnforcer limits) : base(uow, tenant, audit)
         {
             _ai = ai;
             _usage = usage;
             _access = access;
             _users = users;
             _logger = logger;
+            _limits = limits;
         }
 
         public async Task<PredictionResultDto> GenerateAsync(GeneratePredictionDto request, CancellationToken ct = default)
@@ -66,6 +68,7 @@ namespace DerasaX.Application.Services.Ai
 
             // Access: self / assigned teacher / linked parent / same-tenant admin; cross-tenant → 404.
             await _access.EnsureCanAccessStudentAsync(request.StudentId, ct);
+            await _limits.EnsureWithinAiMonthlyQuotaAsync(tenantId, ct);
 
             var (features, dataFrom, dataTo) = await BuildFeaturesAsync(request.StudentId, ct);
 

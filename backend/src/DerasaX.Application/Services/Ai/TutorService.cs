@@ -33,13 +33,15 @@ namespace DerasaX.Application.Services.Ai
         private readonly ITenantContext _tenant;
         private readonly IAiUsageService _usage;
         private readonly ILogger<TutorService> _logger;
+        private readonly IPlanLimitEnforcer _limits;
 
-        public TutorService(IAiRagClient ai, ITenantContext tenant, IAiUsageService usage, ILogger<TutorService> logger)
+        public TutorService(IAiRagClient ai, ITenantContext tenant, IAiUsageService usage, ILogger<TutorService> logger, IPlanLimitEnforcer limits)
         {
             _ai = ai;
             _tenant = tenant;
             _usage = usage;
             _logger = logger;
+            _limits = limits;
         }
 
         public async Task<TutorChatResponseDto> AskAsync(TutorChatRequestDto request, CancellationToken ct = default)
@@ -52,6 +54,8 @@ namespace DerasaX.Application.Services.Ai
                 throw new BadRequestException("Message is required.");
             if (request.Message.Length > MaxContentChars)
                 throw new BadRequestException("Message is too long.");
+
+            await _limits.EnsureWithinAiMonthlyQuotaAsync(tenantId, ct);
 
             var correlationId = Guid.NewGuid().ToString("N");
             var aiRequest = new AiTutorRequest

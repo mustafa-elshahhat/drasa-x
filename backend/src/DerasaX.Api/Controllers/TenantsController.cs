@@ -46,6 +46,12 @@ namespace DerasaX.Api.Controllers
         [HttpGet("plans")]
         public async Task<IActionResult> Plans(CancellationToken ct) => R(await _service.ListPlansAsync(ct));
 
+        [HttpPost("plans")]
+        public async Task<IActionResult> CreatePlan([FromBody] CreatePlanDto dto, CancellationToken ct) => R(await _service.CreatePlanAsync(dto, ct));
+
+        [HttpPut("plans/{id}")]
+        public async Task<IActionResult> UpdatePlan(string id, [FromBody] UpdatePlanDto dto, CancellationToken ct) => R(await _service.UpdatePlanAsync(id, dto, ct));
+
         [HttpPost("subscriptions")]
         public async Task<IActionResult> AssignPlan([FromBody] AssignPlanDto dto, CancellationToken ct) => R(await _service.AssignPlanAsync(dto, ct));
 

@@ -11,9 +11,7 @@
     powershell -ExecutionPolicy Bypass -File scripts\reset-local-db.ps1 -ConfirmReset
 #>
 param(
-    [switch]$ConfirmReset,
-    [ValidateSet("auto", "docker", "native")]
-    [string]$Mode = "auto"
+    [switch]$ConfirmReset
 )
 
 . "$PSScriptRoot\_common.ps1"
@@ -37,23 +35,6 @@ if ($dbName -notmatch "local") {
 }
 Write-Ok "Target is a local database: $dbName"
 
-$resolved = Resolve-Mode -Requested $Mode
-
-if ($resolved -eq "docker" -and (Get-DockerAvailable)) {
-    Write-Step "Resetting via docker compose (removing the postgres volume)"
-    Push-Location $Workspace
-    try {
-        docker compose rm -sf postgres | Out-Null
-        docker volume rm "$(Split-Path $Workspace -Leaf)_derasax-pgdata" 2>$null | Out-Null
-        docker volume rm "derasax-pgdata" 2>$null | Out-Null
-        docker compose up -d postgres
-        Write-Ok "Recreated postgres container + empty volume"
-        Write-Warn2 "Start the backend (start-local.ps1) to apply migrations and reseed."
-    } finally { Pop-Location }
-    exit 0
-}
-
-# --- Native mode -------------------------------------------------------------
 $pgBin = Get-PgBin
 if (-not $pgBin) { throw "PostgreSQL client tools (pg_ctl) not found." }
 

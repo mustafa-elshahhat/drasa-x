@@ -217,8 +217,8 @@ def _cors_allow_origins(app):
 
 def test_ai_cors_has_no_browser_origin_by_default(monkeypatch):
     # The internal AI service is called server-to-server by the backend only; the browser
-    # NEVER calls it. "Default" = the shipped config (.env.example / docker-compose.yml /
-    # start-local.ps1, all now empty) -> the allow-list must be EMPTY (no SPA/browser origin).
+    # NEVER calls it. "Default" = the shipped config (.env.example / start-local.ps1, all now
+    # empty) -> the allow-list must be EMPTY (no SPA/browser origin).
     # Set ALLOWED_ORIGINS empty (NOT delete) so api.load_dotenv() does not restore a
     # developer's local ai/.env value — matching the pattern in test_health_readiness.py.
     monkeypatch.setenv("ALLOWED_ORIGINS", "")

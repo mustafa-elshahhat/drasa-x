@@ -131,4 +131,41 @@ test.describe('Phase 12 — system-admin management', () => {
     await expect(page.getByText('The announcement was published.')).toBeVisible()
     guards.assertNoForbidden()
   })
+
+  test('PH12-B8 admin creates a subscription plan and sees it in the Plans table', async ({ page }) => {
+    const guards = attachGuards(page)
+    const stamp = String(Date.now()).slice(-9)
+    const code = `E2E-${stamp}`
+    await login(page, CODES12.systemAdmin)
+    await nav(page, '/app/system/plans')
+    await expect(h1(page)).toHaveText('Plans')
+
+    await page.getByRole('button', { name: 'Add plan' }).click()
+    await expect(page.getByRole('heading', { name: 'Add a subscription plan' })).toBeVisible()
+    await page.getByLabel('Plan name', { exact: false }).fill(`E2E Plan ${stamp}`)
+    await page.getByLabel('Plan code', { exact: false }).fill(code)
+    await page.getByLabel('Price', { exact: false }).fill('15')
+    await page.getByLabel('Max students', { exact: false }).fill('25')
+    await page.getByRole('button', { name: 'Save' }).click()
+
+    // Modal closes on success and the new plan shows up in the (refetched) table.
+    await expect(page.getByRole('heading', { name: 'Add a subscription plan' })).toBeHidden()
+    await expect(page.getByText(code)).toBeVisible()
+    guards.assertNoForbidden()
+  })
+
+  test('PH12-B9 admin assigns a plan to an already-onboarded tenant from tenant details', async ({ page }) => {
+    const guards = attachGuards(page)
+    await login(page, CODES12.systemAdmin)
+    await nav(page, `/app/system/tenants/${FIX12.lifecycleTenant}`)
+    await expect(h1(page)).toHaveText('Tenant details')
+
+    await page.getByLabel('Assign / change plan', { exact: true }).selectOption({ label: FIX12.planPro })
+    await page.getByRole('button', { name: 'Assign / change plan' }).click()
+    await expect(page.getByText('The plan was assigned.')).toBeVisible()
+    // The subscription card (re-fetched after the mutation) now renders a real
+    // subscription instead of the "no subscription" empty state.
+    await expect(page.getByText('No subscription for this tenant.')).toBeHidden()
+    guards.assertNoForbidden()
+  })
 })

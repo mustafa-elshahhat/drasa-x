@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DerasaX.Application.Common;
 using DerasaX.Application.Services.Abstractions;
 using DerasaX.Application.Services.Abstractions.Audit;
+using DerasaX.Application.Services.Abstractions.Operations;
 using DerasaX.Application.Services.Abstractions.Storage;
 using DerasaX.Application.Services.Operations;
 using DerasaX.Domain.Entities.Models;
@@ -32,16 +33,18 @@ namespace DerasaX.Application.Services.Storage
         private readonly IFileScanner _scanner;
         private readonly FileStorageSettings _settings;
         private readonly byte[] _signingKey;
+        private readonly IPlanLimitEnforcer _limits;
 
         public FileStorageService(
             IUnitOfWork uow, ITenantContext tenant, IAuditWriter audit,
             IFileStorageProvider provider, IFileRecordLookup lookup, IFileScanner scanner,
-            IOptions<FileStorageSettings> settings, IConfiguration configuration)
+            IOptions<FileStorageSettings> settings, IConfiguration configuration, IPlanLimitEnforcer limits)
             : base(uow, tenant, audit)
         {
             _provider = provider;
             _lookup = lookup;
             _scanner = scanner;
+            _limits = limits;
             _settings = settings.Value;
             var key = !string.IsNullOrWhiteSpace(_settings.SigningKey) ? _settings.SigningKey : configuration["SecretKey"];
             if (string.IsNullOrWhiteSpace(key))
@@ -72,6 +75,8 @@ namespace DerasaX.Application.Services.Storage
 
             if (rule.RequiresConsent && !request.ConsentObtained)
                 throw new BadRequestException($"Explicit consent is required to store a {request.Purpose}.");
+
+            await _limits.EnsureCanUploadBytesAsync(tenantId, request.SizeBytes, ct);
 
             var visibility = request.Visibility ?? rule.DefaultVisibility;
             var storageKey = StorageSafety.BuildStorageKey(tenantId, request.Purpose, ext);

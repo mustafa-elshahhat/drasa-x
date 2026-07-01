@@ -8,6 +8,7 @@ using DerasaX.Application.Common;
 using DerasaX.Application.Dto.ProvisioningDto;
 using DerasaX.Application.Services.Abstractions;
 using DerasaX.Application.Services.Abstractions.Audit;
+using DerasaX.Application.Services.Abstractions.Operations;
 using DerasaX.Application.Services.Abstractions.Provisioning;
 using DerasaX.Domain.Common;
 using DerasaX.Domain.Entities.Models;
@@ -28,14 +29,16 @@ namespace DerasaX.Application.Services.Provisioning
         private readonly ITenantContext _tenant;
         private readonly IAuditWriter _audit;
         private readonly UserManager<ApplicationUser> _users;
+        private readonly IPlanLimitEnforcer _limits;
 
         public UserProvisioningService(IUnitOfWork uow, ITenantContext tenant, IAuditWriter audit,
-            UserManager<ApplicationUser> users)
+            UserManager<ApplicationUser> users, IPlanLimitEnforcer limits)
         {
             _uow = uow;
             _tenant = tenant;
             _audit = audit;
             _users = users;
+            _limits = limits;
         }
 
         private string RequireTenant() =>
@@ -55,6 +58,8 @@ namespace DerasaX.Application.Services.Provisioning
             // Login code must be globally unique (it is the authentication key).
             if (await _users.Users.AnyAsync(u => u.LoginCode == dto.LoginCode, ct))
                 throw new ConflictException("An account with this login code already exists.");
+
+            await _limits.EnsureCanAddUserAsync(tenantId, role, ct);
 
             string? gradeId = null;
             if (role == Roles.Student)

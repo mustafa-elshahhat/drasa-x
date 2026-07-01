@@ -13,8 +13,8 @@ only to the backend; the backend mediates all AI traffic over a signed internal 
 | **AI service** | `ai/` | FastAPI internal RAG/tutor service | http://localhost:8000 (`/docs`, `/health/live`, `/health/ready`) |
 
 Supporting folders: `scripts/` (local orchestration), `infra/` (deployment placeholder),
-`docs/` (audit + design + phase reports), `docker-compose.yml` (root-level local stack:
-PostgreSQL + backend + ai; the frontend runs as a native Vite server, not in compose).
+`docs/` (audit + design + phase reports). The local stack is **native only — no Docker**: all
+three apps and PostgreSQL run directly on the host, orchestrated by `scripts/start-local.ps1`.
 
 PostgreSQL runs locally on `localhost:5432` (database `derasax_local`, role `derasax`).
 
@@ -23,8 +23,7 @@ PostgreSQL runs locally on `localhost:5432` (database `derasax_local`, role `der
 - **.NET SDK 9.0.x** (pinned via `backend/global.json`; `dotnet --version` should resolve a 9.0.x).
 - **Node.js** (v20+; repo developed on v24) and npm.
 - **Python 3.10** (the AI service uses `ai/.venv`; created automatically on first start).
-- **PostgreSQL 16** client + server tools on `PATH` (`psql`, `pg_ctl`, `pg_restore`) for native mode,
-  **or** Docker for compose mode.
+- **PostgreSQL 16** client + server tools on `PATH` (`psql`, `pg_ctl`, `pg_restore`).
 
 Copy the env templates before first run (the start script does this automatically if missing):
 `.env.example` → `.env` at the repo root, in `ai/`, and in `frontend/`. **Real `.env` files are
@@ -35,14 +34,13 @@ gitignored; never commit secrets.**
 All scripts live in `scripts/` (PowerShell). Run them from the repo root.
 
 ```powershell
-scripts/start-local.ps1            # start PostgreSQL + backend + ai + frontend (auto: docker if up, else native)
+scripts/start-local.ps1            # start PostgreSQL + backend + ai + frontend (native)
 scripts/verify-local.ps1 -AiMode Full   # health + seed + genuine backend->AI flow checks
 scripts/stop-local.ps1             # stop tracked child processes; PRESERVES the database
 ```
 
-`start-local.ps1 -Mode native` forces the native (non-Docker) path; `-Gate core` requires only
-backend + AI to be reachable. `verify-local.ps1 -AiMode Core` is a faster check that does not require
-the full RAG/prediction stack.
+`start-local.ps1 -Gate core` requires only backend + AI to be reachable. `verify-local.ps1 -AiMode Core`
+is a faster check that does not require the full RAG/prediction stack.
 
 ## Database — reset / backup / restore
 

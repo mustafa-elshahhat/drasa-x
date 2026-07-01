@@ -161,6 +161,8 @@ namespace DerasaX.Application.Extensions
                 DerasaX.Application.Services.Operations.AuditQueryService>();
             services.AddScoped<DerasaX.Application.Services.Abstractions.Operations.IAiUsageService,
                 DerasaX.Application.Services.Operations.AiUsageService>();
+            services.AddScoped<DerasaX.Application.Services.Abstractions.Operations.IPlanLimitEnforcer,
+                DerasaX.Application.Services.Operations.PlanLimitEnforcer>();
             services.AddScoped<DerasaX.Application.Services.Abstractions.Operations.ISettingsService,
                 DerasaX.Application.Services.Operations.SettingsService>();
             services.AddScoped<DerasaX.Application.Services.Abstractions.Operations.IFileMetadataService,

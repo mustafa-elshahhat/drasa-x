@@ -59,6 +59,12 @@ export const systemApi = {
   async plans(signal) {
     return toItems(await api.get('/api/v1/tenants/plans', { signal }))
   },
+  async createPlan(body) {
+    return unwrapEnvelope(await api.post('/api/v1/tenants/plans', body))
+  },
+  async updatePlan(id, body) {
+    return unwrapEnvelope(await api.put(`/api/v1/tenants/plans/${enc(id)}`, body))
+  },
   async assignPlan(body) {
     // body: { tenantId, planDefinitionId, isTrial, expiresAt? }
     return unwrapEnvelope(await api.post('/api/v1/tenants/subscriptions', body))

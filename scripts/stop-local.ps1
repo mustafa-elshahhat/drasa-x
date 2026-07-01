@@ -1,8 +1,8 @@
 <#
 .SYNOPSIS
     Stop EVERY process started by start-local.ps1 (backend, AI service, both
-    frontends, and - in native mode - local PostgreSQL), using the PID metadata
-    recorded under .runtime\. PRESERVES the database data directory / volume.
+    frontends, and local PostgreSQL), using the PID metadata recorded under
+    .runtime\. PRESERVES the database data directory.
 
 .DESCRIPTION
     Processes are stopped by their RECORDED PID (and child tree), never by a
@@ -12,25 +12,11 @@
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File scripts\stop-local.ps1
 #>
-param(
-    [ValidateSet("auto", "docker", "native")]
-    [string]$Mode = "auto"
-)
 
 . "$PSScriptRoot\_common.ps1"
 
 $envVals = Get-WorkspaceEnv
-$resolved = Resolve-Mode -Requested $Mode
-Write-Step "Stopping local stack (mode: $resolved)"
-
-# Docker infra (if this stack was started in docker mode).
-if ($resolved -eq "docker" -and (Get-DockerAvailable)) {
-    Push-Location $Workspace
-    try {
-        docker compose down            # keeps named volumes (db data)
-        Write-Ok "docker compose down complete (db volume preserved)"
-    } finally { Pop-Location }
-}
+Write-Step "Stopping local stack (native)"
 
 # Tracked native processes (backend, AI, unified frontend) - stop by recorded PID.
 Write-Step "Stopping tracked services (by PID, incl. child trees)"

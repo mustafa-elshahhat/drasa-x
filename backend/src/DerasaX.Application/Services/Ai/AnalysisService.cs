@@ -37,15 +37,18 @@ namespace DerasaX.Application.Services.Ai
         private readonly IAiUsageService _usage;
         private readonly IStudentAccessAuthorizer _access;
         private readonly ILogger<AnalysisService> _logger;
+        private readonly IPlanLimitEnforcer _limits;
 
         public AnalysisService(IUnitOfWork uow, ITenantContext tenant, IAuditWriter audit,
-            IAiRagClient ai, IAiUsageService usage, IStudentAccessAuthorizer access, ILogger<AnalysisService> logger)
+            IAiRagClient ai, IAiUsageService usage, IStudentAccessAuthorizer access, ILogger<AnalysisService> logger,
+            IPlanLimitEnforcer limits)
             : base(uow, tenant, audit)
         {
             _ai = ai;
             _usage = usage;
             _access = access;
             _logger = logger;
+            _limits = limits;
         }
 
         public async Task<AnalysisResultDto> GenerateAsync(GenerateAnalysisDto request, CancellationToken ct = default)
@@ -58,6 +61,7 @@ namespace DerasaX.Application.Services.Ai
                 throw new BadRequestException("Conversation is required.");
 
             await _access.EnsureCanAccessStudentAsync(request.StudentId, ct);
+            await _limits.EnsureWithinAiMonthlyQuotaAsync(tenantId, ct);
 
             var correlationId = Guid.NewGuid().ToString("N");
             var aiReq = new AiAnalysisRequest
