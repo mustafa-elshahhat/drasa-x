@@ -85,6 +85,10 @@ namespace DerasaX.Api.Controllers
         public async Task<IActionResult> CreateSchoolAdmin(string id, [FromBody] CreateSchoolAdminDto dto, CancellationToken ct)
             => R(await _service.CreateSchoolAdminAsync(id, dto, ct));
 
+        [HttpPost("tenants/{id}/school-admins/{userId}/reset-credential")]
+        public async Task<IActionResult> ResetSchoolAdminCredential(string id, string userId, CancellationToken ct)
+            => R(await _service.ResetSchoolAdminCredentialAsync(id, userId, ct));
+
         // ---- Operational posture ----
 
         [HttpGet("operational-status")]

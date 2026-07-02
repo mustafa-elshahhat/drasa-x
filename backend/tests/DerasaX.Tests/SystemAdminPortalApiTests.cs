@@ -127,7 +127,6 @@ public class SystemAdminPortalApiTests : IClassFixture<IntegrationFactory>
     {
         var sys = await TestClient.AuthedClientAsync(_factory, Sys);
         var tenantId = NewId("ten");
-        var adminCode = NewId("ADM");
         var planId = await InsertPlanAsync();
         string? adminUserId = null;
         try
@@ -141,22 +140,27 @@ public class SystemAdminPortalApiTests : IClassFixture<IntegrationFactory>
                 new { tenantId, planDefinitionId = planId, isTrial = false });
             Assert.Equal(HttpStatusCode.Created, assign.StatusCode);
 
-            // 3) Create the INITIAL school admin for the tenant (NEW Phase 12 contract).
+            // 3) Create the INITIAL school admin for the tenant — no password/login-code is
+            // typed by the caller; both are generated server-side.
             var mk = await sys.PostAsJsonAsync($"/api/v1/system-admin/tenants/{tenantId}/school-admins",
-                new { fullName = "Phase12 Founder Admin", loginCode = adminCode });
+                new { fullName = "Onboarding Founder Admin" });
             Assert.Equal(HttpStatusCode.Created, mk.StatusCode);
             var mkd = await DataAsync(mk);
             adminUserId = mkd.GetProperty("userId").GetString();
+            var adminCode = mkd.GetProperty("loginCode").GetString()!;
             var tempPassword = mkd.GetProperty("temporaryPassword").GetString();
             Assert.Equal(tenantId, mkd.GetProperty("tenantId").GetString());      // correct tenant
             Assert.Equal("SchoolAdmin", mkd.GetProperty("role").GetString());      // correct role
+            Assert.False(string.IsNullOrWhiteSpace(adminCode));
             Assert.False(string.IsNullOrWhiteSpace(tempPassword));
 
-            // 4) The new admin can log in while the tenant is Active, and is a SchoolAdmin.
+            // 4) The new admin can log in while the tenant is Active, is a SchoolAdmin, and must
+            // change the generated temporary password before continuing.
             var (st1, b1) = await TestClient.LoginAsync(TestClient.NewClient(_factory), adminCode, tempPassword);
             Assert.Equal(200, st1);
             Assert.True(b1!.isAuthenticated);
             Assert.Equal("SchoolAdmin", b1.role);
+            Assert.True(b1.mustChangePassword);
 
             // 5) Suspend → the tenant's users can no longer log in (Phase 3 suspended-tenant gate).
             var suspend = await sys.PostAsync($"/api/v1/tenants/{tenantId}/suspend", null);
@@ -171,7 +175,20 @@ public class SystemAdminPortalApiTests : IClassFixture<IntegrationFactory>
             Assert.Equal(200, st3);
             Assert.True(b3!.isAuthenticated);
 
-            // 7) The lifecycle mutations are recorded in the real platform audit trail for this tenant.
+            // 7) Resetting the SchoolAdmin's credential (new SystemAdmin-side surface) rotates the
+            // password and forces another change, while the login code stays stable.
+            var resetResp = await sys.PostAsync($"/api/v1/system-admin/tenants/{tenantId}/school-admins/{adminUserId}/reset-credential", null);
+            Assert.Equal(HttpStatusCode.OK, resetResp.StatusCode);
+            var resetD = await DataAsync(resetResp);
+            var rotatedCode = resetD.GetProperty("loginCode").GetString()!;
+            var rotatedPassword = resetD.GetProperty("temporaryPassword").GetString()!;
+            Assert.Equal(adminCode, rotatedCode);
+            Assert.NotEqual(tempPassword, rotatedPassword);
+            var (st4, b4) = await TestClient.LoginAsync(TestClient.NewClient(_factory), rotatedCode, rotatedPassword);
+            Assert.Equal(200, st4);
+            Assert.True(b4!.mustChangePassword);
+
+            // 8) The lifecycle mutations are recorded in the real platform audit trail for this tenant.
             var audit = await sys.GetAsync("/api/v1/platform-audit?pageSize=100");
             Assert.Equal(HttpStatusCode.OK, audit.StatusCode);
             Assert.Contains(tenantId, await audit.Content.ReadAsStringAsync());
@@ -190,13 +207,38 @@ public class SystemAdminPortalApiTests : IClassFixture<IntegrationFactory>
     }
 
     [Fact]
-    public async Task Create_school_admin_duplicate_login_code_conflict()
+    public async Task Create_school_admin_same_full_name_twice_generates_distinct_login_codes()
     {
         var sys = await TestClient.AuthedClientAsync(_factory, Sys);
-        // ADMIN-T1 is an existing login code → 409 (login code is the global authentication key).
-        var resp = await sys.PostAsJsonAsync("/api/v1/system-admin/tenants/tenant-1/school-admins",
-            new { fullName = "Clash", loginCode = "ADMIN-T1" });
-        Assert.Equal(HttpStatusCode.Conflict, resp.StatusCode);
+        string? id1 = null, id2 = null;
+        try
+        {
+            var mk1 = await sys.PostAsJsonAsync("/api/v1/system-admin/tenants/tenant-1/school-admins", new { fullName = "Clash Founder" });
+            Assert.Equal(HttpStatusCode.Created, mk1.StatusCode);
+            var d1 = await DataAsync(mk1);
+            id1 = d1.GetProperty("userId").GetString();
+            var code1 = d1.GetProperty("loginCode").GetString();
+
+            var mk2 = await sys.PostAsJsonAsync("/api/v1/system-admin/tenants/tenant-1/school-admins", new { fullName = "Clash Founder" });
+            Assert.Equal(HttpStatusCode.Created, mk2.StatusCode);
+            var d2 = await DataAsync(mk2);
+            id2 = d2.GetProperty("userId").GetString();
+            var code2 = d2.GetProperty("loginCode").GetString();
+
+            // Never fails just because the base name already exists — a fresh, unique code is generated.
+            Assert.NotEqual(code1, code2);
+        }
+        finally
+        {
+            using var scope = _factory.Services.CreateScope();
+            var um = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            foreach (var id in new[] { id1, id2 })
+            {
+                if (id is null) continue;
+                var u = await um.FindByIdAsync(id);
+                if (u is not null) await um.DeleteAsync(u);
+            }
+        }
     }
 
     [Fact]
@@ -204,7 +246,7 @@ public class SystemAdminPortalApiTests : IClassFixture<IntegrationFactory>
     {
         var sys = await TestClient.AuthedClientAsync(_factory, Sys);
         var resp = await sys.PostAsJsonAsync($"/api/v1/system-admin/tenants/{NewId("nope")}/school-admins",
-            new { fullName = "Ghost", loginCode = NewId("GH") });
+            new { fullName = "Ghost Founder" });
         Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }
 
@@ -213,7 +255,18 @@ public class SystemAdminPortalApiTests : IClassFixture<IntegrationFactory>
     {
         var sys = await TestClient.AuthedClientAsync(_factory, Sys);
         var resp = await sys.PostAsJsonAsync("/api/v1/system-admin/tenants/tenant-1/school-admins",
-            new { fullName = "", loginCode = "" });
+            new { fullName = "" });
+        Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("محمد أحمد")]
+    [InlineData("12345")]
+    [InlineData("John🙂")]
+    public async Task Create_school_admin_non_english_full_name_400(string fullName)
+    {
+        var sys = await TestClient.AuthedClientAsync(_factory, Sys);
+        var resp = await sys.PostAsJsonAsync("/api/v1/system-admin/tenants/tenant-1/school-admins", new { fullName });
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 

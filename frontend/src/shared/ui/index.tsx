@@ -21,6 +21,8 @@ import { Alert as RawAlert } from '../../components/ui/Alert'
 // these dialogs already carry specific prop contracts the migrated pages use.
 export { ConfirmDialog } from '../../components/ui/ConfirmDialog'
 export { FormModal } from '../../components/ui/FormModal'
+// One-time generated login-credential display (onboarding/create-user/reset-credential flows).
+export { CredentialsPanel } from '../../components/credentials/CredentialsPanel'
 import { Spinner as RawSpinner } from '../../components/ui/Spinner'
 import { Skeleton as RawSkeleton, SkeletonText as RawSkeletonText } from '../../components/ui/Skeleton'
 import { Toggle as RawToggle } from '../../components/ui/Toggle'

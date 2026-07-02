@@ -120,6 +120,12 @@ app.UseCors(DerasaX.Api.Helper.ServiceCollectionExtensions.LocalCorsPolicy);
 app.UseRouting();
 
 app.UseAuthentication();
+
+// Blocks every endpoint but a small allowlist (change-password/logout/revoke/refresh) for an
+// authenticated user whose account still requires a forced password change. Runs after
+// authentication (claims are validated) and before authorization (catches all controllers).
+app.UseMiddleware<DerasaX.Api.Security.MustChangePasswordGateMiddleware>();
+
 app.UseAuthorization();
 
 // Rate limiter runs after authentication so policies can partition by the trusted

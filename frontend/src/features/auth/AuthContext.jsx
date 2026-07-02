@@ -27,6 +27,7 @@ export function AuthProvider({ children, onSessionEnd }) {
   const [role, setRole] = useState(null)
   const [expiresOn, setExpiresOn] = useState(null)
   const [reason, setReason] = useState(null) // 'expired' | null
+  const [mustChangePassword, setMustChangePassword] = useState(false)
   const refreshTimer = useRef(null)
   const onSessionEndRef = useRef(onSessionEnd)
   // Keep the latest callback without writing the ref during render.
@@ -46,6 +47,7 @@ export function AuthProvider({ children, onSessionEnd }) {
     setRole(session.role)
     setExpiresOn(session.expiresOn)
     setReason(null)
+    setMustChangePassword(Boolean(session.mustChangePassword))
     setStatus('authenticated')
   }, [])
 
@@ -57,6 +59,7 @@ export function AuthProvider({ children, onSessionEnd }) {
       setRole(null)
       setExpiresOn(null)
       setReason(nextReason)
+      setMustChangePassword(false)
       setStatus(nextStatus)
       // Notify subscribers (e.g. React Query) to drop all cached data so no
       // cross-user / cross-tenant data survives a logout or expiry.
@@ -132,17 +135,32 @@ export function AuthProvider({ children, onSessionEnd }) {
     endSession('anonymous')
   }, [endSession])
 
+  // Change password, then immediately refresh so the session reflects the cleared
+  // mustChangePassword flag (a fresh refresh token is issued alongside a successful
+  // change) — unblocks the app right away instead of waiting on natural token expiry.
+  // Failures propagate unchanged so callers can map field/server errors onto the form.
+  const changePassword = useCallback(
+    async (payload) => {
+      const result = await authApi.changePassword(payload)
+      const data = await refreshOnce()
+      if (data?.token) applySession(authApi.toSession(data))
+      return result
+    },
+    [applySession]
+  )
+
   const value = {
     status,
     user,
     role,
     expiresOn,
     reason,
+    mustChangePassword,
     isAuthenticated: status === 'authenticated',
     isLoading: status === 'loading',
     login,
     logout,
-    changePassword: authApi.changePassword,
+    changePassword,
   }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

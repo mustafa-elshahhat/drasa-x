@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { I18nextProvider } from 'react-i18next'
@@ -70,5 +71,44 @@ describe('SchoolUsersPage role-scoped listing', () => {
     schoolApi.users.mockResolvedValue([])
     renderUsers({ role: 'Teacher' })
     expect(await screen.findByText('No accounts yet.')).toBeInTheDocument()
+  })
+})
+
+// Account provisioning defaults: no password/login-code input, server-generated
+// credentials shown once, English-only full name enforced client-side.
+describe('SchoolUsersPage create form', () => {
+  it('does not render any password or login-code input', async () => {
+    schoolApi.users.mockResolvedValue([])
+    renderUsers({ role: null, canCreate: true })
+    await screen.findByRole('button', { name: 'Create account' })
+    expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Login code')).not.toBeInTheDocument()
+  })
+
+  it('rejects a non-English full name and blocks submit', async () => {
+    schoolApi.users.mockResolvedValue([])
+    const user = userEvent.setup()
+    renderUsers({ role: null, canCreate: true })
+
+    await screen.findByRole('button', { name: 'Create account' })
+    await user.type(screen.getByLabelText('Name'), 'محمد أحمد')
+    expect(await screen.findByText('Full name must be written in English letters only.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Create account' })).toBeDisabled()
+    expect(schoolApi.createUser).not.toHaveBeenCalled()
+  })
+
+  it('creates a user with a valid English name and shows the generated credentials', async () => {
+    schoolApi.users.mockResolvedValue([])
+    schoolApi.createUser.mockResolvedValue({ userId: 'u1', loginCode: 'teacher.ali.hassan.4821', role: 'Teacher', temporaryPassword: 'Fresh#Pass9000' })
+    const user = userEvent.setup()
+    renderUsers({ role: null, canCreate: true })
+
+    await screen.findByRole('button', { name: 'Create account' })
+    await user.type(screen.getByLabelText('Name'), 'Ali Hassan')
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    await waitFor(() => expect(schoolApi.createUser).toHaveBeenCalledWith({ fullName: 'Ali Hassan', role: 'Student', gradeId: null }))
+    expect(await screen.findByText('teacher.ali.hassan.4821')).toBeInTheDocument()
+    expect(screen.getByText('Fresh#Pass9000')).toBeInTheDocument()
   })
 })

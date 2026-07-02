@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { CheckboxField, SelectField, TextField } from '../../../shared/form'
-import { Alert, Button, Card, Stepper } from '../../../shared/ui'
+import { Alert, Button, Card, CredentialsPanel, Stepper } from '../../../shared/ui'
 import { ErrorState } from '../../../shared/feedback'
+import { isEnglishName } from '../../../lib/validation/englishName'
 import { displayValue, itemId } from '../../../features/student/studentUtils'
 import { Head } from '../../../features/system/components'
 import { CURRICULUM } from '../../../features/system/constants'
@@ -20,8 +21,12 @@ function OnboardingPage({ userId }) {
   const [tenantForm, setTenantForm] = useState({ id: '', name: '', type: 0 })
   const [createdTenantId, setCreatedTenantId] = useState(null)
   const [planForm, setPlanForm] = useState({ planDefinitionId: '', isTrial: false })
-  const [adminForm, setAdminForm] = useState({ fullName: '', loginCode: '' })
+  const [adminForm, setAdminForm] = useState({ fullName: '' })
   const [credential, setCredential] = useState(null)
+  const [showCredential, setShowCredential] = useState(false)
+  const nameError = adminForm.fullName.trim() && !isEnglishName(adminForm.fullName)
+    ? t('validation.englishNameOnly', 'Full name must be written in English letters only.')
+    : null
 
   const createTenant = useMutation({
     mutationFn: () => systemApi.createTenant({ id: tenantForm.id.trim(), name: tenantForm.name.trim(), type: Number(tenantForm.type) }),
@@ -31,8 +36,8 @@ function OnboardingPage({ userId }) {
     mutationFn: () => systemApi.assignPlan({ tenantId: createdTenantId, planDefinitionId: planForm.planDefinitionId, isTrial: planForm.isTrial }),
   })
   const createAdmin = useMutation({
-    mutationFn: () => systemApi.createSchoolAdmin(createdTenantId, adminForm),
-    onSuccess: (data) => setCredential(data),
+    mutationFn: () => systemApi.createSchoolAdmin(createdTenantId, { fullName: adminForm.fullName.trim() }),
+    onSuccess: (data) => { setCredential(data); setShowCredential(true) },
   })
   const activate = useMutation({
     mutationFn: () => systemApi.setTenantStatus(createdTenantId, 'activate'),
@@ -77,16 +82,34 @@ function OnboardingPage({ userId }) {
       <Card title={t('system.onboarding.step3')}>
         {credential && (
           <Alert variant="success" title={t('system.credential.title')}>
-            {t('system.credential.body')} — {t('system.common.loginCode')}: <code>{credential.loginCode}</code> · {t('system.credential.password')}: <code>{credential.temporaryPassword}</code>
+            {t('system.credential.body')}{' '}
+            <Button type="button" variant="ghost" onClick={() => setShowCredential(true)}>
+              {t('credentials.view', 'View credentials')}
+            </Button>
           </Alert>
         )}
         {createAdmin.isError && <ErrorState error={createAdmin.error} onRetry={() => createAdmin.reset()} />}
         <div className="ui-formgrid ui-formgrid--2">
-          <TextField label={t('system.common.name')} value={adminForm.fullName} onChange={(e) => setAdminForm((f) => ({ ...f, fullName: e.target.value }))} />
-          <TextField label={t('system.common.loginCode')} value={adminForm.loginCode} onChange={(e) => setAdminForm((f) => ({ ...f, loginCode: e.target.value }))} />
+          <TextField
+            label={t('system.common.name')}
+            value={adminForm.fullName}
+            onChange={(e) => setAdminForm((f) => ({ ...f, fullName: e.target.value }))}
+            error={nameError}
+          />
         </div>
-        <Button onClick={() => createAdmin.mutate()} loading={createAdmin.isPending} disabled={!createdTenantId || !adminForm.fullName.trim() || !adminForm.loginCode.trim()}>{t('system.onboarding.createAdmin')}</Button>
+        <Button onClick={() => createAdmin.mutate()} loading={createAdmin.isPending} disabled={!createdTenantId || !adminForm.fullName.trim() || Boolean(nameError)}>{t('system.onboarding.createAdmin')}</Button>
       </Card>
+
+      {credential && (
+        <CredentialsPanel
+          open={showCredential}
+          onClose={() => setShowCredential(false)}
+          fullName={adminForm.fullName.trim()}
+          role={credential.role}
+          loginCode={credential.loginCode}
+          temporaryPassword={credential.temporaryPassword}
+        />
+      )}
 
       <Card title={t('system.onboarding.step4')}>
         {activate.isSuccess && <Alert variant="success" title={t('system.common.saved')}>{t('system.onboarding.activated')}</Alert>}

@@ -8845,6 +8845,36 @@
         }
       }
     },
+    "/api/v1/system-admin/tenants/{id}/school-admins/{userId}/reset-credential": {
+      "post": {
+        "tags": [
+          "SystemAdmin"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/system-admin/operational-status": {
       "get": {
         "tags": [
@@ -11803,10 +11833,6 @@
             "type": "string",
             "nullable": true
           },
-          "loginCode": {
-            "type": "string",
-            "nullable": true
-          },
           "role": {
             "type": "string",
             "nullable": true
@@ -11961,10 +11987,6 @@
         "type": "object",
         "properties": {
           "fullName": {
-            "type": "string",
-            "nullable": true
-          },
-          "loginCode": {
             "type": "string",
             "nullable": true
           }

@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { DetailList } from '../../../shared/data-display'
-import { Alert, Button, Card, Chip } from '../../../shared/ui'
+import { Alert, Button, Card, Chip, CredentialsPanel } from '../../../shared/ui'
 import { ErrorState } from '../../../shared/feedback'
 import { Head, Loading } from '../../../features/school/components'
 import { useSchoolQuery } from '../../../features/school/helpers'
@@ -15,6 +16,7 @@ function UserDetailPage({ userId, locale }) {
   const qc = useQueryClient()
   const { userId: targetUserId } = useParams()
   const user = useSchoolQuery(queryKeys.school.user(userId, targetUserId), (s) => schoolApi.getUser(targetUserId, s), { enabled: Boolean(targetUserId) })
+  const [showCredential, setShowCredential] = useState(false)
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: queryKeys.school.user(userId, targetUserId) })
@@ -26,6 +28,7 @@ function UserDetailPage({ userId, locale }) {
   })
   const resetCredential = useMutation({
     mutationFn: () => schoolApi.resetUserCredential(targetUserId),
+    onSuccess: () => setShowCredential(true),
   })
 
   const data = user.data
@@ -68,13 +71,27 @@ function UserDetailPage({ userId, locale }) {
             {resetCredential.isError && <ErrorState error={resetCredential.error} onRetry={() => resetCredential.reset()} />}
             {resetCredential.data && (
               <Alert variant="success" title={t('school.credential.title')}>
-                {t('school.credential.body')} — {t('school.common.loginCode')}: <code>{resetCredential.data.loginCode}</code> · {t('school.credential.password')}: <code>{resetCredential.data.temporaryPassword}</code>
+                {t('school.credential.body')}{' '}
+                <Button type="button" variant="ghost" onClick={() => setShowCredential(true)}>
+                  {t('credentials.view', 'View credentials')}
+                </Button>
               </Alert>
             )}
             <Button variant="secondary" onClick={() => resetCredential.mutate()} loading={resetCredential.isPending}>
               {t('school.user.resetCredential')}
             </Button>
           </Card>
+
+          {resetCredential.data && (
+            <CredentialsPanel
+              open={showCredential}
+              onClose={() => setShowCredential(false)}
+              fullName={data.fullName}
+              role={resetCredential.data.role || data.role}
+              loginCode={resetCredential.data.loginCode}
+              temporaryPassword={resetCredential.data.temporaryPassword}
+            />
+          )}
         </>
       )}
     </>

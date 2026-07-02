@@ -1,4 +1,4 @@
-Runtime OpenAPI endpoint inventory (283 paths)
+Runtime OpenAPI endpoint inventory (284 paths)
 
 /api/chat
 /api/Grades/AddGrade
@@ -237,6 +237,7 @@ Runtime OpenAPI endpoint inventory (283 paths)
 /api/v1/system-admin/tenants/{id}/data-deletion-request
 /api/v1/system-admin/tenants/{id}/data-export
 /api/v1/system-admin/tenants/{id}/school-admins
+/api/v1/system-admin/tenants/{id}/school-admins/{userId}/reset-credential
 /api/v1/system-admin/usage
 /api/v1/system-settings
 /api/v1/teacher-subject-assignments

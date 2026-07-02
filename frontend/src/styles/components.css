@@ -756,6 +756,17 @@ a.ui-metric:hover .ui-metric__value { color: var(--metric-accent, var(--accent))
 .ui-modal__footer { display: flex; justify-content: flex-end; gap: 10px;
   padding: 14px 18px; border-top: 1px solid var(--border); flex: 0 0 auto; }
 
+/* Credentials panel (one-time generated login id / temporary password) ----- */
+.credentials-panel { display: grid; gap: 4px; margin-top: 14px; }
+.credentials-panel__row { display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface-2); }
+.credentials-panel__label { flex: 0 0 auto; min-width: 120px; font-size: 12px;
+  font-weight: 600; color: var(--text-dim); }
+.credentials-panel__value { flex: 1 1 auto; word-break: break-all; }
+.credentials-panel__value--mono { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); }
+.credentials-panel__copy-all { margin-top: 12px; }
+
 /* Toasts ------------------------------------------------------------------- */
 .ui-toast-region {
   position: fixed; inset-block-end: 16px; inset-inline-end: 16px;

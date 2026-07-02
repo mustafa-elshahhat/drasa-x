@@ -21,6 +21,9 @@ namespace DerasaX.Domain.Entities.Models
         public Tenant? Tenant { get; set; }
         /// <summary>When true the account is disabled and may not authenticate.</summary>
         public bool IsDeleted { get; set; } = false;
+        /// <summary>When true the account must change its password before using any other endpoint
+        /// (set on provisioning and on credential reset; cleared on a successful password change).</summary>
+        public bool MustChangePassword { get; set; } = false;
         public Gender? Gender { get; set; }
         public List<RefreshToken>? refreshTokens { get; set; }
         public ICollection<Post> posts { get; set; } = new HashSet<Post>();

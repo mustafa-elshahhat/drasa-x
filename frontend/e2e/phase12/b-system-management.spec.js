@@ -36,7 +36,6 @@ test.describe('Phase 12 — system-admin management', () => {
     const guards = attachGuards(page)
     const stamp = String(Date.now()).slice(-9)
     const tenantId = `PH12-E2E-${stamp}`
-    const adminCode = `PH12-E2E-ADM-${stamp}`
     await login(page, CODES12.systemAdmin)
     await nav(page, '/app/system/onboarding')
     await expect(h1(page)).toHaveText('Tenant onboarding')
@@ -52,11 +51,17 @@ test.describe('Phase 12 — system-admin management', () => {
     await page.getByRole('button', { name: 'Assign plan' }).click()
     await expect(page.getByText('The plan was assigned.')).toBeVisible()
 
-    // Step 3 — create the initial school admin (one-time credential is shown)
-    await page.getByLabel('Full name', { exact: true }).fill('E2E Founder Admin')
-    await page.getByLabel('Login code', { exact: true }).fill(adminCode)
+    // Step 3 — create the initial school admin: no password/login-code is typed by the
+    // admin, both are generated server-side and shown once in the credentials panel.
+    await page.getByLabel('Full name', { exact: true }).fill('Founder Admin')
+    await expect(page.getByLabel('Login code', { exact: true })).toHaveCount(0)
+    await expect(page.getByLabel(/password/i)).toHaveCount(0)
     await page.getByRole('button', { name: 'Create school admin' }).click()
-    await expect(page.getByText(adminCode).first()).toBeVisible()
+    const credentialsModal = page.getByRole('dialog', { name: 'Account credentials' })
+    await expect(credentialsModal).toBeVisible()
+    await expect(credentialsModal.getByText('Login ID')).toBeVisible()
+    await expect(credentialsModal.getByText('Temporary password')).toBeVisible()
+    await credentialsModal.getByRole('button', { name: 'Close', exact: true }).click()
 
     // Step 4 — activate
     await page.getByRole('button', { name: 'Activate tenant' }).click()

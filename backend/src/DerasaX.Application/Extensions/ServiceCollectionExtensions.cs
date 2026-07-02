@@ -173,6 +173,11 @@ namespace DerasaX.Application.Extensions
             services.AddScoped<DerasaX.Application.Services.Abstractions.Operations.IReportService,
                 DerasaX.Application.Services.Operations.ReportService>();
 
+            // Centralized login-code/temporary-password generation shared by every provisioning
+            // and reset-credential flow (SystemAdmin onboarding + SchoolAdmin user management).
+            services.AddScoped<DerasaX.Application.Services.Abstractions.Provisioning.ICredentialProvisioningService,
+                DerasaX.Application.Services.Provisioning.CredentialProvisioningService>();
+
             // Phase 5 closure — SchoolAdmin user/credential provisioning.
             services.AddScoped<DerasaX.Application.Services.Abstractions.Provisioning.IUserProvisioningService,
                 DerasaX.Application.Services.Provisioning.UserProvisioningService>();

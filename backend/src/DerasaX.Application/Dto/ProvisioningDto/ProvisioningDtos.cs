@@ -7,8 +7,6 @@ namespace DerasaX.Application.Dto.ProvisioningDto
     public class CreateTenantUserDto
     {
         public string FullName { get; set; } = string.Empty;
-        /// <summary>Stable business login identifier (must be unique within the tenant).</summary>
-        public string LoginCode { get; set; } = string.Empty;
         /// <summary>One of: Student, Teacher, Parent. Admin roles cannot be provisioned through this surface.</summary>
         public string Role { get; set; } = string.Empty;
         /// <summary>Required when Role == Student (the grade the student belongs to).</summary>

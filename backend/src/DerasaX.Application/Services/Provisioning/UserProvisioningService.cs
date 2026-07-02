@@ -30,15 +30,17 @@ namespace DerasaX.Application.Services.Provisioning
         private readonly IAuditWriter _audit;
         private readonly UserManager<ApplicationUser> _users;
         private readonly IPlanLimitEnforcer _limits;
+        private readonly ICredentialProvisioningService _credentials;
 
         public UserProvisioningService(IUnitOfWork uow, ITenantContext tenant, IAuditWriter audit,
-            UserManager<ApplicationUser> users, IPlanLimitEnforcer limits)
+            UserManager<ApplicationUser> users, IPlanLimitEnforcer limits, ICredentialProvisioningService credentials)
         {
             _uow = uow;
             _tenant = tenant;
             _audit = audit;
             _users = users;
             _limits = limits;
+            _credentials = credentials;
         }
 
         private string RequireTenant() =>
@@ -48,16 +50,11 @@ namespace DerasaX.Application.Services.Provisioning
         {
             var tenantId = RequireTenant();
 
-            if (string.IsNullOrWhiteSpace(dto.FullName)) throw new BadRequestException("FullName is required.");
-            if (string.IsNullOrWhiteSpace(dto.LoginCode)) throw new BadRequestException("LoginCode is required.");
+            EnglishNameValidator.Validate(dto.FullName);
 
             var role = NormalizeRole(dto.Role);
             if (!ManageableRoles.Contains(role))
                 throw new ForbiddenException("Only Student, Teacher or Parent accounts can be provisioned here.");
-
-            // Login code must be globally unique (it is the authentication key).
-            if (await _users.Users.AnyAsync(u => u.LoginCode == dto.LoginCode, ct))
-                throw new ConflictException("An account with this login code already exists.");
 
             await _limits.EnsureCanAddUserAsync(tenantId, role, ct);
 
@@ -78,13 +75,15 @@ namespace DerasaX.Application.Services.Provisioning
                 Roles.Teacher => new Teacher { Gender = dto.Gender },
                 _ => new Parent { Gender = dto.Gender }
             };
-            user.UserName = dto.LoginCode;
-            user.FullName = dto.FullName;
-            user.LoginCode = dto.LoginCode;
+            var loginCode = await _credentials.GenerateLoginCodeAsync(dto.FullName, role, ct);
+            user.UserName = loginCode;
+            user.FullName = dto.FullName.Trim();
+            user.LoginCode = loginCode;
             user.TenantId = tenantId;
             user.IsDeleted = false;
+            user.MustChangePassword = true;
 
-            var tempPassword = GenerateTemporaryPassword();
+            var tempPassword = _credentials.GenerateTemporaryPassword();
             var result = await _users.CreateAsync(user, tempPassword);
             if (!result.Succeeded)
                 throw new BadRequestException(string.Join("; ", result.Errors.Select(e => e.Description)));
@@ -153,8 +152,9 @@ namespace DerasaX.Application.Services.Provisioning
         {
             var user = await RequireManageableTenantUserAsync(userId, ct);
 
-            var tempPassword = GenerateTemporaryPassword();
+            var tempPassword = _credentials.GenerateTemporaryPassword();
             var token = await _users.GeneratePasswordResetTokenAsync(user);
+            user.MustChangePassword = true; // tracked before the store update below flushes both together
             var result = await _users.ResetPasswordAsync(user, token, tempPassword);
             if (!result.Succeeded)
                 throw new BadRequestException(string.Join("; ", result.Errors.Select(e => e.Description)));
@@ -204,30 +204,5 @@ namespace DerasaX.Application.Services.Provisioning
             var r when string.Equals(r, Roles.SystemAdmin, StringComparison.OrdinalIgnoreCase) => Roles.SystemAdmin,
             _ => role ?? string.Empty
         };
-
-        /// <summary>
-        /// Strong one-time password meeting the configured policy (upper + lower + digit, length 14).
-        /// Generated with a CSPRNG; never logged or persisted in clear text.
-        /// </summary>
-        private static string GenerateTemporaryPassword()
-        {
-            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-            const string lower = "abcdefghijkmnpqrstuvwxyz";
-            const string digits = "23456789";
-            const string all = upper + lower + digits;
-            var chars = new char[14];
-            chars[0] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
-            chars[1] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
-            chars[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
-            for (var i = 3; i < chars.Length; i++)
-                chars[i] = all[RandomNumberGenerator.GetInt32(all.Length)];
-            // Fisher–Yates shuffle so the guaranteed classes are not always in positions 0-2.
-            for (var i = chars.Length - 1; i > 0; i--)
-            {
-                var j = RandomNumberGenerator.GetInt32(i + 1);
-                (chars[i], chars[j]) = (chars[j], chars[i]);
-            }
-            return new string(chars);
-        }
     }
 }

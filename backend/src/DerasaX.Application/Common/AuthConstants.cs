@@ -51,5 +51,8 @@ namespace DerasaX.Application.Common
         public const string StorageUnavailable = "STORAGE_UNAVAILABLE";
         // The requested write would exceed a limit on the tenant's current subscription plan.
         public const string PlanLimitExceeded = "PLAN_LIMIT_EXCEEDED";
+        // The authenticated account must change its (temporary/reset) password before any other
+        // endpoint may be used.
+        public const string PasswordChangeRequired = "PASSWORD_CHANGE_REQUIRED";
     }
 }

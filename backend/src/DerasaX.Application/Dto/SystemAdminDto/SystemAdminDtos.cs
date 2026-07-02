@@ -142,7 +142,6 @@ namespace DerasaX.Application.Dto.SystemAdminDto
     public class CreateSchoolAdminDto
     {
         public string FullName { get; set; } = string.Empty;
-        public string LoginCode { get; set; } = string.Empty;
     }
 
     /// <summary>One-time credential returned ONCE on creation; never persisted in clear text or audited.</summary>

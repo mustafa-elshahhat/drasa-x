@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { SelectField, TextField } from '../../../shared/form'
-import { Alert, Button, Card } from '../../../shared/ui'
+import { Alert, Button, Card, CredentialsPanel } from '../../../shared/ui'
 import { ErrorState } from '../../../shared/feedback'
+import { isEnglishName } from '../../../lib/validation/englishName'
 import { Head, List } from '../../../features/school/components'
 import { USER_ROLES } from '../../../features/school/constants'
 import { useSchoolQuery } from '../../../features/school/helpers'
@@ -21,11 +22,22 @@ function UsersPage({ userId, locale, role, canCreate }) {
   const detailBase = `/app/school/${view}`
   const query = useSchoolQuery(queryKeys.school.users(userId, role || 'all'), (s) => schoolApi.users(role, s), { staleTime: STALE.medium })
   const grades = useSchoolQuery(queryKeys.school.grades(userId), (s) => schoolApi.grades(s), { staleTime: STALE.medium, enabled: Boolean(canCreate) })
-  const [form, setForm] = useState({ fullName: '', loginCode: '', role: 'Student', gradeId: '' })
+  const [form, setForm] = useState({ fullName: '', role: 'Student', gradeId: '' })
   const [credential, setCredential] = useState(null)
+  const [credentialName, setCredentialName] = useState('')
+  const [showCredential, setShowCredential] = useState(false)
+  const nameError = form.fullName.trim() && !isEnglishName(form.fullName)
+    ? t('validation.englishNameOnly', 'Full name must be written in English letters only.')
+    : null
   const create = useMutation({
-    mutationFn: () => schoolApi.createUser({ fullName: form.fullName, loginCode: form.loginCode, role: form.role, gradeId: form.role === 'Student' ? form.gradeId || null : null }),
-    onSuccess: (data) => { setCredential(toObject(data)); setForm({ fullName: '', loginCode: '', role: 'Student', gradeId: '' }); qc.invalidateQueries({ queryKey: queryKeys.school.users(userId, role || 'all') }) },
+    mutationFn: () => schoolApi.createUser({ fullName: form.fullName.trim(), role: form.role, gradeId: form.role === 'Student' ? form.gradeId || null : null }),
+    onSuccess: (data) => {
+      setCredential(toObject(data))
+      setCredentialName(form.fullName.trim())
+      setShowCredential(true)
+      setForm({ fullName: '', role: 'Student', gradeId: '' })
+      qc.invalidateQueries({ queryKey: queryKeys.school.users(userId, role || 'all') })
+    },
   })
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
   const gradeItems = Array.isArray(grades.data) ? grades.data : []
@@ -41,21 +53,34 @@ function UsersPage({ userId, locale, role, canCreate }) {
         <Card title={t('school.users.create')}>
           {credential && (
             <Alert variant="success" title={t('school.credential.title')}>
-              {t('school.credential.body')} — {t('school.common.loginCode')}: <code>{credential.loginCode}</code> · {t('school.credential.password')}: <code>{credential.temporaryPassword}</code>
+              {t('school.credential.body')}{' '}
+              <Button type="button" variant="ghost" onClick={() => setShowCredential(true)}>
+                {t('credentials.view', 'View credentials')}
+              </Button>
             </Alert>
           )}
           {create.isError && <ErrorState error={create.error} onRetry={() => create.reset()} />}
           <div className="ui-formgrid ui-formgrid--2">
-            <TextField label={t('school.common.name')} value={form.fullName} onChange={set('fullName')} />
-            <TextField label={t('school.common.loginCode')} value={form.loginCode} onChange={set('loginCode')} />
+            <TextField label={t('school.common.name')} value={form.fullName} onChange={set('fullName')} error={nameError} />
             <SelectField label={t('school.common.role')} value={form.role} onChange={set('role')} options={USER_ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))} />
             {form.role === 'Student' && (
               <SelectField label={t('school.common.grade')} value={form.gradeId} onChange={set('gradeId')}
                 options={[{ value: '', label: t('school.common.choose') }, ...gradeItems.map((g) => ({ value: itemId(g), label: displayValue(g, ['name', 'Name']) || itemId(g) }))]} />
             )}
           </div>
-          <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.fullName.trim() || !form.loginCode.trim()}>{t('school.users.create')}</Button>
+          <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.fullName.trim() || Boolean(nameError)}>{t('school.users.create')}</Button>
         </Card>
+      )}
+
+      {credential && (
+        <CredentialsPanel
+          open={showCredential}
+          onClose={() => setShowCredential(false)}
+          fullName={credentialName}
+          role={credential.role}
+          loginCode={credential.loginCode}
+          temporaryPassword={credential.temporaryPassword}
+        />
       )}
       <List
         query={query}

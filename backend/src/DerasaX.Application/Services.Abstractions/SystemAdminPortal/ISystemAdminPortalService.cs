@@ -33,6 +33,9 @@ namespace DerasaX.Application.Services.Abstractions.SystemAdminPortal
         // Onboarding: create the INITIAL SchoolAdmin for a target tenant.
         Task<ApiResponse<CreatedSchoolAdminDto>> CreateSchoolAdminAsync(string tenantId, CreateSchoolAdminDto dto, CancellationToken ct = default);
 
+        // Reset an existing SchoolAdmin's credential (mirrors the tenant-users reset-credential surface).
+        Task<ApiResponse<CreatedSchoolAdminDto>> ResetSchoolAdminCredentialAsync(string tenantId, string userId, CancellationToken ct = default);
+
         // Operational posture: real DB-readiness check + honest deferred states.
         Task<ApiResponse<OperationalStatusDto>> OperationalStatusAsync(CancellationToken ct = default);
 

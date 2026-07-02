@@ -6,7 +6,9 @@
 //   POST /api/v1/account/logout                                 -> { message }
 //   POST /api/v1/account/change-password { CurrentPassword, NewPassword }
 //
-// AuthModel = { id, userName, fullName, role, token, expiresOn, isAuthenticated }
+// AuthModel = { id, userName, fullName, role, token, expiresOn, isAuthenticated, mustChangePassword }
+// mustChangePassword: true means the account signed in with a temporary/reset password and
+// must change it before using any other endpoint (see AuthContext + guards.jsx).
 // The refresh token is an HttpOnly cookie the browser cannot read; we send it
 // implicitly via credentials:'include'. Identity/role/tenant are derived by the
 // backend from the signed token — the browser never asserts them.
@@ -34,6 +36,7 @@ export function toSession(model) {
     role: model.role || null,
     token: model.token || null,
     expiresOn: model.expiresOn || null,
+    mustChangePassword: Boolean(model.mustChangePassword),
   }
 }
 

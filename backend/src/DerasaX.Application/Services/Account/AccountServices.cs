@@ -241,16 +241,36 @@ namespace DerasaX.Application.Services.Account
             if (user is null)
                 return OperationResult.Fail("Unable to change password.");
 
+            // Checked before calling Identity: a no-op "change" to the same password would
+            // otherwise succeed and clear MustChangePassword, letting a user rubber-stamp past
+            // the forced first-login change.
+            if (dto.NewPassword == dto.CurrentPassword)
+                return OperationResult.Fail("The new password must be different from the current password.");
+
             var result = await _userManager.ChangePasswordAsync(user, dto.CurrentPassword, dto.NewPassword);
             if (!result.Succeeded)
                 return OperationResult.Fail("Unable to change password.");
 
             await _userManager.UpdateSecurityStampAsync(user);
+            user.MustChangePassword = false;
             RevokeAllSessions(user, "password-change");
+
+            // Issue one fresh refresh token so the browser can immediately call /refresh and get
+            // an access token reflecting the cleared MustChangePassword claim, without a full
+            // re-login. Added after RevokeAllSessions so it is never itself marked revoked.
+            var (rawRefresh, refreshRecord) = NewRefreshToken();
+            user.refreshTokens ??= new List<RefreshToken>();
+            user.refreshTokens.Add(refreshRecord);
             await _userManager.UpdateAsync(user);
 
             _logger.LogInformation("AUDIT password.changed uid={Uid}", user.Id);
-            return OperationResult.Ok("Password changed.");
+            return new OperationResult
+            {
+                Success = true,
+                Message = "Password changed.",
+                RawRefreshToken = rawRefresh,
+                RefreshTokenExpiration = refreshRecord.ExpiresOn
+            };
         }
 
         // -------------------------------------------------------- Password reset
@@ -296,6 +316,7 @@ namespace DerasaX.Application.Services.Account
 
             await _userManager.UpdateSecurityStampAsync(user);
             await _userManager.ResetAccessFailedCountAsync(user);
+            user.MustChangePassword = false;
             RevokeAllSessions(user, "password-reset");
             await _userManager.UpdateAsync(user);
 
@@ -325,6 +346,7 @@ namespace DerasaX.Application.Services.Account
                 UserName = user.UserName ?? string.Empty,
                 FullName = user.FullName,
                 Role = role,
+                MustChangePassword = user.MustChangePassword,
                 IsAuthenticated = true,
                 Token = tokenString,
                 ExpiresOn = jwt.ValidTo,
@@ -343,7 +365,10 @@ namespace DerasaX.Application.Services.Account
                 new("uid", user.Id),
                 new(ClaimTypes.NameIdentifier, user.Id),
                 // Security stamp / token version (invalidate-on-change support).
-                new("sstamp", user.SecurityStamp ?? string.Empty)
+                new("sstamp", user.SecurityStamp ?? string.Empty),
+                // Enforced by MustChangePasswordGateMiddleware: blocks all but a small
+                // allowlist of endpoints while true.
+                new("mustChangePassword", user.MustChangePassword ? "true" : "false")
             };
 
             // tenantId claim ONLY for tenant-scoped users. Platform SystemAdmin omits it.

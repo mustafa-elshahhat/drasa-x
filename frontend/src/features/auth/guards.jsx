@@ -8,18 +8,39 @@
 // =============================================================================
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './AuthContext'
-import { roleHasPermission } from './roles'
+import { roleHasPermission, homeRouteForRole } from './roles'
 import { FullPageLoader } from '../../shared/feedback'
 
-/** Requires an authenticated session. Anonymous -> /login (remembers origin). */
+/**
+ * Requires an authenticated session. Anonymous -> /login (remembers origin). An account signed
+ * in with a temporary/reset password (mustChangePassword) is redirected to the forced
+ * change-password page before any other /app route (including the shell/nav) ever renders.
+ */
 export function ProtectedRoute({ children }) {
-  const { status } = useAuth()
+  const { status, mustChangePassword } = useAuth()
   const location = useLocation()
 
   if (status === 'loading') return <FullPageLoader label="Restoring your session…" />
   if (status === 'suspended') return <Navigate to="/suspended" replace />
   if (status !== 'authenticated')
     return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />
+  if (mustChangePassword)
+    return <Navigate to="/change-password" replace state={{ from: location.pathname + location.search }} />
+
+  return children
+}
+
+/**
+ * Guards the standalone forced change-password page itself: not authenticated -> /login;
+ * authenticated but nothing to force -> the user's normal home (nothing to do here); otherwise
+ * render the page.
+ */
+export function RequirePasswordChange({ children }) {
+  const { status, mustChangePassword, role } = useAuth()
+
+  if (status === 'loading') return <FullPageLoader label="Loading…" />
+  if (status !== 'authenticated') return <Navigate to="/login" replace />
+  if (!mustChangePassword) return <Navigate to={homeRouteForRole(role)} replace />
 
   return children
 }

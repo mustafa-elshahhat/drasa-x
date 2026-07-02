@@ -76,6 +76,23 @@ public class PlanLimitEnforcementApiTests : IClassFixture<IntegrationFactory>
         return scope.ServiceProvider.GetRequiredService<IPlanLimitEnforcer>();
     }
 
+    /// <summary>
+    /// A freshly-provisioned account must change its temporary password before any other endpoint
+    /// is usable (MustChangePassword gate). Changes it, then refreshes so the client's bearer token
+    /// reflects the cleared flag, before the test proceeds to exercise other endpoints.
+    /// </summary>
+    private static async Task ChangePasswordAndUnblockAsync(HttpClient client, string currentPassword, string newPassword = "Fresh#Pass9000")
+    {
+        var change = await client.PostAsJsonAsync("/api/v1/account/change-password",
+            new { CurrentPassword = currentPassword, NewPassword = newPassword });
+        Assert.Equal(HttpStatusCode.OK, change.StatusCode);
+
+        var refresh = await client.PostAsync("/api/v1/account/refresh", null);
+        Assert.Equal(HttpStatusCode.OK, refresh.StatusCode);
+        var refreshed = await refresh.Content.ReadFromJsonAsync<TestClient.LoginResponse>(Json);
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", refreshed!.token);
+    }
+
     private async Task<string> SeedGradeAsync(string tenantId)
     {
         var gradeId = Phase4Db.NewId("grade");
@@ -134,6 +151,7 @@ public class PlanLimitEnforcementApiTests : IClassFixture<IntegrationFactory>
             var (loginStatus, loginBody) = await TestClient.LoginAsync(admin, cred.loginCode, cred.temporaryPassword);
             Assert.Equal((int)HttpStatusCode.OK, loginStatus);
             admin.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginBody!.token);
+            await ChangePasswordAndUnblockAsync(admin, cred.temporaryPassword);
 
             // Under the limit: the first student succeeds.
             var first = await admin.PostAsJsonAsync("/api/v1/tenant-users", new { fullName = "Student One", loginCode = Phase4Db.NewId("STU1")[..16], role = "Student", gradeId });
@@ -168,11 +186,12 @@ public class PlanLimitEnforcementApiTests : IClassFixture<IntegrationFactory>
             var (loginStatus, loginBody) = await TestClient.LoginAsync(admin, cred.loginCode, cred.temporaryPassword);
             Assert.Equal((int)HttpStatusCode.OK, loginStatus);
             admin.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", loginBody!.token);
+            await ChangePasswordAndUnblockAsync(admin, cred.temporaryPassword);
 
             // Several students in a row all succeed — an unassigned tenant is unlimited.
             for (var i = 0; i < 3; i++)
             {
-                var resp = await admin.PostAsJsonAsync("/api/v1/tenant-users", new { fullName = $"Student {i}", loginCode = Phase4Db.NewId($"NOLIM{i}")[..18], role = "Student", gradeId });
+                var resp = await admin.PostAsJsonAsync("/api/v1/tenant-users", new { fullName = "Unlimited Student", role = "Student", gradeId });
                 Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
             }
         }

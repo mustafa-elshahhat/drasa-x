@@ -1,11 +1,11 @@
-import { Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import type { ReactElement } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { ROUTES } from './router/routes'
 import type { AppRoute } from './router/route.types'
 import { AppShell } from '../layouts/AppShell'
 import { PublicLayout } from '../layouts/PublicLayout'
-import { ProtectedRoute, RoleGuard, PermissionGuard, AnonymousOnly } from '../features/auth/guards'
+import { ProtectedRoute, RoleGuard, PermissionGuard, AnonymousOnly, RequirePasswordChange } from '../features/auth/guards'
 import { FullPageLoader } from '../components/ui/FullPageLoader'
 import {
   ForbiddenPage,
@@ -13,6 +13,8 @@ import {
   SuspendedTenantPage,
   NotFoundPage,
 } from '../pages/status/StatusPages'
+
+const ForcedChangePasswordPage = lazy(() => import('../pages/auth/ForcedChangePasswordPage.jsx'))
 
 // Wrap a route element with the guard implied by its metadata.
 // `roles` takes precedence over `permission` (they are not combined) — identical
@@ -76,6 +78,19 @@ export default function App() {
             )
           })}
         </Route>
+
+        {/* Forced first-login password change — hardcoded (not in the ROUTES registry) so it
+            renders standalone, outside the AppShell nav, and doesn't affect routeArchitecture's
+            registry invariants (EXPECTED_ROUTE_COUNT). Guarded separately from ProtectedRoute:
+            only reachable while mustChangePassword is true. */}
+        <Route
+          path="/change-password"
+          element={
+            <RequirePasswordChange>
+              <ForcedChangePasswordPage />
+            </RequirePasswordChange>
+          }
+        />
 
         {/* Status + fallback routes */}
         <Route path="/forbidden" element={<ForbiddenPage />} />

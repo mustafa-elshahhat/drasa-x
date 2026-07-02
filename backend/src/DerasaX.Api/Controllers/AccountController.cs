@@ -110,7 +110,13 @@ namespace DerasaX.Api.Controllers
             if (!result.Success)
                 return ProblemResultFactory.Result(HttpContext, StatusCodes.Status400BadRequest, ErrorCodes.BadRequest, "Unable to change password.", result.Message);
 
-            ClearRefreshCookie();
+            // A fresh refresh token was issued alongside the password change (replacing every
+            // prior session) so the browser can immediately refresh and pick up the cleared
+            // MustChangePassword claim, instead of being logged out and needing to re-authenticate.
+            if (!string.IsNullOrEmpty(result.RawRefreshToken))
+                SetRefreshCookie(result.RawRefreshToken, result.RefreshTokenExpiration ?? System.DateTime.UtcNow);
+            else
+                ClearRefreshCookie();
             return Ok(new { message = result.Message });
         }
 

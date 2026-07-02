@@ -10,7 +10,7 @@ public static class TestClient
 {
     public const string Password = "Local@Dev123";
 
-    public record LoginResponse(string? token, string? role, string? id, bool isAuthenticated);
+    public record LoginResponse(string? token, string? role, string? id, bool isAuthenticated, bool mustChangePassword = false);
 
     public static HttpClient NewClient(IntegrationFactory factory) =>
         factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions

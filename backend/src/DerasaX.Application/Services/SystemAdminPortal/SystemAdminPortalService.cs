@@ -11,6 +11,7 @@ using DerasaX.Application.Dto.SystemAdminDto;
 using DerasaX.Application.Services.Abstractions;
 using DerasaX.Application.Services.Abstractions.Audit;
 using DerasaX.Application.Services.Abstractions.Operations;
+using DerasaX.Application.Services.Abstractions.Provisioning;
 using DerasaX.Application.Services.Abstractions.SystemAdminPortal;
 using DerasaX.Application.Services.Operations;
 using DerasaX.Domain.Common;
@@ -50,6 +51,7 @@ namespace DerasaX.Application.Services.SystemAdminPortal
         private readonly UserManager<ApplicationUser> _users;
         private readonly IAuditQueryService _auditQuery;
         private readonly IPlanLimitEnforcer _limits;
+        private readonly ICredentialProvisioningService _credentials;
 
         public SystemAdminPortalService(
             IUnitOfWork unitOfWork,
@@ -60,7 +62,8 @@ namespace DerasaX.Application.Services.SystemAdminPortal
             IPlatformRepository<SystemSetting> systemSettings,
             UserManager<ApplicationUser> users,
             IAuditQueryService auditQuery,
-            IPlanLimitEnforcer limits)
+            IPlanLimitEnforcer limits,
+            ICredentialProvisioningService credentials)
             : base(unitOfWork, tenant, audit)
         {
             _tenants = tenants;
@@ -69,6 +72,7 @@ namespace DerasaX.Application.Services.SystemAdminPortal
             _users = users;
             _auditQuery = auditQuery;
             _limits = limits;
+            _credentials = credentials;
         }
 
         // ---------------------------------------------------------------
@@ -403,27 +407,25 @@ namespace DerasaX.Application.Services.SystemAdminPortal
         public async Task<ApiResponse<CreatedSchoolAdminDto>> CreateSchoolAdminAsync(string tenantId, CreateSchoolAdminDto dto, CancellationToken ct = default)
         {
             RequireSystemAdmin();
-            if (string.IsNullOrWhiteSpace(dto.FullName)) throw new BadRequestException("FullName is required.");
-            if (string.IsNullOrWhiteSpace(dto.LoginCode)) throw new BadRequestException("LoginCode is required.");
+            EnglishNameValidator.Validate(dto.FullName);
 
             var tenant = await _tenants.FirstOrDefaultAsync(t => t.Id == tenantId, ct)
                 ?? throw new NotFoundException("Tenant not found.");
 
-            if (await _users.Users.AnyAsync(u => u.LoginCode == dto.LoginCode, ct))
-                throw new ConflictException("An account with this login code already exists.");
-
             await _limits.EnsureCanAddUserAsync(tenant.Id, Roles.SchoolAdmin, ct);
 
+            var loginCode = await _credentials.GenerateLoginCodeAsync(dto.FullName, Roles.SchoolAdmin, ct);
             var user = new SchoolAdmin
             {
-                UserName = dto.LoginCode,
+                UserName = loginCode,
                 FullName = dto.FullName.Trim(),
-                LoginCode = dto.LoginCode.Trim(),
+                LoginCode = loginCode,
                 TenantId = tenant.Id,
-                IsDeleted = false
+                IsDeleted = false,
+                MustChangePassword = true
             };
 
-            var tempPassword = GenerateTemporaryPassword();
+            var tempPassword = _credentials.GenerateTemporaryPassword();
             var result = await _users.CreateAsync(user, tempPassword);
             if (!result.Succeeded)
                 throw new BadRequestException(string.Join("; ", result.Errors.Select(e => e.Description)));
@@ -442,6 +444,40 @@ namespace DerasaX.Application.Services.SystemAdminPortal
                 Role = Roles.SchoolAdmin,
                 TemporaryPassword = tempPassword
             }, 201, "School administrator created.");
+        }
+
+        // ---------------------------------------------------------------
+        // Reset credential for an existing SchoolAdmin (closes the gap where only
+        // Student/Teacher/Parent reset existed via the tenant-users surface).
+        // ---------------------------------------------------------------
+        public async Task<ApiResponse<CreatedSchoolAdminDto>> ResetSchoolAdminCredentialAsync(string tenantId, string userId, CancellationToken ct = default)
+        {
+            RequireSystemAdmin();
+            var tenant = await _tenants.FirstOrDefaultAsync(t => t.Id == tenantId, ct)
+                ?? throw new NotFoundException("Tenant not found.");
+            var user = await _users.Users.FirstOrDefaultAsync(
+                u => u.Id == userId && u.TenantId == tenantId && u is SchoolAdmin, ct)
+                ?? throw new NotFoundException("School administrator not found.");
+
+            var tempPassword = _credentials.GenerateTemporaryPassword();
+            var token = await _users.GeneratePasswordResetTokenAsync(user);
+            user.MustChangePassword = true; // tracked before the store update below flushes both together
+            var result = await _users.ResetPasswordAsync(user, token, tempPassword);
+            if (!result.Succeeded)
+                throw new BadRequestException(string.Join("; ", result.Errors.Select(e => e.Description)));
+
+            await Audit.StageAsync(AuditActionType.Update, nameof(ApplicationUser), user.Id,
+                "{\"action\":\"reset-school-admin-credential\"}", ct, tenantOverride: tenant.Id);
+            await UnitOfWork.SaveChangesAsync(ct);
+
+            return Ok(new CreatedSchoolAdminDto
+            {
+                UserId = user.Id,
+                TenantId = tenant.Id,
+                LoginCode = user.LoginCode,
+                Role = Roles.SchoolAdmin,
+                TemporaryPassword = tempPassword
+            }, 200, "School administrator credential regenerated.");
         }
 
         // ---------------------------------------------------------------
@@ -612,29 +648,5 @@ namespace DerasaX.Application.Services.SystemAdminPortal
             Id = r.Id, TenantId = r.TenantId, UserId = r.UserId, Type = r.Type, Status = r.Status,
             Message = r.Message, ResponseMessage = r.ResponseMessage, CreatedAt = r.CreatedAt, RespondedAt = r.RespondedAt
         };
-
-        /// <summary>
-        /// Strong one-time password (upper+lower+digit, length 14) via CSPRNG; mirrors
-        /// <c>UserProvisioningService.GenerateTemporaryPassword</c>. Never logged or persisted in clear text.
-        /// </summary>
-        private static string GenerateTemporaryPassword()
-        {
-            const string upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-            const string lower = "abcdefghijkmnpqrstuvwxyz";
-            const string digits = "23456789";
-            const string all = upper + lower + digits;
-            var chars = new char[14];
-            chars[0] = upper[RandomNumberGenerator.GetInt32(upper.Length)];
-            chars[1] = lower[RandomNumberGenerator.GetInt32(lower.Length)];
-            chars[2] = digits[RandomNumberGenerator.GetInt32(digits.Length)];
-            for (var i = 3; i < chars.Length; i++)
-                chars[i] = all[RandomNumberGenerator.GetInt32(all.Length)];
-            for (var i = chars.Length - 1; i > 0; i--)
-            {
-                var j = RandomNumberGenerator.GetInt32(i + 1);
-                (chars[i], chars[j]) = (chars[j], chars[i]);
-            }
-            return new string(chars);
-        }
     }
 }

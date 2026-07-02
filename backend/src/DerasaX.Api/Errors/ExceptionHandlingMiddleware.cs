@@ -43,6 +43,7 @@ namespace DerasaX.Api.Errors
                     ForbiddenException => (StatusCodes.Status403Forbidden, ErrorCodes.Forbidden, "Forbidden."),
                     UnauthorizedException => (StatusCodes.Status401Unauthorized, ErrorCodes.Unauthenticated, "Unauthenticated."),
                     ImageValidationException => (StatusCodes.Status400BadRequest, ErrorCodes.ValidationError, "Validation failed."),
+                    ValidationException => (StatusCodes.Status400BadRequest, ErrorCodes.ValidationError, "Validation failed."),
                     // AI orchestration failures: stable upstream error, never a fake success.
                     AiServiceException => (StatusCodes.Status502BadGateway, ErrorCodes.AiUnavailable, "AI service unavailable."),
                     // Durable storage provider unreachable/unconfigured: honest 503, never faked.
