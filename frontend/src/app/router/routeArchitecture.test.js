@@ -27,7 +27,12 @@ import { ROLES, PERMISSIONS, ALL_ROLES } from '../../features/auth/roles'
 // Contract-gap appendix (audit-driven fix pass, communities/gamification):
 // +2 routes — /app/teacher/communities (new teacher community creation/
 // moderation UI) and /app/school/gamification-rules (school-admin rule editor).
-const EXPECTED_ROUTE_COUNT = 141
+// School Admin "Users" page removal: -2 routes — /app/school/users (generic
+// role-dropdown listing) and /app/school/users/:userId (superseded by the
+// role-scoped /app/school/{students,teachers,parents}/:userId detail routes,
+// which already existed). Account creation now happens only from the
+// Students/Teachers/Parents pages.
+const EXPECTED_ROUTE_COUNT = 139
 
 describe('route architecture (Phase 13 regression guards)', () => {
   it('has the exact verified route count (no silent add/remove)', () => {

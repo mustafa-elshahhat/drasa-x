@@ -460,7 +460,6 @@ export default {
         grades: { title: 'الصفوف', description: 'المستويات الدراسية التي تقدّمها مدرستك.' },
         classes: { title: 'الفصول', description: 'الفصول/الشُّعب ضمن صف وعام دراسي.' },
         subjects: { title: 'المواد', description: 'المواد التي تُدرّس في مدرستك.' },
-        users: { title: 'المستخدمون', description: 'إنشاء وإدارة حسابات المستأجر (طالب/معلّم/ولي أمر).' },
         students: { title: 'الطلاب', description: 'حسابات الطلاب في مستأجرك.' },
         teachers: { title: 'المعلّمون', description: 'حسابات المعلّمين في مستأجرك.' },
         parents: { title: 'أولياء الأمور', description: 'حسابات أولياء الأمور في مستأجرك.' },
@@ -504,7 +503,7 @@ export default {
         archive: 'أرشفة', delete: 'حذف',
       },
       enrollmentStatus: { Active: 'نشط', Withdrawn: 'منسحب', Completed: 'مكتمل', Transferred: 'منقول', Suspended: 'موقوف' },
-      users: { create: 'إنشاء حساب' },
+      users: { add: 'إضافة {{role}}' },
       user: {
         status: 'حالة الحساب', enabled: 'مُفعّل', disabled: 'مُعطّل',
         enable: 'تفعيل الحساب', disable: 'تعطيل الحساب', enabled_success: 'تم تفعيل الحساب.', disabled_success: 'تم تعطيل الحساب.',

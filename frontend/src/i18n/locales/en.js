@@ -460,7 +460,6 @@ export default {
         grades: { title: 'Grades', description: 'The grade levels offered by your school.' },
         classes: { title: 'Classes', description: 'Classes/sections within a grade and academic year.' },
         subjects: { title: 'Subjects', description: 'Subjects taught at your school.' },
-        users: { title: 'Users', description: 'Create and manage tenant accounts (Student/Teacher/Parent).' },
         students: { title: 'Students', description: 'Student accounts in your tenant.' },
         teachers: { title: 'Teachers', description: 'Teacher accounts in your tenant.' },
         parents: { title: 'Parents', description: 'Parent accounts in your tenant.' },
@@ -504,7 +503,7 @@ export default {
         archive: 'Archive', delete: 'Delete',
       },
       enrollmentStatus: { Active: 'Active', Withdrawn: 'Withdrawn', Completed: 'Completed', Transferred: 'Transferred', Suspended: 'Suspended' },
-      users: { create: 'Create account' },
+      users: { add: 'Add {{role}}' },
       user: {
         status: 'Account status', enabled: 'Enabled', disabled: 'Disabled',
         enable: 'Enable account', disable: 'Disable account', enabled_success: 'Account enabled.', disabled_success: 'Account disabled.',

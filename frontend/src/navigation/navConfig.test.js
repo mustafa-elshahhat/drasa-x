@@ -58,12 +58,20 @@ describe('role-aware navigation filtering', () => {
   })
 
   // Audit §2.6 / §11 P1 / D12: 7 school-admin routes were registered but
-  // reachable only by typing the URL — including the only user-creation page.
-  it('surfaces the previously-orphaned school-admin routes (profile, users, terms, grades, storage, communities, competitions)', () => {
+  // reachable only by typing the URL.
+  it('surfaces the previously-orphaned school-admin routes (profile, terms, grades, storage, communities, competitions)', () => {
     const keys = navItemsForRole(ROLES.SCHOOL_ADMIN).map((i) => i.key)
-    for (const key of ['school-profile', 'school-users', 'school-terms', 'school-grades', 'school-storage', 'school-communities', 'school-competitions']) {
+    for (const key of ['school-profile', 'school-terms', 'school-grades', 'school-storage', 'school-communities', 'school-competitions']) {
       expect(keys).toContain(key)
     }
+  })
+
+  // The generic "Users" page (with its role dropdown) was removed — SchoolAdmin
+  // creates each role from its own Students/Teachers/Parents page instead.
+  it('no longer exposes the generic school-admin Users nav item', () => {
+    const keys = navItemsForRole(ROLES.SCHOOL_ADMIN).map((i) => i.key)
+    expect(keys).not.toContain('school-users')
+    expect(navItemsForRole(ROLES.SCHOOL_ADMIN).some((i) => i.to === '/app/school/users')).toBe(false)
   })
 
   it('shows the system admin the platform area but not student learning', () => {

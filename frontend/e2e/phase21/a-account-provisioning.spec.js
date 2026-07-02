@@ -87,18 +87,23 @@ test.describe('Phase 21 — account provisioning + forced password change', () =
 
     // A route the SchoolAdmin is otherwise authorized for is reachable now that the
     // password has been changed (proves the gate cleared, not just the UI redirect).
-    await nav(page, '/app/school/users')
-    await expect(page.getByRole('heading', { name: /users/i })).toBeVisible()
-
-    // --- SchoolAdmin provisions a Teacher (English name, no password typed). A Teacher
-    // (not a Student) is used here because this tenant was just onboarded and has no
-    // Grade yet — Student creation requires one; Teacher exercises the identical
+    // --- SchoolAdmin provisions a Teacher (English name, no password typed) from the
+    // Teachers page itself — the generic "Users" page (with a role dropdown) was
+    // removed; each role is created from its own page now via an "Add {role}" button
+    // that opens the same create-account modal with the role fixed. A Teacher (not a
+    // Student) is used here because this tenant was just onboarded and has no Grade
+    // yet — Student creation requires one; Teacher exercises the identical
     // provisioning + forced-password-change code path without that extra setup. ---
-    await expect(page.getByLabel(/password/i)).toHaveCount(0)
-    await expect(page.getByLabel('Login code')).toHaveCount(0)
-    await page.getByLabel('Name', { exact: true }).fill('Phase Twenty One Teacher')
-    await page.getByLabel('Role', { exact: true }).selectOption({ label: 'Teacher' })
-    await page.getByRole('button', { name: 'Create account' }).click()
+    await nav(page, '/app/school/teachers')
+    await expect(page.getByRole('heading', { name: 'Teachers' })).toBeVisible()
+    await page.getByRole('button', { name: 'Add Teacher' }).click()
+    const createModal = page.getByRole('dialog', { name: 'Add Teacher' })
+    await expect(createModal).toBeVisible()
+    await expect(createModal.getByLabel(/password/i)).toHaveCount(0)
+    await expect(createModal.getByLabel('Login code')).toHaveCount(0)
+    await expect(createModal.getByLabel('Role', { exact: true })).toHaveCount(0)
+    await createModal.getByLabel('Name', { exact: true }).fill('Phase Twenty One Teacher')
+    await createModal.getByRole('button', { name: 'Add Teacher' }).click()
     const teacherModal = page.getByRole('dialog', { name: 'Account credentials' })
     await expect(teacherModal).toBeVisible()
     const teacherCred = await readCredential(teacherModal)
@@ -127,9 +132,11 @@ test.describe('Phase 21 — account provisioning + forced password change', () =
     await signOut(page)
     await loginWith(page, CODES.schoolAdmin, process.env.E2E_PASSWORD)
     await expect(page).not.toHaveURL(/\/login$/, { timeout: 15000 })
-    await nav(page, '/app/school/users')
-    await page.getByLabel('Name', { exact: true }).fill('محمد أحمد')
-    await expect(page.getByText('Full name must be written in English letters only.')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Create account' })).toBeDisabled()
+    await nav(page, '/app/school/teachers')
+    await page.getByRole('button', { name: 'Add Teacher' }).click()
+    const createModal = page.getByRole('dialog', { name: 'Add Teacher' })
+    await createModal.getByLabel('Name', { exact: true }).fill('محمد أحمد')
+    await expect(createModal.getByText('Full name must be written in English letters only.')).toBeVisible()
+    await expect(createModal.getByRole('button', { name: 'Add Teacher' })).toBeDisabled()
   })
 })

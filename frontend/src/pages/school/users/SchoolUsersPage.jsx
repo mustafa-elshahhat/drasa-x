@@ -3,11 +3,10 @@ import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { SelectField, TextField } from '../../../shared/form'
-import { Alert, Button, Card, CredentialsPanel } from '../../../shared/ui'
+import { Alert, Button, CredentialsPanel, Modal } from '../../../shared/ui'
 import { ErrorState } from '../../../shared/feedback'
 import { isEnglishName } from '../../../lib/validation/englishName'
 import { Head, List } from '../../../features/school/components'
-import { USER_ROLES } from '../../../features/school/constants'
 import { useSchoolQuery } from '../../../features/school/helpers'
 import { schoolApi } from '../../../features/school/schoolApi'
 import { toObject } from '../../../features/student/studentSchemas'
@@ -15,42 +14,56 @@ import { displayValue, itemId } from '../../../features/student/studentUtils'
 import { STALE, queryKeys } from '../../../lib/query/keys'
 import { usePortalContext } from '../../../features/portal/context'
 
+// role is always a fixed value now (Student/Teacher/Parent) — each school-admin
+// role page (Students/Teachers/Parents) renders this with its own role, and the
+// account-creation modal never exposes a role selector (School Admin "Users" page
+// removed; accounts are created from the role-specific page only).
 function UsersPage({ userId, locale, role, canCreate }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const view = role ? role.toLowerCase() + 's' : 'users'
+  const view = `${role.toLowerCase()}s`
   const detailBase = `/app/school/${view}`
-  const query = useSchoolQuery(queryKeys.school.users(userId, role || 'all'), (s) => schoolApi.users(role, s), { staleTime: STALE.medium })
+  const query = useSchoolQuery(queryKeys.school.users(userId, role), (s) => schoolApi.users(role, s), { staleTime: STALE.medium })
   const grades = useSchoolQuery(queryKeys.school.grades(userId), (s) => schoolApi.grades(s), { staleTime: STALE.medium, enabled: Boolean(canCreate) })
-  const [form, setForm] = useState({ fullName: '', role: 'Student', gradeId: '' })
+  const [modalOpen, setModalOpen] = useState(false)
+  const [fullName, setFullName] = useState('')
+  const [gradeId, setGradeId] = useState('')
   const [credential, setCredential] = useState(null)
   const [credentialName, setCredentialName] = useState('')
   const [showCredential, setShowCredential] = useState(false)
-  const nameError = form.fullName.trim() && !isEnglishName(form.fullName)
+  const nameError = fullName.trim() && !isEnglishName(fullName)
     ? t('validation.englishNameOnly', 'Full name must be written in English letters only.')
     : null
+  const closeModal = () => {
+    setModalOpen(false)
+    setFullName('')
+    setGradeId('')
+  }
   const create = useMutation({
-    mutationFn: () => schoolApi.createUser({ fullName: form.fullName.trim(), role: form.role, gradeId: form.role === 'Student' ? form.gradeId || null : null }),
+    mutationFn: () => schoolApi.createUser({ fullName: fullName.trim(), role, gradeId: role === 'Student' ? gradeId || null : null }),
     onSuccess: (data) => {
       setCredential(toObject(data))
-      setCredentialName(form.fullName.trim())
+      setCredentialName(fullName.trim())
       setShowCredential(true)
-      setForm({ fullName: '', role: 'Student', gradeId: '' })
-      qc.invalidateQueries({ queryKey: queryKeys.school.users(userId, role || 'all') })
+      closeModal()
+      qc.invalidateQueries({ queryKey: queryKeys.school.users(userId, role) })
     },
   })
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
   const gradeItems = Array.isArray(grades.data) ? grades.data : []
   const columns = [
     { key: 'fullName', header: t('school.common.name') },
     { key: 'loginCode', header: t('school.common.loginCode') },
     { key: 'role', header: t('school.common.role'), kind: 'role' },
   ]
+  const addLabel = t('school.users.add', { role: t(`roles.${role}`) })
   return (
     <>
       <Head view={view} />
       {canCreate && (
-        <Card title={t('school.users.create')}>
+        <>
+          <div className="cluster mb-3">
+            <Button onClick={() => setModalOpen(true)}>{addLabel}</Button>
+          </div>
           {credential && (
             <Alert variant="success" title={t('school.credential.title')}>
               {t('school.credential.body')}{' '}
@@ -59,17 +72,25 @@ function UsersPage({ userId, locale, role, canCreate }) {
               </Button>
             </Alert>
           )}
-          {create.isError && <ErrorState error={create.error} onRetry={() => create.reset()} />}
-          <div className="ui-formgrid ui-formgrid--2">
-            <TextField label={t('school.common.name')} value={form.fullName} onChange={set('fullName')} error={nameError} />
-            <SelectField label={t('school.common.role')} value={form.role} onChange={set('role')} options={USER_ROLES.map((r) => ({ value: r, label: t(`roles.${r}`) }))} />
-            {form.role === 'Student' && (
-              <SelectField label={t('school.common.grade')} value={form.gradeId} onChange={set('gradeId')}
+          <Modal
+            open={modalOpen}
+            onClose={closeModal}
+            title={addLabel}
+            footer={
+              <>
+                <Button type="button" variant="ghost" onClick={closeModal}>{t('actions.cancel', 'Cancel')}</Button>
+                <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!fullName.trim() || Boolean(nameError)}>{addLabel}</Button>
+              </>
+            }
+          >
+            {create.isError && <ErrorState error={create.error} onRetry={() => create.reset()} />}
+            <TextField label={t('school.common.name')} value={fullName} onChange={(e) => setFullName(e.target.value)} error={nameError} />
+            {role === 'Student' && (
+              <SelectField label={t('school.common.grade')} value={gradeId} onChange={(e) => setGradeId(e.target.value)}
                 options={[{ value: '', label: t('school.common.choose') }, ...gradeItems.map((g) => ({ value: itemId(g), label: displayValue(g, ['name', 'Name']) || itemId(g) }))]} />
             )}
-          </div>
-          <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.fullName.trim() || Boolean(nameError)}>{t('school.users.create')}</Button>
-        </Card>
+          </Modal>
+        </>
       )}
 
       {credential && (
@@ -92,10 +113,6 @@ function UsersPage({ userId, locale, role, canCreate }) {
     </>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Relationships (parent ↔ student)
-// ---------------------------------------------------------------------------
 
 export default function SchoolUsersPage(props) {
   const { userId, locale } = usePortalContext()

@@ -33,7 +33,6 @@ describe('Phase 11 school-admin route guards', () => {
       '/app/school/grades',
       '/app/school/classes',
       '/app/school/subjects',
-      '/app/school/users',
       '/app/school/students',
       '/app/school/teachers',
       '/app/school/parents',
@@ -62,5 +61,21 @@ describe('Phase 11 school-admin route guards', () => {
     for (const role of [ROLES.STUDENT, ROLES.TEACHER, ROLES.PARENT]) {
       expect(navItemsForRole(role).some((i) => i.to.startsWith('/app/school'))).toBe(false)
     }
+  })
+
+  // The generic School Admin "Users" page (role dropdown + create form) was removed —
+  // account creation now happens from the Students/Teachers/Parents pages only.
+  it('no longer routes or navigates to the generic /app/school/users page', () => {
+    const paths = schoolRoutes.map((r) => r.path)
+    expect(paths).not.toContain('/app/school/users')
+    expect(paths).not.toContain('/app/school/users/:userId')
+    expect(navItemsForRole(ROLES.SCHOOL_ADMIN).some((i) => i.to === '/app/school/users')).toBe(false)
+  })
+
+  it('lets the Students/Teachers/Parents pages create accounts for their fixed role', () => {
+    const byPath = Object.fromEntries(schoolRoutes.map((r) => [r.path, r]))
+    expect(byPath['/app/school/students'].props).toMatchObject({ role: 'Student', canCreate: true })
+    expect(byPath['/app/school/teachers'].props).toMatchObject({ role: 'Teacher', canCreate: true })
+    expect(byPath['/app/school/parents'].props).toMatchObject({ role: 'Parent', canCreate: true })
   })
 })
