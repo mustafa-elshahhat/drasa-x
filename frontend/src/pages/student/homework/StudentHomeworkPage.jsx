@@ -237,8 +237,11 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
         <span className="font-semibold text-ink">{displayValue(item) || 'Homework Detail'}</span>
       </div>
 
-      {list.isError && <ErrorState error={list.error} onRetry={list.refetch} />}
-
+      {list.isLoading ? (
+        <Loading />
+      ) : list.isError ? (
+        <ErrorState error={list.error} onRetry={list.refetch} />
+      ) : (
       <div className="ui-split">
         {/* Left Column: Main Homework Details & Submission Card */}
         <Card>
@@ -385,6 +388,7 @@ function HomeworkDetails({ userId, homeworkId, list, locale }) {
           </div>
         </Card>
       </div>
+      )}
     </>
   )
 }

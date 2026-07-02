@@ -7,3 +7,4 @@ export const REQ_STATUS = { Open: 0, InProgress: 1, Resolved: 2, Rejected: 3, Cl
 export const SUPPORT_STATUS = { Pending: 1, Approved: 2, Rejected: 3, Completed: 4 }
 export const SETTING_TYPE = { String: 0, Number: 1, Boolean: 2, Json: 3 }
 export const USER_ROLES = ['Student', 'Teacher', 'Parent']
+export const SUGGESTION_STATUS = ['Submitted', 'UnderReview', 'Accepted', 'Rejected', 'Implemented'] // value == index

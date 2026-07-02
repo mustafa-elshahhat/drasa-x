@@ -159,7 +159,14 @@ namespace DerasaX.Application.Services.Progress
             await _access.EnsureCanAccessStudentAsync(studentId, ct);
             var items = await _uow.Repository<PainPoint, string>().GetAllWithSpecAsync(
                 new CriteriaSpecification<PainPoint, string>(x => x.StudentId == studentId));
-            var dto = items.Select(x => new PainPointDto
+
+            // Students/parents only ever see human-reviewed (approved) pain points; unreviewed
+            // (Pending/Rejected) items remain staff-only until a teacher/school admin vets them.
+            var visible = (_tenant.Role == Roles.Student || _tenant.Role == Roles.Parent)
+                ? items.Where(x => x.ReviewStatus == HumanReviewStatus.Approved)
+                : items;
+
+            var dto = visible.Select(x => new PainPointDto
             {
                 Id = x.Id, Category = x.Category, Title = x.Title, Description = x.Description,
                 ConfidenceScore = x.ConfidenceScore, IsResolved = x.IsResolved, DetectedAt = x.DetectedAt
@@ -184,10 +191,17 @@ namespace DerasaX.Application.Services.Progress
             await _access.EnsureCanAccessStudentAsync(studentId, ct);
             var items = await _uow.Repository<PredictionRecord, string>().GetAllWithSpecAsync(
                 new CriteriaSpecification<PredictionRecord, string>(x => x.StudentId == studentId));
+
+            // Students/parents see the prediction outcome, never the AI model internals
+            // (name/version) that produced it — staff-only diagnostic detail.
+            var isSafeAudience = _tenant.Role == Roles.Student || _tenant.Role == Roles.Parent;
             var dto = items.Select(x => new PredictionDto
             {
                 Id = x.Id, Kind = x.Kind, PredictedScore = x.PredictedScore, Level = x.Level,
-                ConfidenceScore = x.ConfidenceScore, ModelName = x.ModelName, ModelVersion = x.ModelVersion, PredictedAt = x.PredictedAt
+                ConfidenceScore = x.ConfidenceScore,
+                ModelName = isSafeAudience ? null : x.ModelName,
+                ModelVersion = isSafeAudience ? null : x.ModelVersion,
+                PredictedAt = x.PredictedAt
             }).ToList();
             return Ok<IEnumerable<PredictionDto>>(dto);
         }

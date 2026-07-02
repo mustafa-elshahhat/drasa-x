@@ -29,7 +29,8 @@ public class Phase14ClosureApiTests : IClassFixture<IntegrationFactory>
     private static readonly JsonSerializerOptions Json = new() { PropertyNameCaseInsensitive = true };
     private sealed record Env<T>(bool success, int statusCode, T? data, int totalCount);
     private sealed record IdRow(string id);
-    private sealed record SubmissionRow(string id, string competitionId, string studentId, string content);
+    private sealed record SubmissionRow(string id, string competitionId, string studentId, string content, string? entryId);
+    private sealed record LeaderboardRow(string studentId, decimal score);
 
     private static string NewId(string p) => $"{p}-{Guid.NewGuid():N}";
 
@@ -83,7 +84,15 @@ public class Phase14ClosureApiTests : IClassFixture<IntegrationFactory>
             var listResp = await teacher.GetAsync($"/api/v1/competitions/{compId}/submissions");
             Assert.Equal(HttpStatusCode.OK, listResp.StatusCode);
             var list = await Read<List<SubmissionRow>>(listResp);
-            Assert.Contains(list!.data!, s => s.studentId == stuId && s.content == "My revised answer");
+            var row = Assert.Single(list!.data!, s => s.studentId == stuId && s.content == "My revised answer");
+
+            // F-09 / P2-4: the submission row carries the entry id the teacher needs to score
+            // directly — no more hand-typing an id that isn't shown anywhere in the UI.
+            Assert.False(string.IsNullOrEmpty(row.entryId));
+            var score = await teacher.PostAsJsonAsync($"/api/v1/competitions/{compId}/entries/{row.entryId}/score", new { score = 91 });
+            Assert.Equal(HttpStatusCode.OK, score.StatusCode);
+            var leaderboard = await Read<List<LeaderboardRow>>(await teacher.GetAsync($"/api/v1/competitions/{compId}/leaderboard"));
+            Assert.Contains(leaderboard!.data!, r => r.studentId == stuId && r.score == 91);
 
             // A student cannot list every submission (staff-only judging surface) → 403.
             Assert.Equal(HttpStatusCode.Forbidden, (await student.GetAsync($"/api/v1/competitions/{compId}/submissions")).StatusCode);

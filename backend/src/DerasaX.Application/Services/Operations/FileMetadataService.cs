@@ -55,7 +55,13 @@ namespace DerasaX.Application.Services.Operations
         public async Task<PaginationResponse<IEnumerable<FileRecordDto>>> ListAsync(FileParameters p, CancellationToken ct = default)
         {
             RequireTenant();
-            Expression<Func<FileRecord, bool>> criteria = f => !p.Type.HasValue || f.Type == p.Type.Value;
+            var caller = RequireUser();
+            // RBAC gap fix (route/RBAC audit §8.1): a non-admin may only enumerate files they own —
+            // only SchoolAdmin/SystemAdmin (the role tier that administers tenant resources
+            // elsewhere in this codebase) may browse the full tenant file list.
+            var isAdmin = IsSchoolAdmin || IsSystemAdmin;
+            Expression<Func<FileRecord, bool>> criteria = f =>
+                (!p.Type.HasValue || f.Type == p.Type.Value) && (isAdmin || f.UploadedByUserId == caller);
             var repo = UnitOfWork.Repository<FileRecord, string>();
             var total = await repo.CountAsync(new CriteriaSpecification<FileRecord, string>(criteria));
             var items = await repo.GetAllWithSpecAsync(
@@ -69,19 +75,43 @@ namespace DerasaX.Application.Services.Operations
             RequireTenant();
             var record = await UnitOfWork.Repository<FileRecord, string>().GetByIdWithSpecAsync(
                 new CriteriaSpecification<FileRecord, string>(f => f.Id == id)) ?? throw new NotFoundException("File record not found.");
+            EnsureBaselineRead(record);
             return Ok(Map(record, false));
         }
 
         public async Task<ApiResponse<bool>> ArchiveAsync(string id, CancellationToken ct = default)
         {
             RequireTenant();
+            var caller = RequireUser();
             var record = await UnitOfWork.Repository<FileRecord, string>().GetByIdWithSpecAsync(
                 new CriteriaSpecification<FileRecord, string>(f => f.Id == id)) ?? throw new NotFoundException("File record not found.");
+
+            // RBAC gap fix (route/RBAC audit §8.1): mirrors the guarded FileStorageService.SoftDeleteAsync
+            // owner-or-admin rule (the "Phase-16" DELETE /files/{id} path) so an arbitrary tenant member
+            // can no longer archive someone else's file record.
+            var isOwner = string.Equals(record.UploadedByUserId, caller, StringComparison.Ordinal);
+            if (!isOwner && !IsSchoolAdmin && !IsSystemAdmin)
+                throw new ForbiddenException("You are not allowed to archive this file.");
+
             record.IsDeleted = true; // soft archive
             UnitOfWork.Repository<FileRecord, string>().Update(record);
             await Audit.StageAsync(AuditActionType.Delete, nameof(FileRecord), record.Id, "{\"action\":\"archive\"}", ct);
             await UnitOfWork.SaveChangesAsync(ct);
             return Ok(true, 200, "File record archived.");
+        }
+
+        /// <summary>
+        /// RBAC gap fix (route/RBAC audit §8.1): mirrors <c>FileStorageService.EnsureBaselineRead</c>
+        /// exactly (owner, SchoolAdmin/SystemAdmin, or TenantInternal-visibility) so a legacy metadata
+        /// read is never more permissive than the already-guarded byte-download path.
+        /// </summary>
+        private void EnsureBaselineRead(FileRecord record)
+        {
+            var caller = Tenant.UserId;
+            if (string.Equals(record.UploadedByUserId, caller, StringComparison.Ordinal)) return;
+            if (IsSchoolAdmin || IsSystemAdmin) return;
+            if (record.Visibility == FileVisibility.TenantInternal) return;
+            throw new ForbiddenException("You are not allowed to access this file.");
         }
 
         private static FileRecordDto Map(FileRecord f, bool archived) => new()

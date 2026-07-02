@@ -98,6 +98,8 @@ export interface ResourceTableProps<Row = Record<string, unknown>> {
   emptyMessage?: ReactNode
   caption?: string
   locale?: string
+  /** Appended as a trailing `__actions` column (mirrors `Crud`'s row-actions contract). */
+  rowActions?: (row: Row) => ReactNode
 }
 /** Binds records to the responsive DataTable via typed, translated columns. */
 export const ResourceTable = RawResourceTable as <Row = Record<string, unknown>>(

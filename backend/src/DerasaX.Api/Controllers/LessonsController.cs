@@ -35,7 +35,7 @@ namespace DerasaX.Api.Controllers
         }
 
         [HttpPost("AddLesson")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> AddLesson([FromForm] AddLessonDto lessonDto)
         {
             _logger.LogInformation("Adding new Lesson");
@@ -47,7 +47,7 @@ namespace DerasaX.Api.Controllers
         }
 
         [HttpPut("UpdateLesson")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> UpdateLesson([FromForm] GetLessonDto getLessonDto)
         {
             _logger.LogInformation("Updating lesson with ID: {lessonId}", getLessonDto.Id);
@@ -59,7 +59,7 @@ namespace DerasaX.Api.Controllers
         }
 
         [HttpDelete("DeleteLesson")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> DeleteLesson(string id)
         {
             _logger.LogInformation("Deleting Lesson with ID: {LessonId}", id);

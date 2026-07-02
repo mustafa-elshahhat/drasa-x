@@ -4,6 +4,7 @@ import { Bell } from 'lucide-react'
 import { Alert, Button, PageHeader } from '../../../shared/ui'
 import { EmptyState, ErrorState } from '../../../shared/feedback'
 import { toItems, toObject } from '../../../features/student/studentSchemas'
+import { Loading } from '../../../features/teacher/components'
 import { useTeacherQuery } from '../../../features/teacher/helpers'
 import { teacherApi } from '../../../features/teacher/teacherApi'
 import { displayValue, itemId, settledData } from '../../../features/teacher/teacherUtils'
@@ -21,8 +22,9 @@ function NotificationsPage({ userId }) {
     <>
       <PageHeader title={t('teacher.notifications.title')} description={t('teacher.notifications.description')} />
       {unread !== null && unread !== undefined && <Alert variant="info" title={t('teacher.notifications.unread')}>{unread}</Alert>}
+      {query.isLoading && <Loading />}
       {query.isError && <ErrorState error={query.error} onRetry={query.refetch} />}
-      {items.length === 0 ? <EmptyState icon={Bell} title={t('teacher.empty.notifications')} /> : (
+      {!query.isLoading && !query.isError && (items.length === 0 ? <EmptyState icon={Bell} title={t('teacher.empty.notifications')} /> : (
         <ul className="ui-list">
           {items.map((item) => {
             const read = item.isRead ?? item.IsRead
@@ -37,7 +39,7 @@ function NotificationsPage({ userId }) {
             )
           })}
         </ul>
-      )}
+      ))}
     </>
   )
 }

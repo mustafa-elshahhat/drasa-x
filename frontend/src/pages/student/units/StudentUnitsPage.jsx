@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Check, ChevronRight, Clock, FileText, PlayCircle } from 'lucide-react'
@@ -58,7 +58,9 @@ function UnitsPage({ userId, locale }) {
     (signal) => studentApi.progress(userId, signal)
   )
 
-  if (!unitId) return <SubjectsPage userId={userId} locale={locale} />
+  // Bare `/app/student/units` has no subject context to render a list against;
+  // redirect to the subjects picker instead of crashing.
+  if (!unitId) return <Navigate to="/app/student/subjects" replace />
 
   const isLoading = unitContextQuery.isLoading || lessons.isLoading || progress.isLoading
   const isError = unitContextQuery.isError || lessons.isError || progress.isError

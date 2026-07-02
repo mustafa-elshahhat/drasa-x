@@ -55,10 +55,6 @@ export function Crud({
     }
   }
 
-  const allColumns = rowActions
-    ? [...columns, { key: '__actions', header: '', align: 'end', render: rowActions }]
-    : columns
-
   return (
     <div>
       <PageHeader
@@ -84,7 +80,8 @@ export function Crud({
 
       <ResourceTable
         rows={rows}
-        columns={allColumns}
+        columns={columns}
+        rowActions={rowActions}
         loading={loading}
         error={error}
         onRetry={onRetry}

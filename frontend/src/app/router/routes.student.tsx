@@ -20,12 +20,11 @@ const StudentAttendancePage = lazy(() => import('../../pages/student/attendance/
 const StudentCommunitiesPage = lazy(() => import('../../pages/student/communities/StudentCommunitiesPage'))
 const StudentCompetitionsPage = lazy(() => import('../../pages/student/competitions/StudentCompetitionsPage'))
 const StudentOfficeHoursPage = lazy(() => import('../../pages/student/office-hours/StudentOfficeHoursPage'))
-const StudentNotificationsPage = lazy(() => import('../../pages/student/notifications/StudentNotificationsPage'))
 const StudentAnnouncementsPage = lazy(() => import('../../pages/student/announcements/StudentAnnouncementsPage'))
 const StudentSuggestionsPage = lazy(() => import('../../pages/student/suggestions/StudentSuggestionsPage'))
 const StudentBadgesPage = lazy(() => import('../../pages/student/badges/StudentBadgesPage'))
 const StudentSettingsPage = lazy(() => import('../../pages/student/settings/StudentSettingsPage'))
-const ProfilePage = lazy(() => import('../../pages/app/ProfilePage.jsx'))
+const RedirectPage = lazy(() => import('../../pages/app/RedirectPage.jsx'))
 
 const r = (
   path: string,
@@ -43,7 +42,10 @@ export const studentRoutes: AppRoute[] = [
   r('/app/student/lessons', 'student.lessons.title', StudentLessonsPage),
   r('/app/student/lessons/:lessonId', 'student.lessons.details', StudentLessonsPage),
   r('/app/student/materials/:materialId', 'student.materials.details', StudentMaterialsPage),
-  r('/app/student/comments/:materialId', 'student.comments.title', StudentMaterialsPage),
+  // D3 (audit-driven fix pass): /comments/:id was an unlinked, byte-identical
+  // alias of /materials/:id — redirect to the canonical URL instead of
+  // rendering the exact same page twice under two paths.
+  r('/app/student/comments/:materialId', 'student.comments.title', RedirectPage, { to: '/app/student/materials/:materialId' }),
   r('/app/student/homework', 'student.homework.title', StudentHomeworkPage),
   r('/app/student/homework/:homeworkId', 'student.homework.details', StudentHomeworkPage),
   r('/app/student/quizzes', 'student.quizzes.title', StudentQuizzesPage),
@@ -59,13 +61,27 @@ export const studentRoutes: AppRoute[] = [
   r('/app/student/communities/:communityId', 'student.communities.details', StudentCommunitiesPage),
   r('/app/student/competitions', 'student.competitions.title', StudentCompetitionsPage),
   r('/app/student/competitions/:competitionId', 'student.competitions.details', StudentCompetitionsPage),
-  r('/app/student/leaderboard/:competitionId', 'student.leaderboard.title', StudentCompetitionsPage),
+  // D3: /leaderboard/:id was an unlinked, byte-identical alias of the
+  // competition detail page (same component, same data) — redirect.
+  r('/app/student/leaderboard/:competitionId', 'student.leaderboard.title', RedirectPage, { to: '/app/student/competitions/:competitionId' }),
   r('/app/student/office-hours', 'student.officeHours.title', StudentOfficeHoursPage),
-  r('/app/student/notifications', 'student.notifications.title', StudentNotificationsPage),
+  // D3: /app/student/notifications duplicated the shared notification center
+  // at /app/notifications (same backend data — `NotificationsController` is a
+  // plain `[Authorize]` endpoint, not student-scoped) and the bell already
+  // linked to the shared center instead of this page — redirect to the
+  // canonical, feature-superset page (realtime status, deep links, category
+  // chips, preferences link). StudentNotificationsPage.jsx retired; its unique
+  // loading-state regression coverage was ported to
+  // CommunicationNotificationsPage.test.jsx.
+  r('/app/student/notifications', 'student.notifications.title', RedirectPage, { to: '/app/notifications' }),
   r('/app/student/announcements', 'student.announcements.title', StudentAnnouncementsPage),
   r('/app/student/suggestions', 'student.suggestions.title', StudentSuggestionsPage),
   r('/app/student/badges', 'student.badges.title', StudentBadgesPage),
-  r('/app/student/streaks', 'student.streaks.title', StudentBadgesPage),
+  // D3: /streaks was an unlinked, byte-identical alias of /badges — redirect.
+  r('/app/student/streaks', 'student.streaks.title', RedirectPage, { to: '/app/student/badges' }),
   r('/app/student/settings', 'student.settings.title', StudentSettingsPage),
-  { path: '/app/student/profile', titleKey: 'nav.profile', requiresAuth: true, roles: [ROLES.STUDENT], Component: ProfilePage },
+  // D3: /app/student/profile duplicated the shared /app/profile (same
+  // ProfilePage component) and was unlinked from anywhere (header uses
+  // /app/profile) — redirect.
+  { path: '/app/student/profile', titleKey: 'nav.profile', requiresAuth: true, roles: [ROLES.STUDENT], Component: RedirectPage, props: { to: '/app/profile' } },
 ]

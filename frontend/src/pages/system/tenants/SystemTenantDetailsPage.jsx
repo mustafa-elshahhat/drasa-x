@@ -3,16 +3,22 @@ import { useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { DetailList } from '../../../shared/data-display'
-import { CheckboxField, SelectField, TextField } from '../../../shared/form'
+import { CheckboxField, DateField, SelectField, TextareaField, TextField } from '../../../shared/form'
 import { Alert, Button, Chip, Card } from '../../../shared/ui'
 import { EmptyState, ErrorState } from '../../../shared/feedback'
 import { Head, Loading } from '../../../features/system/components'
-import { TENANT_STATUS, TENANT_TONE } from '../../../features/system/constants'
+import { TENANT_STATUS, TENANT_TONE, RENEWAL_STATUS } from '../../../features/system/constants'
 import { useSystemQuery } from '../../../features/system/helpers'
 import { systemApi } from '../../../features/system/systemApi'
 import { displayValue, itemId } from '../../../features/student/studentUtils'
 import { STALE, queryKeys } from '../../../lib/query/keys'
 import { usePortalContext } from '../../../features/portal/context'
+
+// A processed renewal must move OUT of "Requested" (index 0, the state a school's
+// request starts in) into a real decision. "Applied" immediately extends the
+// subscription's expiry and reactivates it (see TenantAdminService.ProcessRenewalAsync);
+// "Approved"/"Rejected"/"Cancelled" record a decision without touching the subscription.
+const RENEWAL_DECISIONS = [1, 2, 3, 4]
 
 function TenantDetailsPage({ userId, locale }) {
   const { t } = useTranslation()
@@ -27,6 +33,7 @@ function TenantDetailsPage({ userId, locale }) {
   const [credential, setCredential] = useState(null)
   const [dataResult, setDataResult] = useState(null)
   const [planForm, setPlanForm] = useState({ planDefinitionId: '', isTrial: false })
+  const [renewalForm, setRenewalForm] = useState({ renewalId: '', status: '', newExpiresAt: '', notes: '' })
 
   const lifecycle = useMutation({
     mutationFn: (action) => systemApi.setTenantStatus(tenantId, action),
@@ -42,6 +49,19 @@ function TenantDetailsPage({ userId, locale }) {
       qc.invalidateQueries({ queryKey: queryKeys.system.tenantUsage(userId, tenantId) })
       qc.invalidateQueries({ queryKey: queryKeys.system.tenant(userId, tenantId) })
       setPlanForm({ planDefinitionId: '', isTrial: false })
+    },
+  })
+  const processRenewal = useMutation({
+    mutationFn: () => systemApi.processRenewal(renewalForm.renewalId.trim(), {
+      status: Number(renewalForm.status),
+      newExpiresAt: renewalForm.newExpiresAt || undefined,
+      notes: renewalForm.notes.trim() || undefined,
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.system.tenantSubscription(userId, tenantId) })
+      qc.invalidateQueries({ queryKey: queryKeys.system.tenantUsage(userId, tenantId) })
+      qc.invalidateQueries({ queryKey: queryKeys.system.tenant(userId, tenantId) })
+      setRenewalForm({ renewalId: '', status: '', newExpiresAt: '', notes: '' })
     },
   })
   const createAdmin = useMutation({
@@ -73,6 +93,7 @@ function TenantDetailsPage({ userId, locale }) {
               <Button onClick={() => lifecycle.mutate('activate')} loading={lifecycle.isPending} disabled={status === 0}>{t('system.tenant.activate')}</Button>
               <Button variant="secondary" onClick={() => lifecycle.mutate('suspend')} loading={lifecycle.isPending} disabled={status === 1}>{t('system.tenant.suspend')}</Button>
               <Button variant="secondary" onClick={() => lifecycle.mutate('reactivate')} loading={lifecycle.isPending} disabled={status === 0}>{t('system.tenant.reactivate')}</Button>
+              <Button variant="secondary" onClick={() => lifecycle.mutate('archive')} loading={lifecycle.isPending} disabled={status === 2}>{t('system.tenant.archive')}</Button>
             </div>
           </Card>
 
@@ -105,6 +126,45 @@ function TenantDetailsPage({ userId, locale }) {
               {usage.data && <DetailList item={usage.data} locale={locale} />}
             </Card>
           </div>
+
+          <Card title={t('system.tenant.processRenewal')}>
+            {processRenewal.isSuccess && <Alert variant="success" title={t('system.common.saved')}>{t('system.tenant.renewalProcessed')}</Alert>}
+            {processRenewal.isError && <ErrorState error={processRenewal.error} onRetry={() => processRenewal.reset()} />}
+            <p className="ui-muted">{t('system.tenant.renewalIdHint')}</p>
+            <div className="ui-formgrid ui-formgrid--2">
+              <TextField
+                label={t('system.tenant.renewalId')}
+                value={renewalForm.renewalId}
+                onChange={(e) => setRenewalForm((f) => ({ ...f, renewalId: e.target.value }))}
+              />
+              <SelectField
+                label={t('system.tenant.renewalDecision')}
+                value={renewalForm.status}
+                onChange={(e) => setRenewalForm((f) => ({ ...f, status: e.target.value }))}
+                options={[
+                  { value: '', label: t('system.common.choose') },
+                  ...RENEWAL_DECISIONS.map((v) => ({ value: String(v), label: t(`system.tenant.renewalStatusValue.${RENEWAL_STATUS[v]}`) })),
+                ]}
+              />
+              <DateField
+                label={t('system.tenant.renewalNewExpiresAt')}
+                value={renewalForm.newExpiresAt}
+                onChange={(e) => setRenewalForm((f) => ({ ...f, newExpiresAt: e.target.value }))}
+              />
+            </div>
+            <TextareaField
+              label={t('system.tenant.renewalNotes')}
+              value={renewalForm.notes}
+              onChange={(e) => setRenewalForm((f) => ({ ...f, notes: e.target.value }))}
+            />
+            <Button
+              onClick={() => processRenewal.mutate()}
+              loading={processRenewal.isPending}
+              disabled={!renewalForm.renewalId.trim() || renewalForm.status === ''}
+            >
+              {t('system.tenant.processRenewal')}
+            </Button>
+          </Card>
 
           <Card title={t('system.tenant.createAdmin')}>
             {credential && (

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { SelectField, TextField } from '../../../shared/form'
@@ -17,6 +18,7 @@ function UsersPage({ userId, locale, role, canCreate }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const view = role ? role.toLowerCase() + 's' : 'users'
+  const detailBase = `/app/school/${view}`
   const query = useSchoolQuery(queryKeys.school.users(userId, role || 'all'), (s) => schoolApi.users(role, s), { staleTime: STALE.medium })
   const grades = useSchoolQuery(queryKeys.school.grades(userId), (s) => schoolApi.grades(s), { staleTime: STALE.medium, enabled: Boolean(canCreate) })
   const [form, setForm] = useState({ fullName: '', loginCode: '', role: 'Student', gradeId: '' })
@@ -55,7 +57,13 @@ function UsersPage({ userId, locale, role, canCreate }) {
           <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.fullName.trim() || !form.loginCode.trim()}>{t('school.users.create')}</Button>
         </Card>
       )}
-      <List query={query} columns={columns} empty={t('school.empty.users')} locale={locale} />
+      <List
+        query={query}
+        columns={columns}
+        empty={t('school.empty.users')}
+        locale={locale}
+        rowActions={(item) => <Link className="ui-btn ui-btn--secondary" to={`${detailBase}/${encodeURIComponent(itemId(item))}`}>{t('school.common.open')}</Link>}
+      />
     </>
   )
 }

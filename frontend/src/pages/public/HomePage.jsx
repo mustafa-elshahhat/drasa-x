@@ -1,6 +1,5 @@
 import { useDocumentTitle } from '../../app/useDocumentTitle'
 import { HeroSection } from './sections/HeroSection'
-import { FaqButton } from './FaqButton'
 import { ThreeCards } from './sections/ThreeCards'
 
 // Unified public marketing homepage (replaces the placeholder LandingPage).
@@ -11,7 +10,6 @@ export default function HomePage() {
   return (
     <main className="public-home" role="main">
       <HeroSection />
-      <FaqButton />
       <ThreeCards />
     </main>
   )

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { MessageSquare } from 'lucide-react'
 import { DetailList } from '../../../shared/data-display'
@@ -20,10 +21,10 @@ function ConversationsPage({ userId, locale }) {
         {(items) => (
           <div className="student-list">
             {items.map((item, idx) => (
-              <div className="student-list__item" key={itemId(item) || idx}>
+              <Link className="student-list__item ui-link" to={`/app/messages/${encodeURIComponent(itemId(item))}`} key={itemId(item) || idx}>
                 <strong className="domain-row__title">{displayValue(item) || itemId(item)}</strong>
                 <DetailList item={item} locale={locale} />
-              </div>
+              </Link>
             ))}
           </div>
         )}

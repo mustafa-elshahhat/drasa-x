@@ -3,7 +3,11 @@ import type { AppRoute, RouteComponent } from './route.types'
 import { ROLES } from '../../features/auth/roles'
 
 // Teacher portal (Phase 9 surface) — real lazy-loaded page modules (Phase 6 split).
-// Available to Teacher AND SchoolAdmin (an admin may act on teacher surfaces).
+// Teacher ONLY. SchoolAdmin must not see, land on, or directly access any
+// /app/teacher/* route — SchoolAdmin's administrative capabilities live under
+// /app/school/* instead (see routes.school.tsx). A previous pass allowed
+// SchoolAdmin on these routes ("an admin may act on teacher surfaces"); that is
+// no longer the desired product behavior (SchoolAdmin Teacher-portal removal).
 const TeacherDashboardPage = lazy(() => import('../../pages/teacher/dashboard/TeacherDashboardPage'))
 const TeacherClassesPage = lazy(() => import('../../pages/teacher/classes/TeacherClassesPage'))
 const TeacherSubjectsPage = lazy(() => import('../../pages/teacher/subjects/TeacherSubjectsPage'))
@@ -17,13 +21,15 @@ const TeacherHomeworkPage = lazy(() => import('../../pages/teacher/homework/Teac
 const TeacherCompetitionsPage = lazy(() => import('../../pages/teacher/competitions/TeacherCompetitionsPage'))
 const TeacherNotificationsPage = lazy(() => import('../../pages/teacher/notifications/TeacherNotificationsPage'))
 const TeacherOfficeHoursPage = lazy(() => import('../../pages/teacher/office-hours/TeacherOfficeHoursPage'))
+const TeacherCommunitiesPage = lazy(() => import('../../pages/teacher/communities/TeacherCommunitiesPage'))
 const TeacherSettingsPage = lazy(() => import('../../pages/teacher/settings/TeacherSettingsPage'))
+const RedirectPage = lazy(() => import('../../pages/app/RedirectPage.jsx'))
 
 const r = (path: string, titleKey: string, Component: RouteComponent): AppRoute => ({
   path,
   titleKey,
   requiresAuth: true,
-  roles: [ROLES.TEACHER, ROLES.SCHOOL_ADMIN],
+  roles: [ROLES.TEACHER],
   Component,
 })
 
@@ -52,9 +58,20 @@ export const teacherRoutes: AppRoute[] = [
   r('/app/teacher/competitions/:competitionId', 'teacher.competitions.details', TeacherCompetitionsPage),
   r('/app/teacher/competitions/:competitionId/submissions', 'teacher.competitions.submissions', TeacherCompetitionsPage),
   r('/app/teacher/competitions/:competitionId/leaderboard', 'teacher.competitions.leaderboard', TeacherCompetitionsPage),
-  // /assignments now resolves to the real homework lifecycle (no longer a quizzes stand-in).
-  r('/app/teacher/assignments', 'nav.assignments', TeacherHomeworkPage),
+  // D4 (audit-driven fix pass): /assignments is a legacy alias of the real
+  // homework lifecycle — redirect to the canonical URL instead of rendering
+  // the same page under two different paths (was previously wired to the
+  // same component directly, which left the URL bar inconsistent).
+  {
+    path: '/app/teacher/assignments',
+    titleKey: 'nav.assignments',
+    requiresAuth: true,
+    roles: [ROLES.TEACHER],
+    Component: RedirectPage,
+    props: { to: '/app/teacher/homework' },
+  },
   r('/app/teacher/notifications', 'teacher.notifications.title', TeacherNotificationsPage),
   r('/app/teacher/office-hours', 'teacher.officeHours.title', TeacherOfficeHoursPage),
+  r('/app/teacher/communities', 'teacher.communities.title', TeacherCommunitiesPage),
   r('/app/teacher/settings', 'teacher.settings.title', TeacherSettingsPage),
 ]

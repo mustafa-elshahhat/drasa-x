@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { FileText } from 'lucide-react'
 import { DetailList } from '../../../shared/data-display'
+import { FileUpload } from '../../../shared/files'
 import { TextareaField } from '../../../shared/form'
 import { Alert, Button, Card } from '../../../shared/ui'
 import { EmptyState, ErrorState } from '../../../shared/feedback'
@@ -19,13 +20,14 @@ function DocumentRequestsPage({ userId, locale }) {
   const qc = useQueryClient()
   const query = useSchoolQuery(queryKeys.school.documentRequests(userId), (s) => schoolApi.documentRequests(s))
   const [replyById, setReplyById] = useState({})
+  const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.school.documentRequests(userId) })
   const respond = useMutation({
     mutationFn: ({ id, body }) => schoolApi.respondDocumentRequest(id, { body }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.school.documentRequests(userId) }),
+    onSuccess: invalidate,
   })
   const transition = useMutation({
     mutationFn: ({ id, status }) => schoolApi.transitionDocumentRequest(id, { status }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.school.documentRequests(userId) }),
+    onSuccess: invalidate,
   })
   const items = Array.isArray(query.data) ? query.data : []
   return (
@@ -46,6 +48,16 @@ function DocumentRequestsPage({ userId, locale }) {
                   <Button onClick={() => respond.mutate({ id, body: replyById[id] || '' })} loading={respond.isPending} disabled={!(replyById[id] || '').trim()}>{t('school.common.respond')}</Button>
                   <Button variant="secondary" onClick={() => transition.mutate({ id, status: REQ_STATUS.Resolved })} loading={transition.isPending}>{t('school.requests.markResolved')}</Button>
                 </div>
+                {/* Phase 16 — attach a sensitive response document (multipart); complements the
+                    text-only reply above rather than replacing it. Reuses the same reply text (if
+                    any) as the document's Body, or uploads with no body if left blank. */}
+                <FileUpload
+                  label={t('files.schoolResponseDocTitle')}
+                  hint={t('files.schoolResponseDocHint')}
+                  accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+                  upload={(file) => schoolApi.attachResponseDocument(id, file, replyById[id] || undefined)}
+                  onUploaded={invalidate}
+                />
               </Card>
             )
           })}

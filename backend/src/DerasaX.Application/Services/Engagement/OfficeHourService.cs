@@ -108,6 +108,12 @@ namespace DerasaX.Application.Services.Engagement
                 : (await UnitOfWork.Repository<OfficeHourSession, string>().GetAllWithSpecAsync(
                     new CriteriaSpecification<OfficeHourSession, string>(s => ids.Contains(s.Id)))).ToList();
             var dto = await MapWithCounts(sessions);
+            // The student's own booking id isn't derivable from the session-level DTO otherwise
+            // (GET .../bookings is teacher/admin-only) — without this, a student has no way to
+            // discover the id they'd need to call POST bookings/{bookingId}/cancel.
+            var bookingIdBySession = bookings.GroupBy(b => b.OfficeHourSessionId).ToDictionary(g => g.Key, g => g.First().Id);
+            foreach (var d in dto)
+                if (bookingIdBySession.TryGetValue(d.Id, out var bookingId)) d.MyBookingId = bookingId;
             return Ok<IEnumerable<OfficeHourDto>>(dto, 200, "Sessions retrieved.");
         }
 

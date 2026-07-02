@@ -4,6 +4,7 @@ import { ArrowRight, Flame, PieChart, PlayCircle, Sparkles, Trophy } from 'lucid
 import { useStudentContext } from '../../../features/student/helpers'
 import { Avatar } from '../../../shared/ui'
 import { ErrorState } from '../../../shared/feedback'
+import { Loading } from '../../../features/student/Loading'
 import { Ring } from '../../../shared/charts'
 import { useAuth } from '../../../features/auth/AuthContext'
 import { percentOf, useStudentQuery } from '../../../features/student/helpers'
@@ -79,18 +80,20 @@ function DashboardPage({ userId }) {
   const { user } = useAuth()
   const studentName = user?.fullName || user?.userName || t('student.dashboard.student', 'Student')
 
+  // Only queries whose data is actually rendered below — homework/notifications/
+  // office-hours were previously fetched here too but never shown anywhere on
+  // this page (dead over-fetching); each has its own dedicated page already.
   const subjects = useStudentQuery(queryKeys.student.subjects(userId), (signal) => studentApi.subjects(signal), { staleTime: STALE.medium })
-  const _homework = useStudentQuery(queryKeys.student.homework(userId), (signal) => studentApi.homework(signal))
   const quizzes = useStudentQuery(queryKeys.student.quizzes(userId), (signal) => studentApi.assignedQuizzes(signal))
   const progress = useStudentQuery(queryKeys.student.progress(userId), (signal) => studentApi.progress(userId, signal))
-  const notifications = useStudentQuery(queryKeys.student.notifications(userId), (signal) => studentApi.notifications(signal))
-  const office = useStudentQuery(queryKeys.student.officeHours(userId), (signal) => studentApi.officeHours(signal))
   const badges = useStudentQuery(queryKeys.student.badges(userId), (signal) => studentApi.badges(userId, signal), { staleTime: STALE.medium })
   const points = useStudentQuery(queryKeys.student.points(userId), (signal) => studentApi.points(userId, signal), { staleTime: STALE.short })
 
+  const isInitialLoading = subjects.isLoading || quizzes.isLoading || progress.isLoading || badges.isLoading || points.isLoading
+  const criticalError = subjects.error || quizzes.error || progress.error || badges.error || points.error
+  const retryAll = () => { subjects.refetch(); quizzes.refetch(); progress.refetch(); badges.refetch(); points.refetch() }
+
   const progressRecommendations = progress.data ? toItems(settledData(progress.data.recommendations)) : []
-  const _unread = notifications.data ? toObject(settledData(notifications.data.count))?.unreadCount : null
-  const _officeAvailable = office.data ? toItems(settledData(office.data.available)) : []
   const earnedBadges = badges.data ? toItems(settledData(badges.data.earned)) : []
   const subjectItems = toItems(subjects.data)
   const quizItems = toItems(quizzes.data)
@@ -127,6 +130,10 @@ function DashboardPage({ userId }) {
         </p>
       </div>
 
+      {isInitialLoading && <Loading />}
+      {!isInitialLoading && criticalError && <ErrorState error={criticalError} onRetry={retryAll} />}
+      {!isInitialLoading && !criticalError && (
+        <>
       <div className="student-dashboard__stats-grid">
         {/* Learning progress card */}
         <div className="stats-card stats-card--progress">
@@ -271,6 +278,8 @@ function DashboardPage({ userId }) {
             </Link>
           </div>
         </div>
+      )}
+        </>
       )}
     </>
   )

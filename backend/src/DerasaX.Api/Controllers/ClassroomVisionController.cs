@@ -16,16 +16,17 @@ using Microsoft.Extensions.Configuration;
 namespace DerasaX.Api.Controllers
 {
     /// <summary>
-    /// Phase 15 — teacher/school-admin computer-vision attendance + engagement. Every
-    /// route is tenant-scoped and role-authorized; the AI service is reached only through
-    /// the backend (no direct browser→AI calls). CV never auto-marks attendance.
-    /// Phase 16 adds OPTIONAL consented durable enrollment assets, gated OFF by default
-    /// (Cv:EnrollmentAssetsEnabled) and honest about being disabled until product approval.
-    /// Raw classroom frames are never stored.
+    /// Phase 15 — Teacher-only computer-vision attendance + engagement (SchoolAdmin
+    /// Teacher-portal removal — this is a Teacher portal surface with no school-admin
+    /// equivalent). Every route is tenant-scoped and role-authorized; the AI service is
+    /// reached only through the backend (no direct browser→AI calls). CV never auto-marks
+    /// attendance. Phase 16 adds OPTIONAL consented durable enrollment assets, gated OFF by
+    /// default (Cv:EnrollmentAssetsEnabled) and honest about being disabled until product
+    /// approval. Raw classroom frames are never stored.
     /// </summary>
     [ApiController]
     [Route("api/v1/vision")]
-    [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+    [Authorize(Policy = Policies.TeacherOnly)]
     public class ClassroomVisionController : ControllerBase
     {
         private readonly IClassroomVisionService _service;

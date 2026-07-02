@@ -19,6 +19,17 @@ export function statusLabel(value) {
   return String(value)
 }
 
+// Lesson-material attachment type (backend AttachmentType enum: Video=1, Document=2, Image=3,
+// Slides=4, Audio=5), serialized as its numeric value. Used by material detail/list views (student
+// + teacher) to render an honest type label/icon instead of assuming every material is a video.
+const ATTACHMENT_TYPE = { 1: 'Video', 2: 'Document', 3: 'Image', 4: 'Slides', 5: 'Audio' }
+export function attachmentTypeName(value) {
+  if (value === undefined || value === null || value === '') return ''
+  if (typeof value === 'number') return ATTACHMENT_TYPE[value] || String(value)
+  if (/^\d+$/.test(String(value))) return ATTACHMENT_TYPE[Number(value)] || String(value)
+  return String(value)
+}
+
 export function formatDate(value, locale) {
   if (!value) return '—'
   const date = new Date(value)

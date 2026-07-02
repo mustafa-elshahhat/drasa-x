@@ -276,6 +276,30 @@ public class AiPredictionApiTests : IClassFixture<IntegrationFactory>
         Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
     }
 
+    /// <summary>
+    /// Route/RBAC audit §8.1 gap 3 — POST /api/v1/ai/prediction has no role gate (a Student may
+    /// call it), which the audit flagged as worth investigating. Decision: this is confirmed
+    /// INTENTIONAL self/relationship service (see AiPredictionApiTests class remarks and the
+    /// final RBAC-audit report) — the sibling analysis-generation endpoint
+    /// (AiAnalysisController.Generate) is deliberately staff-only, but prediction generation is a
+    /// numeric ML read over already-stored objective metrics, consistently open to self/assigned-
+    /// teacher/linked-parent/same-tenant-admin via IStudentAccessAuthorizer, exactly like every
+    /// other test in this class already proves. Ownership — not role — is the gate, and it is
+    /// enforced BEFORE the tenant AI-quota check (PredictionService.GenerateAsync calls
+    /// EnsureCanAccessStudentAsync prior to EnsureWithinAiMonthlyQuotaAsync), so this assertion is
+    /// deliberately independent of feature-data seeding and of the tenant's current AI-usage quota.
+    /// </summary>
+    [Fact]
+    public async Task Role_is_permissive_by_design_but_ownership_still_blocks_student_targeting_a_different_student()
+    {
+        var student = await TestUsers.CreateLockoutStudentAsync(_factory);
+        var other = await UserId("ST-001");
+        var stu = await AuthedAsync(WithFake(new FakeAiClient()), student.LoginCode);
+
+        var resp = await stu.PostAsJsonAsync("/api/v1/ai/prediction", new { studentId = other });
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
     [Fact]
     public async Task Cross_tenant_target_returns_404()
     {

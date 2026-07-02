@@ -153,6 +153,10 @@ namespace DerasaX.Application.Dto.EngagementDto
         public string StudentId { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public DateTime SubmittedAt { get; set; }
+        /// <summary>Populated only in the staff submissions list — the id RecordScoreAsync needs
+        /// (POST .../entries/{entryId}/score). Null if the student hasn't entered (submitted
+        /// without entering isn't possible via SubmitAsync, but defensive nonetheless).</summary>
+        public string? EntryId { get; set; }
     }
 
     public class LeaderboardRowDto
@@ -234,6 +238,9 @@ namespace DerasaX.Application.Dto.EngagementDto
         public int Capacity { get; set; }
         public int BookedCount { get; set; }
         public OfficeHourStatus Status { get; set; }
+        /// <summary>Populated only in the student's own "mine" (my bookings) view — the id the
+        /// student needs to call POST bookings/{bookingId}/cancel. Null for the teacher/admin view.</summary>
+        public string? MyBookingId { get; set; }
     }
 
     public class BookingDto

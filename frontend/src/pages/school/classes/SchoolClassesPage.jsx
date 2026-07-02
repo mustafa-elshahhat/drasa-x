@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { SelectField, TextField } from '../../../shared/form'
@@ -42,7 +43,12 @@ function ClassesPage({ userId, locale }) {
         </div>
         <Button onClick={() => create.mutate()} loading={create.isPending} disabled={!form.name.trim() || !form.code.trim() || !form.gradeId || !form.academicYearId}>{t('school.common.create')}</Button>
       </Card>
-      <List query={query} empty={t('school.empty.generic')} locale={locale} />
+      <List
+        query={query}
+        empty={t('school.empty.generic')}
+        locale={locale}
+        rowActions={(item) => <Link className="ui-btn ui-btn--secondary" to={`/app/school/classes/${encodeURIComponent(itemId(item))}`}>{t('school.common.open')}</Link>}
+      />
     </>
   )
 }

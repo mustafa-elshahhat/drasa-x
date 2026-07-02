@@ -55,8 +55,11 @@ namespace DerasaX.Api.Controllers
             _logger.LogInformation("Successfully retrieved Subjects for Grade ID: {GradeId}", id);
             return Ok(result);
         }
+        // Curriculum authoring is a Teacher-portal capability only reachable from
+        // /app/teacher/* pages (teacherApi.js) — SchoolAdmin has no authoring UI and
+        // must not call these directly either (SchoolAdmin Teacher-portal removal).
         [HttpPost("AddSubject")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> AddSubject([FromForm] AddSubjectDto addSubjectDto)
         {
             _logger.LogInformation("Adding new subject: {SubjectName}", addSubjectDto.Name);
@@ -68,7 +71,7 @@ namespace DerasaX.Api.Controllers
             return Ok(result); 
         }
         [HttpPut("UpdateSubject")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> UpdateSubject([FromForm] UpdateSubjectDto updateSubjectDto)
         {
             _logger.LogInformation("Updating subject with ID: {SubjectId}", updateSubjectDto.Id);
@@ -80,7 +83,7 @@ namespace DerasaX.Api.Controllers
             return Ok(result);
         }
         [HttpDelete("DeleteSubject/{id}")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> DeleteSubject(string id)
         {
             _logger.LogInformation("Deleting subject with ID: {SubjectId}", id);

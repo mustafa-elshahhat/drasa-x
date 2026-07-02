@@ -1,6 +1,12 @@
 import { lazy } from 'react'
 import type { AppRoute } from './route.types'
-import { PERMISSIONS } from '../../features/auth/roles'
+import { PERMISSIONS, ROLES } from '../../features/auth/roles'
+
+// SystemAdmin is platform-scope (no tenantId claim); the backend's `ConversationsController`
+// requires `TenantMember` and 403s a SystemAdmin caller. Restricting the route guard to the
+// tenant roles (rather than `requiresAuth` only) closes the FE-allowed/BE-blocked mismatch —
+// SystemAdmin now gets the same /forbidden the backend would otherwise 403 on.
+const TENANT_ROLES = [ROLES.STUDENT, ROLES.TEACHER, ROLES.PARENT, ROLES.SCHOOL_ADMIN]
 
 // Authenticated shell + account surfaces, and the shared communication surfaces
 // available to any authenticated tenant role (Phase 13).
@@ -34,6 +40,6 @@ export const sharedRoutes: AppRoute[] = [
   // ---- Shared communication surfaces (Phase 13) — any authenticated tenant role ----
   { path: '/app/notifications', titleKey: 'notifications.title', requiresAuth: true, Component: CommunicationNotificationsPage },
   { path: '/app/notifications/preferences', titleKey: 'notifications.preferencesTitle', requiresAuth: true, Component: CommunicationPreferencesPage },
-  { path: '/app/messages', titleKey: 'messages.title', requiresAuth: true, Component: CommunicationMessagesPage },
-  { path: '/app/messages/:conversationId', titleKey: 'messages.thread', requiresAuth: true, Component: CommunicationThreadPage },
+  { path: '/app/messages', titleKey: 'messages.title', requiresAuth: true, roles: TENANT_ROLES, Component: CommunicationMessagesPage },
+  { path: '/app/messages/:conversationId', titleKey: 'messages.thread', requiresAuth: true, roles: TENANT_ROLES, Component: CommunicationThreadPage },
 ]

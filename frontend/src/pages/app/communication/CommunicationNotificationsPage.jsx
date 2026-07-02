@@ -8,6 +8,7 @@ import { useAuth } from '../../../features/auth/AuthContext'
 import { categoryName, formatWhen } from '../../../features/communication/helpers'
 import { notificationsApi } from '../../../features/notifications/notificationsApi'
 import { useNotificationsRealtime } from '../../../features/notifications/NotificationsProvider'
+import { safeInternalPath } from '../../../features/student/studentUtils'
 import { STALE, queryKeys } from '../../../lib/query/keys'
 
 function NotificationCentre() {
@@ -79,8 +80,8 @@ function NotificationCentre() {
                 </div>
                 <div className="ui-list__meta">{n.body}</div>
                 <div className="ui-list__meta ui-muted">{formatWhen(n.createdAt)}</div>
-                {n.actionUrl && (
-                  <Link to={n.actionUrl} className="ui-link">
+                {safeInternalPath(n.actionUrl) && (
+                  <Link to={safeInternalPath(n.actionUrl)} className="ui-link">
                     {t('notifications.open')}
                   </Link>
                 )}

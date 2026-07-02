@@ -76,6 +76,12 @@ export const parentApi = {
   downloadRequestDocument(id, fallbackName = 'document') {
     return downloadToBrowser(`/api/v1/parent-requests/${encodeURIComponent(id)}/attachment/download`, fallbackName)
   },
+  // Backend-mediated, audited download of a staff response's attached document.
+  // ParentRequestResponseDto carries no "has a document" flag, so the caller
+  // attempts this per response; the backend honestly 404s when there is none.
+  downloadResponseDocument(id, responseId, fallbackName = 'response-document') {
+    return downloadToBrowser(`/api/v1/parent-requests/${encodeURIComponent(id)}/responses/${encodeURIComponent(responseId)}/document/download`, fallbackName)
+  },
 
   // ---- teacher conversations (read; participant-scoped server-side) ----
   async conversations(signal) {

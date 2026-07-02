@@ -33,7 +33,7 @@ namespace DerasaX.Api.Controllers
         }
 
         [HttpPost("AddUnit")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> AddUnit([FromForm] AddUnitDto addUnitDto)
         {
             _logger.LogInformation("Adding new Unit: {UnitName}", addUnitDto.Title);
@@ -46,7 +46,7 @@ namespace DerasaX.Api.Controllers
         }
 
         [HttpPut("UpdateUnit")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> UpdateUnit([FromForm] UpdateUnitDto updateUnitDto)
         {
             _logger.LogInformation("Updating unit with ID: {unitId}", updateUnitDto.Id);
@@ -58,7 +58,7 @@ namespace DerasaX.Api.Controllers
         }
 
         [HttpDelete("DeleteUnit")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> DeleteUnit(string id)
         {
             _logger.LogInformation("Deleting unit with ID: {unitId}", id);

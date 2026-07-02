@@ -36,4 +36,17 @@ describe('public marketing routes', () => {
     expect(login.anonymousOnly).toBe(true)
     expect(login.layout).not.toBe('public')
   })
+
+  // Task 3 (audit-driven fix pass): the forgot/reset password flow registers two
+  // more anonymous-only auth routes alongside /login (no marketing chrome either).
+  it('registers /forgot-password and /reset-password as anonymous-only auth routes', () => {
+    for (const path of ['/forgot-password', '/reset-password']) {
+      const route = ROUTES.find((r) => r.path === path)
+      expect(route, `${path} is registered`).toBeTruthy()
+      expect(route.anonymousOnly).toBe(true)
+      expect(route.layout).not.toBe('public')
+      expect(route.requiresAuth).toBeFalsy()
+      expect(route.Component).toBeTruthy()
+    }
+  })
 })

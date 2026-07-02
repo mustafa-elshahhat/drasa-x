@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { ClipboardList, FileText, Sparkles } from 'lucide-react'
@@ -23,7 +23,12 @@ function QuizzesPage({ userId, locale }) {
   if (quizId) return <QuizDetailPage userId={userId} quizId={quizId} locale={locale} />
   return (
     <>
-      <PageHeader title={t('teacher.quizzes.title')} description={t('teacher.quizzes.description')} actions={<Link className="ui-btn ui-btn--primary" to="/app/teacher/quiz-generate"><Sparkles size={16} aria-hidden="true" /> {t('teacher.quizzes.generate')}</Link>} />
+      <PageHeader
+        title={t('teacher.quizzes.title')}
+        description={t('teacher.quizzes.description')}
+        actions={<Link className="ui-btn ui-btn--primary" to="/app/teacher/quiz-generate"><Sparkles size={16} aria-hidden="true" /> {t('teacher.quizzes.generate')}</Link>}
+      />
+      <ManualCreateCard userId={userId} />
       <Listing query={query} empty={t('teacher.empty.quizzes')} emptyIcon={ClipboardList}>
         {(items) => (
           <div className="ui-grid ui-grid--auto">
@@ -47,6 +52,51 @@ function QuizzesPage({ userId, locale }) {
   )
 }
 
+// Manual (non-AI) quiz creation — complements the AI-draft generator; both
+// produce an editable draft the teacher builds questions into.
+function ManualCreateCard({ userId }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+  const subjects = useTeacherQuery(queryKeys.teacher.subjects(userId), (signal) => teacherApi.subjects(signal), { staleTime: STALE.medium })
+  const [form, setForm] = useState({ title: '', subjectId: '', type: '1', difficulty: '2', timeLimitMinutes: 30 })
+  const create = useMutation({
+    mutationFn: () => teacherApi.createQuiz({
+      title: form.title.trim(), subjectId: form.subjectId || null, type: Number(form.type),
+      difficulty: Number(form.difficulty), timeLimitMinutes: Number(form.timeLimitMinutes) || 0,
+    }),
+    onSuccess: (created) => {
+      qc.invalidateQueries({ queryKey: queryKeys.teacher.quizzes(userId) })
+      const id = itemId(created, ['quizId', 'QuizId', 'id', 'Id'])
+      if (id) navigate(`/app/teacher/quizzes/${id}`)
+    },
+  })
+  const subjectItems = subjects.data || []
+  const valid = form.title.trim() && form.subjectId
+  return (
+    <Card title={t('teacher.quizzes.manualCreate', 'Create a quiz manually')}>
+      <form className="ui-formgrid ui-formgrid--2" onSubmit={(e) => { e.preventDefault(); if (valid) create.mutate() }}>
+        <TextField label={t('teacher.quizzes.field.title', 'Title')} value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required />
+        <SelectField
+          label={t('teacher.subjects.title')}
+          value={form.subjectId}
+          onChange={(e) => setForm((f) => ({ ...f, subjectId: e.target.value }))}
+          options={[{ value: '', label: t('teacher.quizzes.chooseClass') }, ...subjectItems.map((s) => ({ value: itemId(s, ['subjectId', 'SubjectId', 'id', 'Id']), label: displayValue(s, ['name', 'Name']) }))]}
+        />
+        <SelectField
+          label={t('teacher.quizzes.field.type', 'Type')}
+          value={form.type}
+          onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+          options={[{ value: '1', label: t('teacher.quizzes.quizType.lesson', 'Lesson') }, { value: '2', label: t('teacher.quizzes.quizType.practice', 'Practice') }, { value: '3', label: t('teacher.quizzes.quizType.final', 'Final') }]}
+        />
+        <TextField label={t('teacher.quizzes.field.timeLimit', 'Time limit (minutes)')} type="number" min="0" value={form.timeLimitMinutes} onChange={(e) => setForm((f) => ({ ...f, timeLimitMinutes: e.target.value }))} />
+        <Button type="submit" loading={create.isPending} disabled={!valid}>{t('teacher.quizzes.manualCreate', 'Create a quiz manually')}</Button>
+      </form>
+      {create.isError && <ErrorState error={create.error} />}
+    </Card>
+  )
+}
+
 function QuizDetailPage({ userId, quizId, locale }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
@@ -59,9 +109,11 @@ function QuizDetailPage({ userId, quizId, locale }) {
     qc.invalidateQueries({ queryKey: queryKeys.teacher.dashboard(userId) })
   }
   const publish = useMutation({ mutationFn: () => teacherApi.publishQuiz(quizId), onSuccess: invalidateQuiz })
+  const archive = useMutation({ mutationFn: () => teacherApi.archiveQuiz(quizId), onSuccess: invalidateQuiz })
   const data = quiz.data || {}
   const questions = toItems(data.questions ?? data.Questions ?? [])
   const isPublished = isQuizPublished(data.status ?? data.Status)
+  const isArchived = quizStatusName(data.status ?? data.Status).toLowerCase() === 'archived'
 
   if (quiz.isLoading) return (<><PageHeader title={t('teacher.quizzes.details')} /><Loading /></>)
   if (quiz.isError) return <ErrorState error={quiz.error} onRetry={quiz.refetch} />
@@ -85,7 +137,12 @@ function QuizDetailPage({ userId, quizId, locale }) {
       <PageHeader
         title={displayValue(data, ['title', 'Title']) || t('teacher.quizzes.details')}
         description={t('teacher.quizzes.reviewDescription')}
-        actions={!isPublished ? <Button onClick={() => publish.mutate()} loading={publish.isPending}>{t('teacher.quizzes.publish')}</Button> : null}
+        actions={
+          <span className="cluster">
+            {!isPublished && <Button onClick={() => publish.mutate()} loading={publish.isPending}>{t('teacher.quizzes.publish')}</Button>}
+            {!isArchived && <Button variant="secondary" onClick={() => archive.mutate()} loading={archive.isPending}>{t('teacher.quizzes.archive', 'Archive')}</Button>}
+          </span>
+        }
       />
       <Card title={t('teacher.details')}>
         <Alert variant={isPublished ? 'success' : 'info'} title={`${t('teacher.quizzes.status')}: ${quizStatusName(data.status ?? data.Status)}`}>
@@ -95,6 +152,7 @@ function QuizDetailPage({ userId, quizId, locale }) {
       </Card>
       {publish.isError && <ErrorState error={publish.error} />}
       {publish.isSuccess && <Alert variant="success" title={t('teacher.quizzes.publishedTitle')}>{t('teacher.quizzes.publishedBody')}</Alert>}
+      {archive.isError && <ErrorState error={archive.error} />}
 
       {!isPublished && <QuizMetadataCard userId={userId} quizId={quizId} data={data} onSaved={invalidateQuiz} />}
 
@@ -112,6 +170,7 @@ function QuizDetailPage({ userId, quizId, locale }) {
       </Card>
 
       {isPublished && <AssignQuizCard userId={userId} quizId={quizId} />}
+      {isPublished && <AnalyticsCard userId={userId} quizId={quizId} />}
 
       <Card title={t('teacher.grading.submissions')}>
         <Listing query={submissions} empty={t('teacher.empty.submissions')}>
@@ -175,6 +234,10 @@ function QuestionEditor({ userId, quizId, question, editable, onSaved }) {
     }),
     onSuccess: () => { setEditing(false); qc.invalidateQueries({ queryKey: queryKeys.teacher.quiz(userId, quizId) }); onSaved?.() },
   })
+  const remove = useMutation({
+    mutationFn: () => teacherApi.deleteQuestion(quizId, questionId),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: queryKeys.teacher.quiz(userId, quizId) }); onSaved?.() },
+  })
 
   const reset = () => {
     setText(displayValue(question, ['text', 'Text']))
@@ -207,7 +270,12 @@ function QuestionEditor({ userId, quizId, question, editable, onSaved }) {
         <div>
           <div className="student-item">
             <strong className="domain-row__title">{displayValue(question, ['text', 'Text'])}</strong>
-            {editable && <Button variant="secondary" onClick={() => setEditing(true)}>{t('teacher.quizzes.editQuestion')}</Button>}
+            {editable && (
+              <span className="cluster">
+                <Button variant="secondary" onClick={() => setEditing(true)}>{t('teacher.quizzes.editQuestion')}</Button>
+                <Button variant="secondary" onClick={() => remove.mutate()} loading={remove.isPending}>{t('teacher.quizzes.deleteQuestion', 'Delete question')}</Button>
+              </span>
+            )}
           </div>
           {objective && (
             <ul className="ui-list">
@@ -216,6 +284,7 @@ function QuestionEditor({ userId, quizId, question, editable, onSaved }) {
               ))}
             </ul>
           )}
+          {remove.isError && <ErrorState error={remove.error} />}
         </div>
       )}
     </div>
@@ -401,6 +470,39 @@ function AssignQuizCard({ userId, quizId }) {
           </div>
         )}
       </Listing>
+    </Card>
+  )
+}
+
+function AnalyticsCard({ userId, quizId }) {
+  const { t } = useTranslation()
+  const analytics = useTeacherQuery(queryKeys.teacher.quizAnalytics(userId, quizId), (signal) => teacherApi.quizAnalytics(quizId, signal))
+  if (analytics.isLoading) return <Card title={t('teacher.quizzes.analytics', 'Analytics')}><Loading /></Card>
+  if (analytics.isError) return <Card title={t('teacher.quizzes.analytics', 'Analytics')}><ErrorState error={analytics.error} onRetry={analytics.refetch} /></Card>
+  const data = analytics.data || {}
+  const questions = toItems(data.questions ?? data.Questions ?? [])
+  return (
+    <Card title={t('teacher.quizzes.analytics', 'Analytics')}>
+      <div className="domain-child__stats">
+        <div className="domain-child__stat"><span className="domain-child__stat-value">{data.totalSubmissions ?? data.TotalSubmissions ?? 0}</span><span className="domain-child__stat-label">{t('teacher.quizzes.totalSubmissions', 'Total submissions')}</span></div>
+        <div className="domain-child__stat"><span className="domain-child__stat-value">{(data.averageScorePercentage ?? data.AverageScorePercentage ?? 0).toFixed(1)}%</span><span className="domain-child__stat-label">{t('teacher.quizzes.averageScore', 'Average score')}</span></div>
+      </div>
+      {questions.length === 0 ? <EmptyState title={t('teacher.empty.questions')} /> : (
+        <ul className="ui-list">
+          {questions.map((q, i) => (
+            <li className="ui-list__item" key={itemId(q, ['questionId', 'QuestionId', 'id', 'Id']) || i}>
+              <div className="ui-list__body">
+                <div className="ui-list__title">{displayValue(q, ['text', 'Text'])}</div>
+                <div className="ui-list__meta">
+                  {t('teacher.quizzes.answeredCount', '{{answered}} answered', { answered: q.answered ?? q.Answered ?? 0 })}
+                  {' · '}
+                  {t('teacher.quizzes.correctRate', '{{rate}}% correct', { rate: Math.round((q.correctRate ?? q.CorrectRate ?? 0) * 100) })}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </Card>
   )
 }

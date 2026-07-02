@@ -12,6 +12,12 @@ namespace DerasaX.Application.Services.Abstractions.LessonMaterial
     public interface ILessonMaterialServicess
     {
         Task<ApiResponse<IEnumerable<GetLessonMaterialDto>>> GetMaterialByLessonIdAsync(string lessonId);
+        /// <summary>
+        /// Fetches a single lesson material by its own id (tenant-scoped). Used by detail pages that
+        /// only know the material id — not its parent lesson — such as the student material detail
+        /// page (P1-6). Cross-tenant ids resolve to <see cref="DerasaX.Domain.Exceptions.NotFoundException"/>.
+        /// </summary>
+        Task<ApiResponse<GetLessonMaterialDto>> GetMaterialByIdAsync(string id);
         Task<ApiResponse<GetLessonMaterialDto>> AddMaterialAsync(AddLessonMaterialDto addLessonMaterialDto);
         /// <summary>
         /// Phase 16 — registers a lesson material backed by a durable uploaded file. The file bytes

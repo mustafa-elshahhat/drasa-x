@@ -36,7 +36,7 @@ namespace DerasaX.Api.Controllers
         /// for real attachments.
         /// </summary>
         [HttpPost("UploadMaterial")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         [RequestSizeLimit(110_000_000)]
         public async Task<IActionResult> UploadMaterial([FromForm] UploadLessonMaterialForm form, CancellationToken ct)
         {
@@ -72,8 +72,30 @@ namespace DerasaX.Api.Controllers
             _logger.LogInformation("Successfully retrieved material for lesson ID: {unitId}", id);
             return Ok(result);
         }
+
+        /// <summary>
+        /// Fetches a single lesson material by its own id (no parent lesson id required). Added for
+        /// detail pages such as the student material page (`/app/student/materials/:materialId`)
+        /// that only have the material id in the URL. Inherits the class-level TenantMember policy —
+        /// any member of the tenant may read, matching <see cref="UploadMaterial"/>'s doc comment.
+        /// A bare "{id}" route coexists safely with the literal "GetMaterialByLessonId" route above
+        /// (and the other literal-named GET/POST/PUT/DELETE actions below): ASP.NET Core route
+        /// precedence always prefers an all-literal template over a parameterized one for the same
+        /// URL, which is the exact pattern already proven in this codebase by FilesController's
+        /// "download" (literal) vs "{id}" (legacy Get) GET routes.
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetMaterialById(string id)
+        {
+            _logger.LogInformation("Getting material by ID: {MaterialId}", id);
+
+            var result = await _lessonMaterialServicess.GetMaterialByIdAsync(id);
+
+            _logger.LogInformation("Successfully retrieved material with ID: {MaterialId}", id);
+            return Ok(result);
+        }
         [HttpPost("AddMaterial")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> AddMaterial([FromForm] AddLessonMaterialDto lessonMaterialDto)
         {
             _logger.LogInformation("Adding Material");
@@ -85,7 +107,7 @@ namespace DerasaX.Api.Controllers
         }
 
         [HttpPut("UpdateMaterial")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> UpdateMaterial([FromForm] GetLessonMaterialDto getLessonMaterialDto)
         {
             _logger.LogInformation("Updating material with ID: {mterialId}", getLessonMaterialDto.Id);
@@ -97,7 +119,7 @@ namespace DerasaX.Api.Controllers
         }
 
         [HttpDelete("DeleteMaterial")]
-        [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+        [Authorize(Policy = Policies.TeacherOnly)]
         public async Task<IActionResult> DeleteMaterial(string id)
         {
             _logger.LogInformation("Deleting material with ID: {MaterialId}", id);

@@ -61,6 +61,30 @@ namespace DerasaX.Application.Services.LessonMaterials
                 Message = "Material retrieved successfully."
             };
         }
+        public async Task<ApiResponse<GetLessonMaterialDto>> GetMaterialByIdAsync(string id)
+        {
+            var tenantId = GetTenantId();
+            if (string.IsNullOrEmpty(tenantId))
+                throw new UnauthorizedException("Tenant is missing.");
+
+            var spec = new LessonMaterialSpecification(id, tenantId);
+            var material = await _unitOfWork.Repository<LessonMaterial, string>().GetByIdWithSpecAsync(spec);
+
+            if (material is null)
+            {
+                _logger.LogWarning("Material not found with ID: {MaterialId}", id);
+                throw new NotFoundException($"material with ID {id} not found.");
+            }
+
+            var materialDto = _mapper.Map<GetLessonMaterialDto>(material);
+
+            return new ApiResponse<GetLessonMaterialDto>(materialDto)
+            {
+                Success = true,
+                StatusCode = 200,
+                Message = "Material retrieved successfully."
+            };
+        }
         public async Task<ApiResponse<GetLessonMaterialDto>> AddMaterialAsync(AddLessonMaterialDto addLessonMaterialDto)
         {
             var tenantId = GetTenantId();

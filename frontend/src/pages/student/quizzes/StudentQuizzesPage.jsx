@@ -222,6 +222,12 @@ function QuizDetails({ userId, quizId, list, locale }) {
         <span className="font-semibold text-ink">{title}</span>
       </div>
 
+      {list.isLoading ? (
+        <Loading />
+      ) : list.isError ? (
+        <ErrorState error={list.error} onRetry={list.refetch} />
+      ) : (
+      <>
       {start.isError && <ErrorState error={start.error} />}
 
       <div className="max-w-[720px] [margin:0_auto]">
@@ -343,6 +349,8 @@ function QuizDetails({ userId, quizId, list, locale }) {
           </Card>
         </div>
       </div>
+      </>
+      )}
     </>
   )
 }

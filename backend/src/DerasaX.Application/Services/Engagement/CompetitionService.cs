@@ -335,9 +335,20 @@ namespace DerasaX.Application.Services.Engagement
             RequireTenant();
             RequireStaff(); // only staff judge submissions
             await LoadAsync(id);
-            var submissions = await UnitOfWork.Repository<CompetitionSubmission, string>().GetAllWithSpecAsync(
-                new CriteriaSpecification<CompetitionSubmission, string>(s => s.CompetitionId == id));
-            return Ok<IEnumerable<CompetitionSubmissionDto>>(submissions.Select(MapSubmission).ToList(), 200, "Submissions retrieved.");
+            var submissions = (await UnitOfWork.Repository<CompetitionSubmission, string>().GetAllWithSpecAsync(
+                new CriteriaSpecification<CompetitionSubmission, string>(s => s.CompetitionId == id))).ToList();
+
+            // F-09: the teacher scores by entry id (POST .../entries/{entryId}/score), but only
+            // ever sees submissions — attach each submitter's entry id so the UI can score
+            // directly from a submission row instead of requiring a hand-typed entry id.
+            var entries = await UnitOfWork.Repository<CompetitionEntry, string>().GetAllWithSpecAsync(
+                new CriteriaSpecification<CompetitionEntry, string>(e => e.CompetitionId == id));
+            var entryIdByStudent = entries.GroupBy(e => e.StudentId).ToDictionary(g => g.Key, g => g.First().Id);
+
+            var dto = submissions.Select(MapSubmission).ToList();
+            foreach (var d in dto)
+                if (entryIdByStudent.TryGetValue(d.StudentId, out var entryId)) d.EntryId = entryId;
+            return Ok<IEnumerable<CompetitionSubmissionDto>>(dto, 200, "Submissions retrieved.");
         }
 
         // ---- helpers ----

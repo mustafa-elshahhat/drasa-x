@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { CalendarDays, TrendingUp, Trophy } from 'lucide-react'
+import { CalendarDays, ScanFace, TrendingUp, Trophy } from 'lucide-react'
 import { Metric } from '../../../shared/data-display'
 import { Card, PageHeader } from '../../../shared/ui'
 import { EmptyState, ErrorState } from '../../../shared/feedback'
@@ -46,6 +46,7 @@ function ChildOverviewPage({ userId }) {
             <Metric to={`/app/parent/children/${childId}/progress`} icon={TrendingUp} accent="var(--brand)" label={t('parent.child.viewProgress')} />
             <Metric to={`/app/parent/children/${childId}/attendance`} icon={CalendarDays} accent="var(--success)" label={t('parent.child.viewAttendance')} />
             <Metric to={`/app/parent/children/${childId}/points`} icon={Trophy} accent="var(--purple)" label={t('parent.child.viewPoints')} />
+            <Metric to={`/app/parent/children/${childId}/vision`} icon={ScanFace} accent="var(--brand)" label={t('parent.child.viewVision')} />
           </div>
         </>
       )}

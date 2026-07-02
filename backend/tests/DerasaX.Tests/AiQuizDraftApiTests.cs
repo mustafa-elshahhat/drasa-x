@@ -103,7 +103,31 @@ public class AiQuizDraftApiTests : IClassFixture<IntegrationFactory>
         return subjectId;
     }
 
-    private async Task CleanupQuizAsync(string subjectId, string? quizId)
+    private async Task<string> UserIdAsync(string loginCode)
+    {
+        await using var db = Phase4Db.Platform(_factory);
+        return (await db.applicationUsers.IgnoreQueryFilters().FirstAsync(u => u.LoginCode == loginCode)).Id;
+    }
+
+    // A subject WITH an active TeacherSubjectAssignment for `teacherCode` — needed because
+    // AiQuizController is Teacher-only (SchoolAdmin Teacher-portal removal): a Teacher actor
+    // must be genuinely assigned to the subject to pass QuizDraftService's authorization,
+    // unlike the SchoolAdmin tenant-wide bypass this suite previously relied on.
+    private async Task<(string subjectId, string assignmentId)> SeedSubjectAssignedToAsync(string teacherCode)
+    {
+        var subjectId = await SeedSubjectAsync();
+        var teacherId = await UserIdAsync(teacherCode);
+        var assignmentId = Phase4Db.NewId("tsa");
+        await using var db = Phase4Db.AsTenant(_factory, "tenant-1");
+        db.teacherSubjectAssignments.Add(new TeacherSubjectAssignment
+        {
+            Id = assignmentId, TenantId = "tenant-1", TeacherId = teacherId, SubjectId = subjectId, ActiveFrom = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync();
+        return (subjectId, assignmentId);
+    }
+
+    private async Task CleanupQuizAsync(string subjectId, string? quizId, string? assignmentId = null)
     {
         await using var db = Phase4Db.Platform(_factory);
         if (quizId is not null)
@@ -114,21 +138,27 @@ public class AiQuizDraftApiTests : IClassFixture<IntegrationFactory>
             db.quizGenerations.RemoveRange(await db.quizGenerations.IgnoreQueryFilters().Where(g => g.QuizId == quizId).ToListAsync());
             db.quizzes.RemoveRange(await db.quizzes.IgnoreQueryFilters().Where(q => q.Id == quizId).ToListAsync());
         }
+        if (assignmentId is not null)
+            db.teacherSubjectAssignments.RemoveRange(await db.teacherSubjectAssignments.IgnoreQueryFilters().Where(a => a.Id == assignmentId).ToListAsync());
         db.subjects.RemoveRange(await db.subjects.IgnoreQueryFilters().Where(s => s.Id == subjectId).ToListAsync());
         await db.SaveChangesAsync();
     }
 
+    // SchoolAdmin Teacher-portal removal: AiQuizController is now Teacher-only, so the primary
+    // actor here is an assigned Teacher, not SchoolAdmin (which previously relied on a
+    // tenant-wide bypass of the subject-assignment check — see
+    // SchoolAdmin_generate_draft_is_forbidden_403 for the new negative case).
     [Fact]
-    public async Task Admin_generates_draft_persisted_as_Draft_Origin_AI_with_provenance_and_usage()
+    public async Task Teacher_generates_draft_persisted_as_Draft_Origin_AI_with_provenance_and_usage()
     {
-        var subjectId = await SeedSubjectAsync();
+        var (subjectId, assignmentId) = await SeedSubjectAssignedToAsync("TEACH-T1");
         string? quizId = null;
         try
         {
             var f = WithFake(new FakeAiClient());
-            var admin = await AuthedAsync(f, "ADMIN-T1");
+            var teacher = await AuthedAsync(f, "TEACH-T1");
 
-            var resp = await admin.PostAsJsonAsync("/api/v1/ai/quiz/draft", new
+            var resp = await teacher.PostAsJsonAsync("/api/v1/ai/quiz/draft", new
             {
                 subjectId, numQuestions = 2, difficulty = "core", language = "en",
                 questionTypes = new[] { "mcq", "true_false" }, topic = "photosynthesis"
@@ -165,7 +195,7 @@ public class AiQuizDraftApiTests : IClassFixture<IntegrationFactory>
                 .Where(u => u.CorrelationId == result.correlationId && u.Kind == AiUsageKind.QuizGeneration).ToListAsync();
             Assert.Single(usage);
         }
-        finally { await CleanupQuizAsync(subjectId, quizId); }
+        finally { await CleanupQuizAsync(subjectId, quizId, assignmentId); }
     }
 
     [Fact]
@@ -188,7 +218,7 @@ public class AiQuizDraftApiTests : IClassFixture<IntegrationFactory>
     [Fact]
     public async Task Provider_failure_returns_502_and_records_failed_usage()
     {
-        var subjectId = await SeedSubjectAsync();
+        var (subjectId, assignmentId) = await SeedSubjectAssignedToAsync("TEACH-T1");
         try
         {
             int before;
@@ -196,8 +226,8 @@ public class AiQuizDraftApiTests : IClassFixture<IntegrationFactory>
                 before = await db.aiUsageRecords.IgnoreQueryFilters().CountAsync(u => u.Kind == AiUsageKind.QuizGeneration);
 
             var f = WithFake(new FakeAiClient { Throw = true });
-            var admin = await AuthedAsync(f, "ADMIN-T1");
-            var resp = await admin.PostAsJsonAsync("/api/v1/ai/quiz/draft", new
+            var teacher = await AuthedAsync(f, "TEACH-T1");
+            var resp = await teacher.PostAsJsonAsync("/api/v1/ai/quiz/draft", new
             {
                 subjectId, numQuestions = 2, difficulty = "core", questionTypes = new[] { "mcq" }
             });
@@ -206,6 +236,25 @@ public class AiQuizDraftApiTests : IClassFixture<IntegrationFactory>
             await using var db2 = Phase4Db.Platform(_factory);
             var after = await db2.aiUsageRecords.IgnoreQueryFilters().CountAsync(u => u.Kind == AiUsageKind.QuizGeneration);
             Assert.True(after >= before + 1);                            // failure usage recorded; other AI tests may run in parallel
+        }
+        finally { await CleanupQuizAsync(subjectId, null, assignmentId); }
+    }
+
+    // SchoolAdmin Teacher-portal removal: AiQuizController no longer admits SchoolAdmin at all
+    // (previously TeacherOrSchoolAdmin with a tenant-wide bypass of the assignment check).
+    [Fact]
+    public async Task SchoolAdmin_generate_draft_is_forbidden_403()
+    {
+        var subjectId = await SeedSubjectAsync();
+        try
+        {
+            var f = WithFake(new FakeAiClient());
+            var admin = await AuthedAsync(f, "ADMIN-T1");
+            var resp = await admin.PostAsJsonAsync("/api/v1/ai/quiz/draft", new
+            {
+                subjectId, numQuestions = 2, difficulty = "core", questionTypes = new[] { "mcq" }
+            });
+            Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
         }
         finally { await CleanupQuizAsync(subjectId, null); }
     }

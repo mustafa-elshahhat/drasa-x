@@ -25,7 +25,8 @@ namespace DerasaX.Application.Services.Ai
     /// Pain-point analysis orchestration. Teacher/SchoolAdmin only may generate;
     /// access via the student-access authorizer; non-diagnostic outputs persisted
     /// as <c>PainPoint</c> with mandatory review state + model/prompt versions;
-    /// AiUsage on success and failure; parents get an approved-only safe projection.
+    /// AiUsage on success and failure; students/parents get an approved-only safe
+    /// projection (never the internal evidence/model/prompt-version detail).
     /// </summary>
     public class AnalysisService : OperationsServiceBase, IAnalysisService
     {
@@ -167,8 +168,10 @@ namespace DerasaX.Application.Services.Ai
                 new CriteriaSpecification<PainPoint, string>(p => p.StudentId == studentId)))
                 .OrderByDescending(p => p.DetectedAt).ToList();
 
-            // Parents get an APPROVED-only, internal-free safe projection.
-            if (Tenant.Role == Roles.Parent)
+            // Students and parents get an APPROVED-only, internal-free safe projection.
+            // (Only Teacher/SchoolAdmin — the RequireStaff()-gated actors — reach the
+            // full PainPointReviewItemDto branch below.)
+            if (Tenant.Role == Roles.Parent || Tenant.Role == Roles.Student)
             {
                 return items.Where(p => p.ReviewStatus == HumanReviewStatus.Approved)
                     .Select(p => new ParentSafePainPointDto

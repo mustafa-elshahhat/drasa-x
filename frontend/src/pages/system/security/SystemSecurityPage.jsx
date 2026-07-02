@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { DetailList } from '../../../shared/data-display'
-import { Alert, Card } from '../../../shared/ui'
+import { Alert } from '../../../shared/ui'
 import { ErrorState } from '../../../shared/feedback'
 import { Head, List } from '../../../features/system/components'
 import { useSystemQuery } from '../../../features/system/helpers'
@@ -17,19 +16,6 @@ function SecurityPage({ userId, locale }) {
       <Alert title={t('system.notes.securityTitle')}>{t('system.notes.security')}</Alert>
       <List query={query} empty={t('system.empty.security')} locale={locale} />
     </>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Operational posture: Health / Error monitoring / Backups
-// ---------------------------------------------------------------------------
-function PostureCard({ posture, locale }) {
-  const { t } = useTranslation()
-  if (!posture) return null
-  return (
-    <Card title={posture.configured ? t('system.posture.configured') : t('system.posture.notConfigured')}>
-      <DetailList item={posture} locale={locale} />
-    </Card>
   )
 }
 

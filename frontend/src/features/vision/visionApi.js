@@ -35,6 +35,10 @@ export const visionApi = {
   async analyzeFrame(sessionId, payload) {
     return toObject(await api.post(`${BASE}/sessions/${sessionId}/analyze`, payload))
   },
+  // No UI consumer by deliberate decision (contract-gap appendix, same reasoning
+  // as face-enrollment): reviewing raw captured classroom frames after the fact
+  // is a privacy-sensitive surface that needs an explicit retention/access
+  // decision, not something to wire up silently inside a route/RBAC fix pass.
   async listFrames(sessionId, signal) {
     return toItems(await api.get(`${BASE}/sessions/${sessionId}/frames`, { signal }))
   },

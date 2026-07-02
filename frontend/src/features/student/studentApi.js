@@ -26,6 +26,11 @@ export const studentApi = {
   async materials(lessonId, signal) {
     return toItems(await api.get(`/api/v1/LessonMaterial/GetMaterialByLessonId${qs({ id: lessonId })}`, { signal }))
   },
+  // P1-6 — single material by its own id (the material detail page only has the material id in the
+  // URL, not the parent lesson, so it cannot use the by-lesson listing above).
+  async material(materialId, signal) {
+    return toObject(await api.get(`/api/v1/LessonMaterial/${encodeURIComponent(materialId)}`, { signal }))
+  },
   // Direct single-lesson detail (real backend data, authorization-gated) — replaces the
   // brute-force subject→unit→lesson walk on the student lesson page.
   async lessonDetail(lessonId, signal) {
@@ -156,19 +161,6 @@ export const studentApi = {
   },
   async cancelBooking(id) {
     return unwrapEnvelope(await api.post(`/api/v1/bookings/${encodeURIComponent(id)}/cancel`))
-  },
-  async notifications(signal) {
-    const [items, count] = await Promise.allSettled([
-      api.get('/api/v1/notifications', { signal }),
-      api.get('/api/v1/notifications/unread-count', { signal }),
-    ])
-    return { items, count }
-  },
-  async markNotificationRead(id) {
-    return api.patch(`/api/v1/notifications/${encodeURIComponent(id)}/read`)
-  },
-  async markAllNotificationsRead() {
-    return api.patch('/api/v1/notifications/read-all')
   },
   async announcements(signal) {
     return toItems(await api.get('/api/v1/announcements', { signal }))

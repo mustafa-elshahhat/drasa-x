@@ -114,12 +114,15 @@ function SubjectDetailsPage({ userId, locale }) {
 
   const subjectName = subject.data ? (isAr ? (getField(subject.data, 'nameAr') || displayValue(subject.data)) : displayValue(subject.data)) : ''
   const teacher = subject.data ? (getField(subject.data, 'teacherName') || getField(subject.data, 'teacher') || theme.teacher) : ''
-  const grade = subject.data ? (getField(subject.data, 'gradeName') || getField(subject.data, 'grade') || 'Grade 11') : ''
+  // Honest fallbacks only: an empty grade renders nothing, a missing average
+  // score renders the same "no data" dash used elsewhere in this codebase —
+  // never a fabricated plausible-looking value (previously 'Grade 11'/'86%').
+  const grade = subject.data ? (getField(subject.data, 'gradeName') || getField(subject.data, 'grade') || '') : ''
 
   const unitsCount = subject.data ? (getField(subject.data, 'units') || theme.units) : 0
   const lessonsCount = subject.data ? (getField(subject.data, 'lessons') || theme.lessons) : 0
   const progressVal = subject.data ? (percentOf(subject.data) ?? theme.progress) : 0
-  const avgScore = subject.data ? (getField(subject.data, 'averageScore') || getField(subject.data, 'avgScore') || '86%') : '86%'
+  const avgScore = subject.data ? (getField(subject.data, 'averageScore') || getField(subject.data, 'avgScore') || '—') : '—'
 
   const getUnitProgress = (unit, index) => {
     const total = getField(unit, 'lessonsCount') || getField(unit, 'lessons')
@@ -196,8 +199,8 @@ function SubjectDetailsPage({ userId, locale }) {
               <div className="flex items-center gap-2 text-muted">
                 <Avatar name={teacher} size={26} color={color} />
                 <span className="text-[13px]">{teacher}</span>
-                <span className="text-faint">·</span>
-                <span className="text-[13px]">{grade}</span>
+                {grade && <span className="text-faint">·</span>}
+                {grade && <span className="text-[13px]">{grade}</span>}
               </div>
             </div>
             <Link

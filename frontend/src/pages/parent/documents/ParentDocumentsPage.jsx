@@ -10,7 +10,7 @@ import { ErrorState } from '../../../shared/feedback'
 import { Listing } from '../../../features/parent/components'
 import { useParentQuery } from '../../../features/parent/helpers'
 import { parentApi } from '../../../features/parent/parentApi'
-import { displayValue, itemId } from '../../../features/student/studentUtils'
+import { displayValue, formatDate, getField, itemId } from '../../../features/student/studentUtils'
 import { STALE, queryKeys } from '../../../lib/query/keys'
 import { usePortalContext } from '../../../features/portal/context'
 
@@ -23,6 +23,11 @@ function DocumentRequestRow({ item, userId, locale }) {
   const qc = useQueryClient()
   const id = itemId(item, ['id', 'Id'])
   const hasDoc = Boolean(item.fileRecordId || item.FileRecordId || item.requestDocumentId || item.hasRequestDocument)
+  // ParentRequestResponseDto {Id, ResponderId, Body, RespondedAt} carries no flag for
+  // "this response has an attached document" (verified against the real backend DTO),
+  // so — same best-effort spirit as `hasDoc` above — every response gets a download
+  // attempt; the backend honestly 404s (surfaced by FileDownloadButton) when absent.
+  const responses = Array.isArray(getField(item, 'responses')) ? getField(item, 'responses') : []
   return (
     <Card>
       <DetailList item={item} locale={locale} />
@@ -34,6 +39,29 @@ function DocumentRequestRow({ item, userId, locale }) {
         onUploaded={() => qc.invalidateQueries({ queryKey: queryKeys.parent.documentRequests(userId) })}
       />
       {hasDoc && <FileDownloadButton download={() => parentApi.downloadRequestDocument(id)} />}
+
+      {responses.length > 0 && (
+        <div className="mt-3">
+          <h4>{t('parent.documents.responses')}</h4>
+          <ul className="ui-list">
+            {responses.map((r, idx) => {
+              const responseId = itemId(r, ['id', 'Id'])
+              return (
+                <li className="ui-list__item" key={responseId || idx}>
+                  <div className="ui-list__body">
+                    <div className="ui-list__title">{displayValue(r, ['body', 'Body'])}</div>
+                    <div className="ui-list__meta ui-muted">{formatDate(getField(r, 'respondedAt'), locale)}</div>
+                  </div>
+                  <FileDownloadButton
+                    label={t('parent.documents.downloadResponseDocument')}
+                    download={() => parentApi.downloadResponseDocument(id, responseId)}
+                  />
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
     </Card>
   )
 }

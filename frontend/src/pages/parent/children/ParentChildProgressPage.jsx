@@ -21,6 +21,10 @@ function ChildProgressPage({ userId, locale }) {
   const attempts = data ? toItems(settledData(data.attempts)) : []
   const insights = data ? toItems(settledData(data.insights)) : []
   const recommendations = data ? toItems(settledData(data.recommendations)) : []
+  // The backend returns an approved-only, internal-free safe projection for a
+  // Parent caller (StudentProgressService.PainPointsAsync) — never unreviewed
+  // items or staff-only evidence/model details (decision #7).
+  const painPoints = data ? toItems(settledData(data.painPoints)) : []
   const listCard = (title, items, empty) => (
     <Card title={title}>
       {items.length ? (
@@ -47,6 +51,19 @@ function ChildProgressPage({ userId, locale }) {
           </Card>
           {listCard(t('parent.progress.subjectProgress'), subjects, t('parent.empty.progress'))}
           {listCard(t('parent.progress.attemptHistory'), attempts, t('parent.empty.grades'))}
+          <Card title={t('parent.progress.painPoints')}>
+            <p className="ui-muted">{t('parent.progress.painPointsNote')}</p>
+            {painPoints.length ? (
+              <div className="student-list">
+                {painPoints.map((item, idx) => (
+                  <div className="student-list__item" key={itemId(item) || idx}>
+                    <strong className="domain-row__title">{displayValue(item) || itemId(item)}</strong>
+                    <DetailList item={item} locale={locale} />
+                  </div>
+                ))}
+              </div>
+            ) : <EmptyState title={t('parent.empty.painPoints')} />}
+          </Card>
           <Card title={t('parent.progress.insights')}>
             <p className="ui-muted">{t('parent.progress.aiProvenance')}</p>
             {insights.length ? (

@@ -9,3 +9,4 @@ export const SUPPORT_STATUS = { Completed: 4 }
 // 0-indexed like the other enum arrays above. Index this by value, never by position.
 export const PLAN_TIER = [undefined, 'Free', 'Pro', 'Enterprise']
 export const BILLING_PERIOD = ['Monthly', 'Quarterly', 'Annual', 'Custom'] // value == index
+export const RENEWAL_STATUS = ['Requested', 'Approved', 'Rejected', 'Applied', 'Cancelled'] // value == index

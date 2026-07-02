@@ -13,8 +13,8 @@ namespace DerasaX.Api.Controllers
     /// <summary>
     /// Phase 6 §13 — backend-mediated conversation / pain-point analysis. Only a
     /// teacher or school admin may generate or review; access is enforced by the
-    /// student-access authorizer. Parents receive an approved-only safe projection
-    /// (never the internal analysis). Outputs require human review.
+    /// student-access authorizer. Students and parents receive an approved-only
+    /// safe projection (never the internal analysis). Outputs require human review.
     /// </summary>
     [ApiController]
     [Route("api/v1/ai/analysis")]

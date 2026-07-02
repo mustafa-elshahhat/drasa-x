@@ -113,6 +113,7 @@ function CompetitionNew({ userId }) {
 function CompetitionDetail({ userId, competitionId, locale }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
+  const [selected, setSelected] = useState(null)
   const comp = useTeacherQuery(queryKeys.teacher.competition(userId, competitionId), (signal) => teacherApi.competition(competitionId, signal), { enabled: Boolean(competitionId) })
   const data = comp.data || {}
   const statusName = competitionStatusName(data.status ?? data.Status)
@@ -153,8 +154,8 @@ function CompetitionDetail({ userId, competitionId, locale }) {
 
       {isDraft && <CompetitionEditCard competitionId={competitionId} data={data} onSaved={invalidate} />}
 
-      <SubmissionsCard userId={userId} competitionId={competitionId} locale={locale} />
-      <ScoreCard userId={userId} competitionId={competitionId} />
+      <SubmissionsCard userId={userId} competitionId={competitionId} locale={locale} selected={selected} onSelect={setSelected} />
+      <ScoreCard userId={userId} competitionId={competitionId} selected={selected} onScored={() => setSelected(null)} />
       <LeaderboardCard userId={userId} competitionId={competitionId} />
     </>
   )
@@ -193,7 +194,7 @@ function CompetitionEditCard({ competitionId, data, onSaved }) {
   )
 }
 
-function SubmissionsCard({ userId, competitionId, locale }) {
+function SubmissionsCard({ userId, competitionId, locale, selected, onSelect }) {
   const { t } = useTranslation()
   const submissions = useTeacherQuery(queryKeys.teacher.competitionSubmissions(userId, competitionId), (signal) => teacherApi.competitionSubmissions(competitionId, signal), { enabled: Boolean(competitionId) })
   return (
@@ -201,12 +202,26 @@ function SubmissionsCard({ userId, competitionId, locale }) {
       <Listing query={submissions} empty={t('teacher.empty.submissions', 'No submissions yet')}>
         {(items) => (
           <div className="student-list">
-            {items.map((s) => (
-              <div className="student-list__item" key={itemId(s, ['id', 'Id'])}>
-                <strong className="domain-row__title">{displayValue(s, ['studentName', 'StudentName', 'studentId', 'StudentId'])}</strong>
-                <DetailList item={s} locale={locale} />
-              </div>
-            ))}
+            {items.map((s) => {
+              const entryId = getField(s, 'entryId')
+              const isSelected = selected?.id === itemId(s, ['id', 'Id'])
+              return (
+                <div className={`student-list__item${isSelected ? ' is-selected' : ''}`} key={itemId(s, ['id', 'Id'])}>
+                  <strong className="domain-row__title">{displayValue(s, ['studentName', 'StudentName', 'studentId', 'StudentId'])}</strong>
+                  <DetailList item={s} locale={locale} />
+                  {entryId ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => onSelect({ id: itemId(s, ['id', 'Id']), entryId, label: displayValue(s, ['studentName', 'StudentName', 'studentId', 'StudentId']) })}
+                    >
+                      {t('teacher.competitions.scoreThis', 'Score this submission')}
+                    </Button>
+                  ) : (
+                    <span className="ui-muted">{t('teacher.competitions.noEntry', 'No matching entry — cannot score')}</span>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </Listing>
@@ -214,28 +229,31 @@ function SubmissionsCard({ userId, competitionId, locale }) {
   )
 }
 
-function ScoreCard({ userId, competitionId }) {
+function ScoreCard({ userId, competitionId, selected, onScored }) {
   const { t } = useTranslation()
   const qc = useQueryClient()
-  const [entryId, setEntryId] = useState('')
   const [score, setScore] = useState('')
   const record = useMutation({
-    mutationFn: () => teacherApi.scoreCompetitionEntry(competitionId, entryId.trim(), Number(score)),
+    mutationFn: () => teacherApi.scoreCompetitionEntry(competitionId, selected.entryId, Number(score)),
     onSuccess: () => {
       setScore('')
       qc.invalidateQueries({ queryKey: queryKeys.teacher.competitionLeaderboard(userId, competitionId) })
+      onScored?.()
     },
   })
   return (
     <Card title={t('teacher.competitions.recordScore', 'Record a score')}>
-      <p className="ui-muted">{t('teacher.competitions.recordScoreHint', 'Award a score to a competition entry (by entry id).')}</p>
-      <form className="stack" onSubmit={(e) => { e.preventDefault(); if (entryId.trim() && score !== '') record.mutate() }}>
-        <TextField label={t('teacher.competitions.entryId', 'Entry id')} value={entryId} onChange={(e) => setEntryId(e.target.value)} required />
-        <TextField label={t('teacher.competitions.score', 'Score')} type="number" min="0" value={score} onChange={(e) => setScore(e.target.value)} required />
-        <Button type="submit" loading={record.isPending} disabled={!entryId.trim() || score === ''}>{t('teacher.competitions.recordScoreButton', 'Record score')}</Button>
-        {record.isError && <ErrorState error={record.error} />}
-        {record.isSuccess && <Alert variant="success" title={t('teacher.competitions.scoreRecorded', 'Score recorded')} />}
-      </form>
+      {!selected ? (
+        <p className="ui-muted">{t('teacher.competitions.recordScoreHint', 'Click "Score this submission" on a submission above to record its score.')}</p>
+      ) : (
+        <form className="stack" onSubmit={(e) => { e.preventDefault(); if (score !== '') record.mutate() }}>
+          <p>{t('teacher.competitions.scoringFor', 'Scoring: {{name}}', { name: selected.label })}</p>
+          <TextField label={t('teacher.competitions.score', 'Score')} type="number" min="0" value={score} onChange={(e) => setScore(e.target.value)} required autoFocus />
+          <Button type="submit" loading={record.isPending} disabled={score === ''}>{t('teacher.competitions.recordScoreButton', 'Record score')}</Button>
+          {record.isError && <ErrorState error={record.error} />}
+          {record.isSuccess && <Alert variant="success" title={t('teacher.competitions.scoreRecorded', 'Score recorded')} />}
+        </form>
+      )}
     </Card>
   )
 }

@@ -10,15 +10,17 @@ describe('Phase 9 teacher route guards', () => {
     expect(teacherRoutes.length).toBeGreaterThanOrEqual(10)
   })
 
-  it('restricts every teacher route to Teacher and SchoolAdmin only', () => {
+  // SchoolAdmin Teacher-portal removal: Teacher portal = Teacher only.
+  it('restricts every teacher route to Teacher only', () => {
     for (const route of teacherRoutes) {
       expect(route.requiresAuth).toBe(true)
       expect(route.roles).toBeDefined()
       expect(route.roles).toContain(ROLES.TEACHER)
-      // Student / Parent / SystemAdmin must never be allowed on teacher routes.
+      // No other role — including SchoolAdmin — may ever be allowed on a teacher route.
       expect(route.roles).not.toContain(ROLES.STUDENT)
       expect(route.roles).not.toContain(ROLES.PARENT)
       expect(route.roles).not.toContain(ROLES.SYSTEM_ADMIN)
+      expect(route.roles).not.toContain(ROLES.SCHOOL_ADMIN)
     }
   })
 

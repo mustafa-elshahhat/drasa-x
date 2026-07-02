@@ -148,14 +148,35 @@ public class TeacherPortalApiTests : IClassFixture<IntegrationFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, resp.StatusCode);
     }
 
-    // ---- SchoolAdmin: tenant-wide ----
+    // ---- SchoolAdmin: Teacher-portal removal (SchoolAdmin must not reach Teacher-personal endpoints) ----
 
+    // SchoolAdmin Teacher-portal removal: TeacherController used to grant SchoolAdmin a
+    // tenant-wide bypass (this test previously asserted 200 OK here). That is no longer the
+    // desired product behavior — /api/v1/teacher/* is the Teacher's own personal dashboard/
+    // assignment surface, not a school-administration endpoint, so SchoolAdmin now gets 403
+    // like any other non-Teacher role. SchoolAdmin's equivalent administrative views live
+    // under /api/v1/school-admin/* instead.
     [Fact]
-    public async Task SchoolAdmin_dashboard_is_tenant_wide()
+    public async Task SchoolAdmin_dashboard_is_forbidden_403()
     {
         var client = await TestClient.AuthedClientAsync(_factory, "ADMIN-T1");
         var resp = await client.GetAsync("/api/v1/teacher/dashboard");
-        Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
-        Assert.True((await DataAsync(resp)).GetProperty("assignedClassCount").GetInt32() >= 1);
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task SchoolAdmin_classes_is_forbidden_403()
+    {
+        var client = await TestClient.AuthedClientAsync(_factory, "ADMIN-T1");
+        var resp = await client.GetAsync("/api/v1/teacher/classes");
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
+    }
+
+    [Fact]
+    public async Task SchoolAdmin_class_students_is_forbidden_403()
+    {
+        var client = await TestClient.AuthedClientAsync(_factory, "ADMIN-T1");
+        var resp = await client.GetAsync("/api/v1/teacher/classes/PH8-CLASS-T1/students");
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
 }

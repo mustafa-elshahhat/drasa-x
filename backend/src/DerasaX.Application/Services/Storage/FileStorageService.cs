@@ -142,7 +142,12 @@ namespace DerasaX.Application.Services.Storage
         public async Task<FileRecord> GetMetadataAsync(string fileId, CancellationToken ct = default)
         {
             RequireTenant();
-            return await LoadTenantScopedAsync(fileId);
+            var record = await LoadTenantScopedAsync(fileId);
+            // RBAC gap fix (route/RBAC audit §8.1): metadata reads must be gated exactly like the
+            // byte-download path below — otherwise any tenant member could enumerate FileName/
+            // ContentType/StorageKey for files they cannot actually open.
+            EnsureBaselineRead(record);
+            return record;
         }
 
         public async Task<FileContentResult> OpenWithBaselineAuthorizationAsync(string fileId, CancellationToken ct = default)

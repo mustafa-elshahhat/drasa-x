@@ -15,6 +15,8 @@ function ReportsPage({ userId, locale }) {
   const query = useSchoolQuery(queryKeys.school.reports(userId), (s) => schoolApi.reports(s))
   const users = query.data ? toObject(settledData(query.data.users)) : null
   const ai = query.data ? toObject(settledData(query.data.ai)) : null
+  const assessmentSummary = query.data ? toObject(settledData(query.data.assessmentSummary)) : null
+  const auditActivity = query.data ? toObject(settledData(query.data.auditActivity)) : null
   return (
     <>
       <Head view="reports" />
@@ -24,6 +26,8 @@ function ReportsPage({ userId, locale }) {
         <div className="ui-split ui-split--even">
           <Card title={t('school.reports.users')}>{users ? <DetailList item={users} locale={locale} /> : <EmptyState title={t('school.empty.reports')} />}</Card>
           <Card title={t('school.reports.ai')}>{ai ? <DetailList item={ai} locale={locale} /> : <EmptyState title={t('school.empty.reports')} />}</Card>
+          <Card title={t('school.reports.assessmentSummary')}>{assessmentSummary ? <DetailList item={assessmentSummary} locale={locale} /> : <EmptyState title={t('school.empty.reports')} />}</Card>
+          <Card title={t('school.reports.auditActivity')}>{auditActivity ? <DetailList item={auditActivity} locale={locale} /> : <EmptyState title={t('school.empty.reports')} />}</Card>
         </div>
       )}
     </>

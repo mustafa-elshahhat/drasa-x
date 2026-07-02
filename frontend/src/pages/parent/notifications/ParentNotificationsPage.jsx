@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { Bell } from 'lucide-react'
@@ -6,7 +7,7 @@ import { EmptyState, ErrorState } from '../../../shared/feedback'
 import { useParentQuery } from '../../../features/parent/helpers'
 import { parentApi } from '../../../features/parent/parentApi'
 import { toItems, toObject } from '../../../features/student/studentSchemas'
-import { displayValue, formatDate, itemId, settledData } from '../../../features/student/studentUtils'
+import { displayValue, formatDate, getField, itemId, safeInternalPath, settledData } from '../../../features/student/studentUtils'
 import { queryKeys } from '../../../lib/query/keys'
 import { usePortalContext } from '../../../features/portal/context'
 
@@ -26,12 +27,14 @@ function NotificationsPage({ userId, locale }) {
         <ul className="ui-list">
           {items.map((item) => {
             const read = item.isRead ?? item.IsRead
+            const actionUrl = safeInternalPath(getField(item, 'actionUrl'))
             return (
               <li className={`ui-list__item${read ? '' : ' ui-list__item--unread'}`} key={itemId(item)}>
                 <div className="ui-list__body">
                   <div className="ui-list__title">{displayValue(item) || itemId(item)}</div>
                   <div className="ui-list__meta">{displayValue(item, ['body', 'Body', 'message', 'Message'])}</div>
                   <div className="ui-list__meta ui-muted">{formatDate(item.createdAt ?? item.CreatedAt, locale)}</div>
+                  {actionUrl && <Link to={actionUrl} className="ui-link">{t('notifications.open')}</Link>}
                 </div>
                 {!read && <Button variant="ghost" onClick={() => mark.mutate(itemId(item))} loading={mark.isPending}>{t('parent.notifications.markRead')}</Button>}
               </li>

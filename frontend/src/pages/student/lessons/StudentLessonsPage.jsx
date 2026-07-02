@@ -1,7 +1,7 @@
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { ArrowRight, Check, Download, FileText, PlayCircle, Sparkles } from 'lucide-react'
+import { ArrowRight, Check, Download, FileText, Sparkles } from 'lucide-react'
 import { useStudentContext } from '../../../features/student/helpers'
 import { Thumb } from '../../../shared/domain'
 import { Alert, Button, Card, PageHeader } from '../../../shared/ui'
@@ -116,17 +116,26 @@ function LessonsPage({ userId, locale }) {
       <div className="ui-split">
         {/* Left Column: Lesson video card, Lesson details, Lesson materials */}
         <div>
-          {/* Lesson Video player placeholder */}
+          {/* Honest lesson hero: decorative illustration + a real shortcut to the
+              first material, not a fake "play" affordance (no video source
+              exists at the lesson level — see StudentMaterialsPage for the
+              real per-material open/download action). */}
           <div
-            className="rounded-card overflow-hidden mb-[18px] relative cursor-pointer shadow-card"
+            className={`rounded-card overflow-hidden mb-[18px] relative shadow-card${firstMaterial ? ' cursor-pointer' : ''}`}
             onClick={() => firstMaterial && navigate(`/app/student/materials/${itemId(firstMaterial)}`)}
+            role={firstMaterial ? 'link' : undefined}
+            tabIndex={firstMaterial ? 0 : undefined}
+            onKeyDown={(e) => { if (firstMaterial && (e.key === 'Enter' || e.key === ' ')) navigate(`/app/student/materials/${itemId(firstMaterial)}`) }}
           >
-            <Thumb seed={lessonId} icon={PlayCircle} height={300} className="student-lesson__hero" style={{ marginBottom: 0, width: '100%', objectFit: 'cover' }} />
-            <div className="absolute inset-0 flex items-center justify-center bg-[rgba(12,_114,_136,_0.15)]">
-              <div className="student-video-player__btn">
-                <PlayCircle size={30} className="text-brand" />
+            <Thumb seed={lessonId} icon={FileText} height={300} className="student-lesson__hero" style={{ marginBottom: 0, width: '100%', objectFit: 'cover' }} />
+            {firstMaterial && (
+              <div className="absolute inset-0 flex items-center justify-center bg-[rgba(12,_114,_136,_0.15)]">
+                <div className="student-video-player__btn cluster" style={{ gap: 8, width: 'auto', padding: '10px 18px' }}>
+                  <FileText size={20} className="text-brand" />
+                  <span className="text-brand font-semibold text-sm">{t('student.lessons.viewMaterials', 'View lesson materials')}</span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <h1 className="[margin:0_0_10px] text-[26px] font-extrabold text-ink">

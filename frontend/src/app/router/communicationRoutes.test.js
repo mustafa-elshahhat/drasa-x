@@ -17,15 +17,40 @@ describe('Phase 13 shared communication routes', () => {
     for (const r of commsRoutes) expect(r.requiresAuth).toBe(true)
   })
 
-  it('exposes Messages + Notifications nav to every tenant role (not platform admin)', () => {
+  it('exposes Messages nav to every tenant role but never platform admin (backend 403s SystemAdmin there)', () => {
     for (const role of [ROLES.STUDENT, ROLES.TEACHER, ROLES.PARENT, ROLES.SCHOOL_ADMIN]) {
       const keys = navItemsForRole(role).map((i) => i.key)
       expect(keys).toContain('messages')
-      expect(keys).toContain('notifications-center')
     }
     const sysKeys = navItemsForRole(ROLES.SYSTEM_ADMIN).map((i) => i.key)
     expect(sysKeys).not.toContain('messages')
-    expect(sysKeys).not.toContain('notifications-center')
+  })
+
+  // §7 row 2 / P1-9 / D5: NotificationsController is plain [Authorize] (no tenant requirement),
+  // so SystemAdmin genuinely can use it — the nav item now matches what the header
+  // NotificationBell already did for SystemAdmin, instead of hiding an otherwise-working surface.
+  it('exposes Notifications nav to every authenticated role, including platform admin', () => {
+    for (const role of [ROLES.STUDENT, ROLES.TEACHER, ROLES.PARENT, ROLES.SCHOOL_ADMIN, ROLES.SYSTEM_ADMIN]) {
+      const keys = navItemsForRole(role).map((i) => i.key)
+      expect(keys).toContain('notifications-center')
+    }
+  })
+
+  // §7 row 1 / P1-9 / D5: the route itself must reject SystemAdmin (route guard), not just hide
+  // the nav link — a FE-allowed/BE-blocked mismatch is still reachable by typing the URL.
+  it('restricts /app/messages route guards to tenant roles only (SystemAdmin excluded)', () => {
+    const messageRoutes = ROUTES.filter((r) => r.path === '/app/messages' || r.path === '/app/messages/:conversationId')
+    expect(messageRoutes).toHaveLength(2)
+    for (const r of messageRoutes) {
+      expect(r.roles).toEqual(expect.arrayContaining([ROLES.STUDENT, ROLES.TEACHER, ROLES.PARENT, ROLES.SCHOOL_ADMIN]))
+      expect(r.roles).not.toContain(ROLES.SYSTEM_ADMIN)
+    }
+  })
+
+  it('leaves /app/notifications* routes open to any authenticated role (no role restriction)', () => {
+    const notifRoutes = ROUTES.filter((r) => r.path === '/app/notifications' || r.path === '/app/notifications/preferences')
+    expect(notifRoutes).toHaveLength(2)
+    for (const r of notifRoutes) expect(r.roles).toBeUndefined()
   })
 
   it('points messaging/notifications nav at the shared backend-backed routes', () => {

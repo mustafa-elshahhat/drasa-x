@@ -72,6 +72,13 @@ export const systemApi = {
   async subscriptions(signal) {
     return toItems(await api.get('/api/v1/system-admin/subscriptions', { signal }))
   },
+  // Process an already-existing (school-requested) renewal — approve/reject/apply/cancel.
+  // No "list pending renewals" endpoint exists on the backend (verified: neither
+  // TenantsController nor ITenantAdminService exposes one), so the caller supplies the
+  // renewal id directly (see the SystemTenantDetailsPage renewal-processing form).
+  async processRenewal(renewalId, body) {
+    return unwrapEnvelope(await api.post(`/api/v1/tenants/renewals/${enc(renewalId)}/process`, body))
+  },
 
   // ---- initial school admin (Phase 12 contract) ----
   async createSchoolAdmin(tenantId, body) {

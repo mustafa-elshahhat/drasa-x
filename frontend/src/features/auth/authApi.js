@@ -91,3 +91,54 @@ export async function changePassword({ currentPassword, newPassword }) {
     body: JSON.stringify({ CurrentPassword: currentPassword, NewPassword: newPassword }),
   })
 }
+
+/**
+ * Forgot-password is anonymous and ALWAYS returns 200 with the same generic shape —
+ * the backend never discloses whether the login code belongs to a real account.
+ * Uses a direct fetch (same pattern as `login`) since there is no session yet.
+ * `devToken` is populated only in Development (no email provider configured).
+ * @returns {Promise<{ ok: boolean, message?: string, devToken?: string|null, error?: import('../../lib/api/problemDetails').ApiError }>}
+ */
+export async function forgotPassword(loginCode) {
+  let res
+  try {
+    res = await fetch(`${config.backendUrl}${ACCOUNT}/forgot-password`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...correlationHeaders() },
+      body: JSON.stringify({ LoginCode: loginCode }),
+    })
+  } catch (cause) {
+    return { ok: false, error: networkError(cause) }
+  }
+  if (!res.ok) {
+    return { ok: false, error: await problemFromResponse(res) }
+  }
+  const body = await res.json()
+  return { ok: true, message: body.message, devToken: body.devToken || null }
+}
+
+/**
+ * Reset-password is anonymous. Fails with a 400 ("Invalid or expired reset token.")
+ * when the token is wrong/expired/already used. Uses a direct fetch (same pattern
+ * as `login`) since there is no session yet.
+ * @returns {Promise<{ ok: boolean, message?: string, error?: import('../../lib/api/problemDetails').ApiError }>}
+ */
+export async function resetPassword({ loginCode, token, newPassword }) {
+  let res
+  try {
+    res = await fetch(`${config.backendUrl}${ACCOUNT}/reset-password`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...correlationHeaders() },
+      body: JSON.stringify({ LoginCode: loginCode, Token: token, NewPassword: newPassword }),
+    })
+  } catch (cause) {
+    return { ok: false, error: networkError(cause) }
+  }
+  if (!res.ok) {
+    return { ok: false, error: await problemFromResponse(res) }
+  }
+  const body = await res.json()
+  return { ok: true, message: body.message }
+}

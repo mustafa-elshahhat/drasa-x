@@ -17,7 +17,17 @@ import { ROLES, PERMISSIONS, ALL_ROLES } from '../../features/auth/roles'
 // authoritative count; the `r()` helper hides `path:` from a text grep). If a
 // route is intentionally added/removed, update this number in the SAME change —
 // that is the point of the guard.
-const EXPECTED_ROUTE_COUNT = 131
+// P1-1/P1-2 (audit-driven fix pass): +5 routes — /app/school/{users,students,
+// teachers,parents}/:userId (school-admin user detail) and
+// /app/school/classes/:classId (class detail/roster/enrollment).
+// Task 3 (audit-driven fix pass, forgot/reset password flow): +2 routes —
+// /forgot-password, /reset-password (new anonymous-only auth routes).
+// Task 5 (audit-driven fix pass, suggestions moderation): +1 route —
+// /app/school/suggestions (school-admin suggestion moderation page).
+// Contract-gap appendix (audit-driven fix pass, communities/gamification):
+// +2 routes — /app/teacher/communities (new teacher community creation/
+// moderation UI) and /app/school/gamification-rules (school-admin rule editor).
+const EXPECTED_ROUTE_COUNT = 141
 
 describe('route architecture (Phase 13 regression guards)', () => {
   it('has the exact verified route count (no silent add/remove)', () => {

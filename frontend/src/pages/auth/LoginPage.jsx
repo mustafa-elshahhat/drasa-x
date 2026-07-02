@@ -95,6 +95,9 @@ export default function LoginPage() {
               </Button>
             </form>
             <p className="auth-card__alt">
+              <Link to="/forgot-password">{t('auth.forgotPassword')}</Link>
+            </p>
+            <p className="auth-card__alt">
               {t('auth.noAccount', 'No account?')}{' '}
               <Link to="/request-demo">{t('public.requestDemo.title', 'Request a demo')}</Link>
             </p>

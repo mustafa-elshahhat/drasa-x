@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { ShieldCheck } from 'lucide-react'
+import { ShieldCheck, Bell } from 'lucide-react'
 import { Card, PageHeader } from '../../../shared/ui'
 import { ErrorState } from '../../../shared/feedback'
 import { usePortalContext } from '../../../features/portal/context'
@@ -10,9 +10,14 @@ function SettingsPage() {
   return (
     <>
       <PageHeader title={t('parent.settings.title')} description={t('parent.settings.description')} />
-      <Card title={t('nav.security')}>
-        <Link className="ui-btn ui-btn--primary" to="/app/security"><ShieldCheck size={16} aria-hidden="true" /> {t('parent.settings.changePassword')}</Link>
-      </Card>
+      <div className="ui-split ui-split--even">
+        <Card title={t('nav.security')}>
+          <Link className="ui-btn ui-btn--primary" to="/app/security"><ShieldCheck size={16} aria-hidden="true" /> {t('parent.settings.changePassword')}</Link>
+        </Card>
+        <Card title={t('parent.settings.notifications')}>
+          <Link className="ui-btn ui-btn--ghost" to="/app/notifications/preferences"><Bell size={16} aria-hidden="true" /> {t('parent.settings.notificationPreferences')}</Link>
+        </Card>
+      </div>
     </>
   )
 }

@@ -31,6 +31,10 @@ function TeacherAssignmentsPage({ userId, locale }) {
     mutationFn: () => schoolApi.createClassAssignment({ teacherId: classForm.teacherId, schoolClassId: classForm.schoolClassId, subjectId: classForm.subjectId || null, role: Number(classForm.role) }),
     onSuccess: () => { setClassForm({ teacherId: '', schoolClassId: '', subjectId: '', role: 0 }); qc.invalidateQueries({ queryKey: queryKeys.school.classAssignments(userId) }) },
   })
+  const deactivateClass = useMutation({
+    mutationFn: (id) => schoolApi.deactivateClassAssignment(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.school.classAssignments(userId) }),
+  })
   const teacherItems = Array.isArray(teachers.data) ? teachers.data : []
   const subjectItems = Array.isArray(subjects.data) ? subjects.data : []
   const classItems = Array.isArray(classes.data) ? classes.data : []
@@ -53,7 +57,15 @@ function TeacherAssignmentsPage({ userId, locale }) {
       </Card>
       <section className="ui-section">
         <div className="ui-section__head"><h2 className="ui-section__title">{t('school.pages.teacherAssignments.classList')}</h2></div>
-        <List query={classAsg} empty={t('school.empty.assignments')} locale={locale} />
+        {deactivateClass.isError && <ErrorState error={deactivateClass.error} onRetry={() => deactivateClass.reset()} />}
+        <List
+          query={classAsg}
+          empty={t('school.empty.assignments')}
+          locale={locale}
+          rowActions={(item) => item.isActive && (
+            <Button variant="secondary" onClick={() => deactivateClass.mutate(itemId(item))} loading={deactivateClass.isPending}>{t('school.common.deactivate')}</Button>
+          )}
+        />
       </section>
       <Card title={t('school.assignments.subjectCreate')}>
         {createSubj.isSuccess && <Alert variant="success" title={t('school.common.created')}>{t('school.common.createdBody')}</Alert>}

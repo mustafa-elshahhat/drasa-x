@@ -16,10 +16,31 @@ const EMPTY = {
   message: '',
 }
 
+const CONTACT_EMAIL = 'info@derasax.com'
+
 // Marketing "request a demo" page. There is intentionally NO backend demo
-// endpoint (inventing one is out of scope), so this form is client-side only:
-// it validates required fields via the browser and confirms receipt locally
-// without transmitting any PII.
+// endpoint (inventing one is out of scope), so this form cannot itself
+// deliver the request anywhere — it never did, and previously showed a fake
+// "your request has been received" message with no data going anywhere
+// (D10). Instead, submitting builds a real `mailto:` draft (to the same
+// address the public footer already advertises) and hands the visitor a
+// genuine link to actually send it via their own email client.
+function buildMailto(formData) {
+  const subject = `Demo request${formData.company ? ` — ${formData.company}` : ''}`
+  const lines = [
+    ['Name', [formData.firstName, formData.lastName].filter(Boolean).join(' ')],
+    ['Company', formData.company],
+    ['Job title', formData.jobTitle],
+    ['Country', formData.country],
+    ['City', formData.city],
+    ['Email', formData.email],
+    ['Phone', formData.phone],
+    ['Message', formData.message],
+  ].filter(([, value]) => value)
+  const body = lines.map(([label, value]) => `${label}: ${value}`).join('\n')
+  return `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
+
 export default function RequestDemoPage() {
   const { t } = useTranslation()
   useDocumentTitle({ titleKey: 'public.requestDemo.title' })
@@ -42,9 +63,12 @@ export default function RequestDemoPage() {
 
       <div className="public-demo__card">
         {submitted ? (
-          <p className="public-demo__success" role="status">
-            {t('public.requestDemo.success')}
-          </p>
+          <div className="public-demo__success" role="status">
+            <p>{t('public.requestDemo.success')}</p>
+            <a className="public-demo__submit" href={buildMailto(formData)}>
+              {t('public.requestDemo.sendEmail')}
+            </a>
+          </div>
         ) : (
           <form className="public-demo__form" onSubmit={handleSubmit}>
             <div className="public-demo__row">

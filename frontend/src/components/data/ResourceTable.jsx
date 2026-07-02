@@ -23,9 +23,15 @@ export function ResourceTable({
   emptyMessage,
   caption,
   locale,
+  rowActions,
 }) {
   const { t } = useTranslation()
-  const resolvedColumns = columns && columns.length ? columns : autoColumns(rows)
+  const baseColumns = columns && columns.length ? columns : autoColumns(rows)
+  // Mirrors `Crud.jsx`'s `__actions` column so every ResourceTable consumer
+  // (not just Crud-based pages) can render per-row actions.
+  const resolvedColumns = rowActions
+    ? [...baseColumns, { key: '__actions', header: '', align: 'end', render: rowActions }]
+    : baseColumns
 
   const tableColumns = resolvedColumns.map((col) => {
     const header = col.headerKey ? t(col.headerKey) : col.header

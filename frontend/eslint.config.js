@@ -1,5 +1,6 @@
 import js from '@eslint/js'
 import globals from 'globals'
+import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
@@ -24,8 +25,16 @@ export default defineConfig([
         sourceType: 'module',
       },
     },
+    plugins: { react },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // T-03/T-04 (audit-driven fix pass, §10 item 4): catches a JSX element
+      // referencing an undefined/unimported component name at lint time —
+      // exactly the class of bug (F-02/F-03) that previously crashed
+      // /app/student/units and /app/system/errors|backups at runtime. Scoped
+      // to just this one rule (not the full `react` recommended set) to avoid
+      // introducing unrelated new violations across the codebase.
+      'react/jsx-no-undef': 'error',
     },
   },
   {
@@ -48,6 +57,7 @@ export default defineConfig([
         sourceType: 'module',
       },
     },
+    plugins: { react },
     rules: {
       // Keep the existing convention: ignore intentionally-unused PascalCase/_CONST.
       'no-unused-vars': 'off',
@@ -55,6 +65,8 @@ export default defineConfig([
         'error',
         { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' },
       ],
+      // See T-03/T-04 comment in the JS/JSX block above.
+      'react/jsx-no-undef': 'error',
     },
   },
   {

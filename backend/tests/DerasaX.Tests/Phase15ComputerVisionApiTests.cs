@@ -338,17 +338,30 @@ public class Phase15ComputerVisionApiTests : IClassFixture<IntegrationFactory>
         var teacher = await AuthedAsync(f, "TEACH-T1");
         var sessionId = await StartSessionAsync(teacher);
 
-        var (otherCode, _) = await CreateStaffAsync("tenant-2", "SchoolAdmin");
-        var otherAdmin = await AuthedAsync(_factory, otherCode);
-        var resp = await otherAdmin.GetAsync($"/api/v1/vision/sessions/{sessionId}");
+        // Vision is Teacher-only (SchoolAdmin Teacher-portal removal), so tenant isolation
+        // here is proven with a second Teacher account, not a SchoolAdmin one.
+        var (otherCode, _) = await CreateStaffAsync("tenant-2", "Teacher");
+        var otherTeacher = await AuthedAsync(_factory, otherCode);
+        var resp = await otherTeacher.GetAsync($"/api/v1/vision/sessions/{sessionId}");
         Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
 
-        // and the tenant-2 admin cannot confirm a tenant-1 candidate
+        // and the tenant-2 teacher cannot confirm a tenant-1 candidate
         var t = await AuthedAsync(f, "TEACH-T1");
         await AnalyzeAsync(t, sessionId);
         var candidates = await CandidatesAsync(t, sessionId);
-        var conf = await otherAdmin.PostAsJsonAsync($"/api/v1/vision/candidates/{candidates[0].GetProperty("id").GetString()}/reject", new { });
+        var conf = await otherTeacher.PostAsJsonAsync($"/api/v1/vision/candidates/{candidates[0].GetProperty("id").GetString()}/reject", new { });
         Assert.Equal(HttpStatusCode.NotFound, conf.StatusCode);
+    }
+
+    // SchoolAdmin Teacher-portal removal: ClassroomVisionController used to admit SchoolAdmin
+    // (TeacherOrSchoolAdmin); vision is now Teacher-only with no school-admin equivalent.
+    [Fact]
+    public async Task SchoolAdmin_is_denied_vision_session_403()
+    {
+        var (code, _) = await CreateStaffAsync("tenant-1", "SchoolAdmin");
+        var admin = await AuthedAsync(_factory, code);
+        var resp = await admin.PostAsJsonAsync("/api/v1/vision/sessions", new { title = "x" });
+        Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
     }
 
     // ===================================================================

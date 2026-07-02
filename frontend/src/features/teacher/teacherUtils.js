@@ -9,6 +9,7 @@ export {
   settledData,
   settledError,
   safeInternalPath,
+  attachmentTypeName,
 } from '../student/studentUtils'
 
 // The backend serializes QuizStatus as its numeric enum value (and occasionally as

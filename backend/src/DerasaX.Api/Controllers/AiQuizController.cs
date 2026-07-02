@@ -11,15 +11,16 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace DerasaX.Api.Controllers
 {
     /// <summary>
-    /// Phase 6 §11 — backend-mediated AI quiz-draft generation. A teacher (or
-    /// school admin) requests a grounded draft; the backend authorizes, calls
-    /// school-ai-rag, validates, and persists a Draft/Origin=AiGenerated quiz that
-    /// requires teacher review before publishing. The browser never calls the AI
-    /// service directly, and correct answers are never returned to students.
+    /// Phase 6 §11 — backend-mediated AI quiz-draft generation. Teacher-only (SchoolAdmin
+    /// Teacher-portal removal — "Generate AI quiz draft" is a Teacher-portal-only surface):
+    /// a teacher requests a grounded draft; the backend authorizes, calls school-ai-rag,
+    /// validates, and persists a Draft/Origin=AiGenerated quiz that requires teacher review
+    /// before publishing. The browser never calls the AI service directly, and correct
+    /// answers are never returned to students.
     /// </summary>
     [ApiController]
     [Route("api/v1/ai/quiz")]
-    [Authorize(Policy = Policies.TeacherOrSchoolAdmin)]
+    [Authorize(Policy = Policies.TeacherOnly)]
     [EnableRateLimiting(RateLimitPolicies.Ai)]
     public class AiQuizController : ControllerBase
     {

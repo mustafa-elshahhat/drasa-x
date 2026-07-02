@@ -7,6 +7,7 @@
 // per-area files keep each surface small; this module only concatenates them
 // into the `ROUTES` array consumers already import. No path/guard/prop changed.
 // =============================================================================
+import { matchPath } from 'react-router-dom'
 import type { AppRoute } from './route.types'
 import { publicRoutes } from './routes.public'
 import { authRoutes } from './routes.auth'
@@ -35,4 +36,16 @@ export const ROUTES: AppRoute[] = [
 /** Look up route metadata by exact path (used by breadcrumbs/title). */
 export function findRouteByPath(path: string): AppRoute | null {
   return ROUTES.find((r) => r.path === path) || null
+}
+
+/**
+ * True when `path` (a concrete URL, e.g. `/app/teacher/units/unit-1`) resolves to
+ * SOME registered route pattern (including `:param` routes) — not just an exact
+ * literal match. Used by breadcrumbs to decide whether an intermediate crumb is
+ * safe to render as a `Link` (F-05: several cumulative breadcrumb paths, like the
+ * bare `/app/teacher/units` with no id, are not registered on their own and would
+ * otherwise 404).
+ */
+export function matchesRegisteredRoute(path: string): boolean {
+  return ROUTES.some((r) => matchPath({ path: r.path, end: true }, path) !== null)
 }
